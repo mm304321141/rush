@@ -26,7 +26,7 @@ struct yopt
 				int j;
 				for(j=i+1;j<vasm.count();j++)
 				{
-					if(!is_add_sub(sh,vasm[j].vstr))
+					ifn(is_add_sub(sh,vasm[j].vstr))
 					{
 						break;
 					}

@@ -162,7 +162,7 @@ rbuf<V> r_split(const V& v,const V& m,int start=0)
 		{
 			temp+=v[i];
 		}
-		if(!temp.empty())
+		ifn(temp.empty())
 		{
 			result.push(r_move(temp));
 		}
@@ -173,7 +173,7 @@ rbuf<V> r_split(const V& v,const V& m,int start=0)
 	{
 		temp+=v[i];
 	}
-	if(!temp.empty())
+	ifn(temp.empty())
 	{
 		result.push(r_move(temp));
 	}

@@ -24,28 +24,28 @@ struct ypre
 		}
 		else
 		{
-			if(!read_file(sh,sh.main_file))
+			ifn(read_file(sh,sh.main_file))
 			{
 				rserror("can't read main file "+
 					sh.main_file.torstr());
 				return false;
 			}
 		}
-		if(!obtain_all_file(sh))
+		ifn(obtain_all_file(sh))
 		{
 			return false;
 		}
 		tfile* p;
 		for_set(p,sh.s_file)
 		{
-			if(!obtain_def(sh,sh.s_define,p->vword))
+			ifn(obtain_def(sh,sh.s_define,p->vword))
 			{
 				return false;
 			}
 		}
 		for_set(p,sh.s_file)
 		{
-			if(!replace_ifdef(sh,sh.s_define,p->vword))
+			ifn(replace_ifdef(sh,sh.s_define,p->vword))
 			{
 				return false;
 			}
@@ -97,7 +97,7 @@ struct ypre
 
 	static rbool parse_str(const tsh& sh,rstr& src,rbuf<tword>& dst,const tfile* pfile)
 	{
-		if(!yword::parse(sh,src,dst,pfile))
+		ifn(yword::parse(sh,src,dst,pfile))
 		{
 			return false;
 		}
@@ -151,7 +151,7 @@ struct ypre
 	{
 		rbuf<rstr> vname;
 		count_tab(*p);
-		if(!parse_str(sh,p->cont,p->vword,p))
+		ifn(parse_str(sh,p->cont,p->vword,p))
 		{
 			return false;
 		}
@@ -160,7 +160,7 @@ struct ypre
 		{
 			return false;
 		}
-		if(!obtain_name(sh,vname,p->vword,*p))
+		ifn(obtain_name(sh,vname,p->vword,*p))
 		{
 			rserror(rstr("obtain error ")+
 				ybase::get_file_name(p));

@@ -182,7 +182,7 @@ struct zmain
 			{
 				if(q->vasm.empty())
 				{
-					if(!zbin::compile_vword_to_vasm(sh,*q,tenv()))
+					ifn(zbin::compile_vword_to_vasm(sh,*q,tenv()))
 					{
 						return false;
 					}

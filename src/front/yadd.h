@@ -11,12 +11,12 @@ struct yadd
 		//增加局部变量构造和析构
 		//注意增加的这些语句type为空
 		tsent temp=add_local_init(sh,tfi);
-		if(!temp.empty())
+		ifn(temp.empty())
 		{
 			tfi.vsent.push_front(temp);
 		}
 		temp=add_local_free(sh,tfi);
-		if(!temp.empty())
+		ifn(temp.empty())
 		{
 			tfi.vsent.push(temp);
 		}
@@ -164,7 +164,7 @@ struct yadd
 		}
 		v+=tword(rsoptr(c_dot));
 		v.push(tword(tdi.name));
-		if(!tdi.param.empty())
+		ifn(tdi.param.empty())
 		{
 			v.push(tword(rsoptr(c_comma)));
 			v+=tdi.param;
@@ -196,7 +196,7 @@ struct yadd
 			}
 			add_destructor_func(sh,tci,tci.vdata[i],sent.vword,true);
 		}
-		if(!sent.vword.empty())
+		ifn(sent.vword.empty())
 		{
 			tfi.vsent.push(r_move(sent));
 			ybase::part_vsent(tfi.vsent);

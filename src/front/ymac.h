@@ -130,7 +130,7 @@ struct ymac
 			{
 				ifn(i>1&&v.get(i-1).val==rsoptr(c_dot))
 				{
-					if(!replace_param(sh,v,i,
+					ifn(replace_param(sh,v,i,
 						*ptci->vmac.find(item),right))
 					{
 						return false;
@@ -144,7 +144,7 @@ struct ymac
 			{
 				ifn(i>1&&v.get(i-1).val==rsoptr(c_dot))
 				{
-					if(!replace_param(sh,v,i,
+					ifn(replace_param(sh,v,i,
 						*ptci->vmac.find(item),right))
 					{
 						return false;
@@ -170,7 +170,7 @@ struct ymac
 			item.name=v.get(i).val;
 			if(ptci->vmac.exist(item))
 			{
-				if(!replace_param(sh,v,i,*ptci->vmac.find(item),right))
+				ifn(replace_param(sh,v,i,*ptci->vmac.find(item),right))
 				{
 					return false;
 				}
@@ -214,7 +214,7 @@ struct ymac
 			{
 				param.push(ybase::trans_vword_to_vstr(temp[j]));
 			}
-			if(!replace_w(v[i],param,mitem))
+			ifn(replace_w(v[i],param,mitem))
 			{
 				rserror(v.get(i));
 				return false;
@@ -223,7 +223,7 @@ struct ymac
 		}
 		else
 		{
-			if(!replace_w(v[i],param,mitem))
+			ifn(replace_w(v[i],param,mitem))
 			{
 				rserror(v.get(i));
 				return false;

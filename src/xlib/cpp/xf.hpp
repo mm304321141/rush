@@ -240,7 +240,7 @@ struct xf
 		return false;
 #else
 #ifndef __MINGW32__
-		if(!get_cur_dir(buf,size))
+		ifn(get_cur_dir(buf,size))
 		{
 			return false;
 		}
@@ -311,7 +311,7 @@ struct xf
 		{
 			return 0;
 		}
-		if(!::GetFileTime(hFile,null,null,(FILETIME*)&ft))
+		ifn(::GetFileTime(hFile,null,null,(FILETIME*)&ft))
 		{
 			return 0;
 		}

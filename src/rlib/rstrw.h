@@ -307,7 +307,7 @@ struct rstrw
 		}
 		for(int i=0;i<count();i++)
 		{
-			if(!is_number(buf[i]))
+			ifn(is_number(buf[i]))
 			{
 				return false;
 			}

@@ -68,15 +68,15 @@ struct yfunctl
 			tfunc item=*ptfi;
 			item.vtl.free();
 			yclasstl::replace_vtl(item.vword,ptfi->vtl,vparam);
-			if(!replace_type(sh,item.vword))
+			ifn(replace_type(sh,item.vword))
 			{
 				return false;
 			}
-			if(!combine_ftl_name(sh,item.vword,ptfi->name))
+			ifn(combine_ftl_name(sh,item.vword,ptfi->name))
 			{
 				return false;
 			}
-			if(!ymemb::add_func(sh,*cur_ptci,item.vword,false))
+			ifn(ymemb::add_func(sh,*cur_ptci,item.vword,false))
 			{
 				return false;
 			}
@@ -90,7 +90,7 @@ struct yfunctl
 	static rbool replace_type(tsh& sh,rbuf<tword>& v)
 	{
 		int cur=sh.s_class.count();
-		if(!yclasstl::replace_type(sh,v))
+		ifn(yclasstl::replace_type(sh,v))
 		{
 			return false;
 		}
@@ -99,7 +99,7 @@ struct yfunctl
 			tclass* p;
 			for_set(p,sh.s_class)
 			{
-				if(!proc_class(sh,*p))
+				ifn(proc_class(sh,*p))
 				{
 					return false;
 				}

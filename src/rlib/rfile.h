@@ -40,11 +40,11 @@ struct rfile
 	rbool open(rstr name,rstr mode="r")
 	{
 		fp=null;
-		if(!exist(name))
+		ifn(exist(name))
 		{
 			if("rw"==mode)
 			{
-				if(!create(name))
+				ifn(create(name))
 				{
 					return false;
 				}
@@ -110,7 +110,7 @@ struct rfile
 	{
 		rstr ret;
 		ret.set_size(size());
-		if(!read(0,size(),ret.begin()))
+		ifn(read(0,size(),ret.begin()))
 		{
 			return rstr();
 		}
@@ -123,7 +123,7 @@ struct rfile
 		rfile file(name);
 		rstr ret;
 		ret.set_size(file.size());
-		if(!file.read(0,file.size(),ret.begin()))
+		ifn(file.read(0,file.size(),ret.begin()))
 		{
 			return rstr();
 		}
@@ -291,7 +291,7 @@ struct rfile
 		{
 			rfile file(name);
 			file.set_off64(size-1);
-			if(!file.write(1,"\0"))
+			ifn(file.write(1,"\0"))
 			{
 				return false;
 			}

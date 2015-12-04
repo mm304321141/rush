@@ -84,7 +84,7 @@ struct ymemb
 					rserror(rstr("can't find ")+tci.vdata[i].type);
 					return false;
 				}
-				if(!obtain_size_recursion(sh,*ptci,level))
+				ifn(obtain_size_recursion(sh,*ptci,level))
 				{
 					return false;
 				}
@@ -127,7 +127,7 @@ struct ymemb
 			if(v[i].val==rskey(c_mac))
 			{
 				int right;
-				if(!add_mac(sh,tci,v,i,right))
+				ifn(add_mac(sh,tci,v,i,right))
 				{
 					return false;
 				}
@@ -148,7 +148,7 @@ struct ymemb
 					rserror(v.get(i),"miss }");
 					return false;
 				}
-				if(!add_func(sh,tci,v.sub(i,right+1)))
+				ifn(add_func(sh,tci,v.sub(i,right+1)))
 				{
 					return false;
 				}
@@ -162,14 +162,14 @@ struct ymemb
 					if(v.get(i).val==rskey(c_extern)&&
 						v.get(j-1).val==rsoptr(c_sbk_r))
 					{
-						if(!add_func(sh,tci,v.sub(i,j)))
+						ifn(add_func(sh,tci,v.sub(i,j)))
 						{
 							return false;
 						}
 						i=j;
 						break;
 					}
-					if(!add_data(sh,tci,v.sub(i,j)))
+					ifn(add_data(sh,tci,v.sub(i,j)))
 					{
 						return false;
 					}
@@ -192,7 +192,7 @@ struct ymemb
 							rserror(v.get(i));
 							return false;
 						}
-						if(!add_func(sh,tci,v.sub(i,right+1)))
+						ifn(add_func(sh,tci,v.sub(i,right+1)))
 						{
 							return false;
 						}
@@ -202,7 +202,7 @@ struct ymemb
 				}
 				if(v[j].pos!=v.get(j+1).pos)
 				{
-					if(!add_data(sh,tci,v.sub(i,j+1)))
+					ifn(add_data(sh,tci,v.sub(i,j+1)))
 					{
 						return false;
 					}
@@ -648,7 +648,7 @@ struct ymemb
 			return true;
 		}
 		tdata item;
-		if(!parse_data(sh,item,v))
+		ifn(parse_data(sh,item,v))
 		{
 			return false;
 		}
@@ -730,7 +730,7 @@ struct ymemb
 			item.is_friend=true;
 			item.pos=v.get_left().pos;
 			item.ptci=&tci;
-			if(!parse_func(sh,item,v.sub(1)))
+			ifn(parse_func(sh,item,v.sub(1)))
 			{
 				return false;
 			}
@@ -776,7 +776,7 @@ struct ymemb
 		}
 		if(item.vtl.empty())
 		{
-			if(!parse_func(sh,item,vhead))
+			ifn(parse_func(sh,item,vhead))
 			{
 				return false;
 			}
@@ -801,7 +801,7 @@ struct ymemb
 			{
 				sh.dic_macro[item.name]=tci.vfunc.find(item);
 			}
-			if(!proc_default_param(sh,*tci.vfunc.find(item)))
+			ifn(proc_default_param(sh,*tci.vfunc.find(item)))
 			{
 				return false;
 			}
@@ -927,7 +927,7 @@ struct ymemb
 		{
 			tfi.is_friend=true;
 		}
-		if(!tfi.is_friend)
+		ifn(tfi.is_friend)
 		{
 			tdata tdi;
 			tdi.name=rskey(c_this);
@@ -941,7 +941,7 @@ struct ymemb
 		int i;
 		for(i=0;i<tfi.param.count();i++)
 		{
-			if(!tfi.param[i].param.empty())
+			ifn(tfi.param[i].param.empty())
 			{
 				break;
 			}

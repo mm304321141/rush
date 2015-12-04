@@ -7,7 +7,7 @@ struct yconsteval
 {
 	static rbool optimize_const_exp(const tsh& sh,rbuf<tword>& v,rbool clear_sbk)
 	{
-		if(!tconf::c_op_const_eval)
+		ifn(tconf::c_op_const_eval)
 		{
 			return true;
 		}
@@ -98,7 +98,7 @@ struct yconsteval
 					return false;
 				}
 				rstr cur=src[i];
-				if(!sh.optr.is_precede(soptr.top(),cur))
+				ifn(sh.optr.is_precede(soptr.top(),cur))
 				{
 					soptr.push(cur);
 					continue;
@@ -130,7 +130,7 @@ struct yconsteval
 				}
 				int first=sopnd.pop();
 				int outopnd;
-				if(!calc(sh,first,second,theta,outopnd))
+				ifn(calc(sh,first,second,theta,outopnd))
 				{
 					rserror("const eval calc error");
 					return false;
@@ -187,7 +187,7 @@ struct yconsteval
 	{
 		for(int i=begin;i<end;i++)
 		{
-			if(!is_const_str(sh,v[i].val))
+			ifn(is_const_str(sh,v[i].val))
 			{
 				return false;
 			}

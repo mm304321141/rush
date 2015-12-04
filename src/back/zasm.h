@@ -141,7 +141,7 @@ struct zasm
 
 	static rbool use_ebp(const tsh& sh,const rbuf<tasm>& vasm)
 	{
-		if(!tconf::c_op_ebp)
+		ifn(tconf::c_op_ebp)
 		{
 			return true;
 		}
@@ -220,7 +220,7 @@ struct zasm
 					rskey(c_ebp),rsoptr(c_plus),
 					rstr(ptdi->off),rsoptr(c_mbk_r));
 				//这里还可以优化
-				if(!add_esi(sh,ptdi->type,vasm,src))
+				ifn(add_esi(sh,ptdi->type,vasm,src))
 				{
 					rserror("");
 					return false;
@@ -247,7 +247,7 @@ struct zasm
 		tfunc& tfi,int level)
 	{
 		tdata retval;
-		if(!parse_exp(sh,get_src_in(sh,src),vasm,retval,tfi,level))
+		ifn(parse_exp(sh,get_src_in(sh,src),vasm,retval,tfi,level))
 		{
 			return false;
 		}
@@ -258,7 +258,7 @@ struct zasm
 			vasm+=rf::vstr(rskey(c_mov),rskey(c_esi),
 				rsoptr(c_comma),rskey(c_esp));
 			int cur=vasm.count();
-			if(!add_esi(sh,retval.type,vasm,src))
+			ifn(add_esi(sh,retval.type,vasm,src))
 			{
 				rserror("");
 				return false;
@@ -285,7 +285,7 @@ struct zasm
 					rskey(c_ebx),rsoptr(c_mbk_r));
 			}
 		}
-		if(!destruct_ret(sh,retval,vasm))
+		ifn(destruct_ret(sh,retval,vasm))
 		{
 			rserror("");
 			return false;
@@ -338,7 +338,7 @@ struct zasm
 			for(int i=vsent.count()-1;i>=0;i--)
 			{
 				//todo:已有类型数组无需重新获取
-				if(!yexp::proc_exp(sh,vsent[i],tfi,level,tenv()))
+				ifn(yexp::proc_exp(sh,vsent[i],tfi,level,tenv()))
 				{
 					return false;
 				}
@@ -348,18 +348,18 @@ struct zasm
 				tdata tdi;
 				tdi.type=ybase::get_tname(vsent[i].type);
 				tdi.size=yfind::get_type_size(sh,tdi.type);
-				if(!pass_param(sh,vsent[i],tdi,vasm,tfi,level))
+				ifn(pass_param(sh,vsent[i],tdi,vasm,tfi,level))
 				{
 					return false;
 				}
 			}
 			tsent sent=src;
 			sent.vword=vlisp[3];
-			if(!yexp::proc_exp(sh,sent,tfi,level,tenv()))
+			ifn(yexp::proc_exp(sh,sent,tfi,level,tenv()))
 			{
 				return false;
 			}
-			if(!proc_ret(sh,sent,vasm,tfi,level))
+			ifn(proc_ret(sh,sent,vasm,tfi,level))
 			{
 				return false;
 			}
@@ -384,7 +384,7 @@ struct zasm
 		yexp::get_vsent(vlisp,vsent,src);
 		for(int i=vsent.count()-1;i>=0;i--)
 		{
-			if(!yexp::proc_exp(sh,vsent[i],tfi,level,tenv()))
+			ifn(yexp::proc_exp(sh,vsent[i],tfi,level,tenv()))
 			{
 				return false;
 			}
@@ -420,7 +420,7 @@ struct zasm
 		vasm+=rf::vstr(rskey(c_sub),rskey(c_esp),rsoptr(c_comma),size);
 		for(int i=vsent.count()-1;i>=0;i--)
 		{
-			if(!pass_param(sh,vsent[i],ptfi->param[i],vasm,tfi,level))
+			ifn(pass_param(sh,vsent[i],ptfi->param[i],vasm,tfi,level))
 			{
 				return false;
 			}
@@ -448,25 +448,25 @@ struct zasm
 				rsoptr(c_comma),size);
 			//递归处理子表达式
 			tdata retval;
-			if(!parse_exp(sh,src_in,vasm,retval,tfi,level))
+			ifn(parse_exp(sh,src_in,vasm,retval,tfi,level))
 			{
 				return false;
 			}
 			//获取传递参数的地址分别放入esi和edi中，
 			//包括函数返回后再dot，如int.get().m_in
-			if(!obtain_var_addr_f(sh,retval,src,vasm))
+			ifn(obtain_var_addr_f(sh,retval,src,vasm))
 			{
 				rserror("");
 				return false;
 			}
 			//传递参数
-			if(!copy_param(sh,src.type,dst.type,vasm))
+			ifn(copy_param(sh,src.type,dst.type,vasm))
 			{
 				rserror("");
 				return false;
 			}
 			//析构返回值
-			if(!destruct_ret(sh,retval,vasm))
+			ifn(destruct_ret(sh,retval,vasm))
 			{
 				rserror("");
 				return false;
@@ -527,7 +527,7 @@ struct zasm
 				return false;
 			}
 			int cur=vasm.count()+3;
-			if(!obtain_var_addr_var(sh,src,dst,ptdi,vasm))
+			ifn(obtain_var_addr_var(sh,src,dst,ptdi,vasm))
 			{
 				rserror("");
 				return false;

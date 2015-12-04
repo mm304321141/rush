@@ -8,7 +8,7 @@ struct ycontrol
 {
 	static rbool proc_func(const tsh& sh,tfunc& tfi)
 	{
-		if(!replace_switch(sh,tfi.vword))
+		ifn(replace_switch(sh,tfi.vword))
 		{
 			return false;
 		}
@@ -36,7 +36,7 @@ struct ycontrol
 		{
 			return false;
 		}
-		if(!del_bbk(sh,tfi.vword))
+		ifn(del_bbk(sh,tfi.vword))
 		{
 			return false;
 		}

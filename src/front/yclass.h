@@ -12,7 +12,7 @@ struct yclass
 		tfile* p;
 		for_set(p,sh.s_file)
 		{
-			if(!extract_class(sh,p->vword))
+			ifn(extract_class(sh,p->vword))
 			{
 				return false;
 			}
@@ -20,12 +20,12 @@ struct yclass
 		add_main(sh);
 		for_set(p,sh.s_file)
 		{
-			if(!proc_class_again(sh,p->vword))
+			ifn(proc_class_again(sh,p->vword))
 			{
 				return false;
 			}
 		}
-		if(!proc_inherit_all(sh))
+		ifn(proc_inherit_all(sh))
 		{
 			return false;
 		}
@@ -262,7 +262,7 @@ struct yclass
 		tclass item;
 		item.name=name;
 		item.size=size;
-		if(!yfind::is_class(sh,item.name))
+		ifn(yfind::is_class(sh,item.name))
 		{
 			sh.s_class.insert(item);
 		}
@@ -283,7 +283,7 @@ struct yclass
 		tclass* p;
 		for_set(p,sh.s_class)
 		{
-			if(!proc_inherit(sh,*p))
+			ifn(proc_inherit(sh,*p))
 			{
 				return false;
 			}
@@ -323,7 +323,7 @@ struct yclass
 					return false;
 				}
 			}
-			if(!proc_inherit(sh,*ptci,level))
+			ifn(proc_inherit(sh,*ptci,level))
 			{
 				return false;
 			}

@@ -47,7 +47,7 @@ struct yclasstl
 		temp+=rsoptr(c_tbk_l);
 		temp+=tci.name;
 		temp+=rsoptr(c_tbk_r);
-		if(!replace_type(sh,temp))
+		ifn(replace_type(sh,temp))
 		{
 			return false;
 		}
@@ -122,7 +122,7 @@ struct yclasstl
 		need=replace_point(sh,v);
 		if(need)
 		{
-			if(!replace_type(sh,v,level))
+			ifn(replace_type(sh,v,level))
 			{
 				return false;
 			}

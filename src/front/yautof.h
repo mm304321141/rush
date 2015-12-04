@@ -7,7 +7,7 @@ struct yautof
 {
 	static rbool add_func(const tsh& sh,tclass& tci)
 	{
-		if(!tconf::c_auto_addfunc)
+		ifn(tconf::c_auto_addfunc)
 		{
 			return true;
 		}
@@ -19,7 +19,7 @@ struct yautof
 		tpos pos;
 		pos.line=1;
 		pos.file=null;
-		if(!tci.vfunc.empty())
+		ifn(tci.vfunc.empty())
 		{
 			pos=tci.vfunc.begin()->pos;
 		}

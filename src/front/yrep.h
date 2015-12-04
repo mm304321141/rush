@@ -10,7 +10,7 @@ struct yrep
 	{
 		for(int i=0;i<tfi.vsent.count();i++)
 		{
-			if(!replace_typeof_one(sh,tfi,tfi.vsent[i],env))
+			ifn(replace_typeof_one(sh,tfi,tfi.vsent[i],env))
 			{
 				return false;
 			}
@@ -48,7 +48,7 @@ struct yrep
 			}
 			else
 			{
-				if(!yexp::proc_exp(sh,dst,tfi,0,env))
+				ifn(yexp::proc_exp(sh,dst,tfi,0,env))
 				{
 					return false;
 				}
@@ -155,7 +155,7 @@ struct yrep
 	{
 		for(int i=0;i<v.count();i++)
 		{
-			if(!v[i].is_const())
+			ifn(v[i].is_const())
 			{
 				continue;
 			}
@@ -227,7 +227,7 @@ struct yrep
 	{
 		for(int i=0;i<tfi.vsent.count();++i)
 		{
-			if(!trans_size_off_to_zero_v(sh,tfi.vsent[i].vword))
+			ifn(trans_size_off_to_zero_v(sh,tfi.vsent[i].vword))
 			{
 				rserror(tfi.vsent[i],"size_off_to_zero error");
 				return false;
@@ -278,7 +278,7 @@ struct yrep
 	{
 		for(int i=0;i<tfi.vsent.count();++i)
 		{
-			if(!yrep::replace_size_off_v(sh,tfi.vsent[i].vword,tfi))
+			ifn(yrep::replace_size_off_v(sh,tfi.vsent[i].vword,tfi))
 			{
 				rserror(tfi.vsent[i],"size_off_replace error");
 				return false;
@@ -341,7 +341,7 @@ struct yrep
 		{
 			for(int i=1;i<v.count();i++)
 			{
-				if(!v[i].is_name())
+				ifn(v[i].is_name())
 				{
 					continue;
 				}
@@ -411,7 +411,7 @@ struct yrep
 			{
 				continue;
 			}
-			if(!replace_local_var_v(sh,i,tfi))
+			ifn(replace_local_var_v(sh,i,tfi))
 			{
 				return false;
 			}
@@ -430,7 +430,7 @@ struct yrep
 			return true;
 		}
 		tdata tdi;
-		if(!ymemb::parse_data(sh,tdi,v))
+		ifn(ymemb::parse_data(sh,tdi,v))
 		{
 			return false;
 		}
@@ -493,7 +493,7 @@ struct yrep
 			{
 				yadd::add_destructor_func(sh,*tfi.ptci,tdi,vtemp,false);
 			}
-			if(!bstruct)
+			ifn(bstruct)
 			{
 				yadd::add_structor_func(sh,tdi,vtemp);
 			}
@@ -528,7 +528,7 @@ struct yrep
 			{
 				continue;
 			}
-			if(!replace_var_struct_v(sh,tfi.vsent[i].vword,tfi))
+			ifn(replace_var_struct_v(sh,tfi.vsent[i].vword,tfi))
 			{
 				rserror(tfi.vsent[i],"var_struct_replace error");
 				return false;
@@ -571,7 +571,7 @@ struct yrep
 		vtemp.push(tword(rsoptr(c_sbk_l)));
 		vtemp+=v.sub(0,left);
 		rbuf<tword> vsub=v.sub(left+1,right);
-		if(!vsub.empty())
+		ifn(vsub.empty())
 		{
 			vtemp.push(tword(rsoptr(c_comma)));
 			vtemp+=vsub;

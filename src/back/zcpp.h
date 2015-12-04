@@ -95,7 +95,7 @@ struct zcpp
 		}
 		if(tfi.vasm.empty())
 		{
-			if(!zbin::compile_vword_to_vasm(sh,tfi,tenv()))
+			ifn(zbin::compile_vword_to_vasm(sh,tfi,tenv()))
 			{
 				return false;
 			}

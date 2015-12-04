@@ -612,7 +612,7 @@ struct ybase
 	//返回是否需要重排
 	static rbool arrange(rbuf<tword>& src)
 	{
-		if(!need_arrange(src))
+		ifn(need_arrange(src))
 		{
 			return false;
 		}

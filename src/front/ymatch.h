@@ -78,7 +78,7 @@ struct ymatch
 	//可完全传递，临时对象可传递引用，常量和返回对象不可传递引用
 	static rbool is_full_pass(const tsh& sh,const tsent& src,const rstr& dst)
 	{
-		if(!is_direct_pass(sh,src,dst))
+		ifn(is_direct_pass(sh,src,dst))
 		{
 			return false;
 		}
@@ -111,7 +111,7 @@ struct ymatch
 		}
 		for(int i=0;i<vsent.count();i++)
 		{
-			if(!is_full_pass(sh,vsent[i],vparam[i].type))
+			ifn(is_full_pass(sh,vsent[i],vparam[i].type))
 			{
 				return false;
 			}

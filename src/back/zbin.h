@@ -10,18 +10,18 @@ struct zbin
 	//将一个函数翻译成二进制代码
 	static rbool proc(tsh& sh,tfunc& tfi)
 	{
-		if(!tfi.vasm.empty())
+		ifn(tfi.vasm.empty())
 		{
 			return true;
 		}
-		if(!compile_vword_to_vasm(sh,tfi,tenv()))
+		ifn(compile_vword_to_vasm(sh,tfi,tenv()))
 		{
 			return false;
 		}
 		for(int i=0;i<tfi.vasm.count();i++)
 		{
 			tfi.vasm[i].ptfi=&tfi;
-			if(!proc_asm(sh,tfi.vasm,tfi.vasm[i]))
+			ifn(proc_asm(sh,tfi.vasm,tfi.vasm[i]))
 			{
 				rserror(tfi.vasm[i],"asm error");
 				return false;
@@ -54,7 +54,7 @@ struct zbin
 	{
 		for(int i=0;i<vasm.count();i++)
 		{
-			if(!proc_asm(sh,vasm[i]))
+			ifn(proc_asm(sh,vasm[i]))
 			{
 				return false;
 			}
@@ -106,7 +106,7 @@ struct zbin
 			return true;
 		}
 		oasm.ins.type*=6;
-		if(!parse_asm(sh,oasm))
+		ifn(parse_asm(sh,oasm))
 		{
 			rf::printl(oasm.ptfi->name_dec);
 			rserror(oasm);
@@ -150,18 +150,18 @@ struct zbin
 	{
 		int i=find_comma(sh,item.vstr);
 		int first;
-		if(!parse_opnd(sh,item,i-1,item.vstr.sub(1,i),item.ins.first,first))
+		ifn(parse_opnd(sh,item,i-1,item.vstr.sub(1,i),item.ins.first,first))
 		{
 			rserror();
 			return false;
 		}
 		int second;
-		if(!parse_opnd(sh,item,i+1,item.vstr.sub(i+1),item.ins.second,second))
+		ifn(parse_opnd(sh,item,i+1,item.vstr.sub(i+1),item.ins.second,second))
 		{
 			rserror();
 			return false;
 		}
-		if(!obtain_qrun_type(item.ins,first,second))
+		ifn(obtain_qrun_type(item.ins,first,second))
 		{
 			rserror();
 			return false;

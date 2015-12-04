@@ -35,15 +35,15 @@ struct ysent
 		{
 			return false;
 		}
-		if(!ymac::replace(sh,*tfi.ptci,tfi.vword))
+		ifn(ymac::replace(sh,*tfi.ptci,tfi.vword))
 		{
 			return false;
 		}
-		if(!yfunctl::replace_ftl(sh,*tfi.ptci,tfi.vword,null))
+		ifn(yfunctl::replace_ftl(sh,*tfi.ptci,tfi.vword,null))
 		{
 			return false;
 		}
-		if(!ycontrol::proc_func(sh,tfi))
+		ifn(ycontrol::proc_func(sh,tfi))
 		{
 			return false;
 		}
@@ -64,27 +64,27 @@ struct ysent
 		//函数指针常量替换
 		yrep::replace_fpoint(sh,tfi);
 		//sizeof s_off替换成0，稍后处理
-		if(!yrep::trans_size_off_to_zero(sh,tfi))
+		ifn(yrep::trans_size_off_to_zero(sh,tfi))
 		{
 			return false;
 		}
 		//进行类型推断
-		if(!proc_type_infer(sh,tfi,env))
+		ifn(proc_type_infer(sh,tfi,env))
 		{
 			return false;
 		}
-		if(!yrep::replace_typeof(sh,tfi,env))
+		ifn(yrep::replace_typeof(sh,tfi,env))
 		{
 			return false;
 		}
 		//变量构造函数替换如a(1) -> int.int(a,1)
 		//这个变量必须是已定义的，不能是类型推断
-		if(!yrep::replace_var_struct(sh,tfi))
+		ifn(yrep::replace_var_struct(sh,tfi))
 		{
 			return false;
 		}
 		//表达式标准化
-		if(!yexp::proc_exp_all(sh,tfi,env))
+		ifn(yexp::proc_exp_all(sh,tfi,env))
 		{
 			return false;
 		}
@@ -97,7 +97,7 @@ struct ysent
 			return false;
 		}
 		//临时变量替换，替换后有些表达式类型会变空
-		if(!replace_temp_var(sh,tfi,tfi.tid))
+		ifn(replace_temp_var(sh,tfi,tfi.tid))
 		{
 			return false;
 		}
@@ -135,20 +135,20 @@ struct ysent
 		add_main_init_asm(sh,tfi);
 		ylambda::add_init_asm(sh,tfi);
 		//sizeof s_off替换成实际值
-		if(!yrep::trans_size_off_to_zero(sh,tfi))
+		ifn(yrep::trans_size_off_to_zero(sh,tfi))
 		{
 			return false;
 		}
-		if(!yrep::replace_size_off(sh,tfi))
+		ifn(yrep::replace_size_off(sh,tfi))
 		{
 			return false;
 		}
 		//汇编语句常量求值
-		if(!eval_asm_const(sh,tfi))
+		ifn(eval_asm_const(sh,tfi))
 		{
 			return false;
 		}
-		if(!ymac::replace(sh,*tfi.ptci,tfi.vword))
+		ifn(ymac::replace(sh,*tfi.ptci,tfi.vword))
 		{
 			return false;
 		}
@@ -183,7 +183,7 @@ struct ysent
 	static void add_class(tsh& sh,tfunc& tfi,tenv env)
 	{
 		rstr name="_func_class_"+env.ptfi->name_dec;
-		if(!yfind::is_class(sh,name))
+		ifn(yfind::is_class(sh,name))
 		{
 			tclass item;
 			item.name=name;
@@ -318,7 +318,7 @@ struct ysent
 	{
 		for(int i=0;i<tfi.vsent.count();++i)
 		{
-			if(!proc_type_infer(sh,tfi.vsent[i],tfi,env))
+			ifn(proc_type_infer(sh,tfi.vsent[i],tfi,env))
 			{
 				return false;
 			}
@@ -353,11 +353,11 @@ struct ysent
 				return true;
 			}
 			tsent temp=sent.sub(2,sent.vword.count());
-			if(!yrep::replace_typeof_one(sh,tfi,temp,env))
+			ifn(yrep::replace_typeof_one(sh,tfi,temp,env))
 			{
 				return false;
 			}
-			if(!yexp::proc_exp(sh,temp,tfi,0,env))
+			ifn(yexp::proc_exp(sh,temp,tfi,0,env))
 			{
 				return false;
 			}
@@ -449,7 +449,7 @@ struct ysent
 				//刚好是先构造内层的临时变量，再构造外层的临时变量
 				//这种循环替换的方式好像比递归更清晰
 				int temp=tid;
-				if(!replace_temp_var_v(sh,tfi,tfi.vsent[i].vword,tid))
+				ifn(replace_temp_var_v(sh,tfi,tfi.vsent[i].vword,tid))
 				{
 					rserror(tfi.vsent[i],"replace_temp_var_v");
 					return false;

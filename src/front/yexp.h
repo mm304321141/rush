@@ -16,7 +16,7 @@ struct yexp
 		if(ptfi==null)
 		{
 			ptci=sh.pmain;
-			if(!proc_call(sh,src,null,outopnd,tfi,level,i,ptci,env))
+			ifn(proc_call(sh,src,null,outopnd,tfi,level,i,ptci,env))
 			{
 				rserror();
 				return false;
@@ -26,7 +26,7 @@ struct yexp
 		//函数重载不能友元和非友元共存，友元标志很重要。
 		if(ptfi->is_friend)
 		{
-			if(!proc_call(sh,src,null,outopnd,tfi,level,i,ptci,env))
+			ifn(proc_call(sh,src,null,outopnd,tfi,level,i,ptci,env))
 			{
 				rserror();
 				return false;
@@ -37,7 +37,7 @@ struct yexp
 			tsent first;
 			first.type=ptci->name+rsoptr(c_addr);
 			first.vword+=rskey(c_this);
-			if(!proc_call(sh,src,&first,outopnd,tfi,level,i,ptci,env))
+			ifn(proc_call(sh,src,&first,outopnd,tfi,level,i,ptci,env))
 			{
 				rserror();
 				return false;
@@ -78,7 +78,7 @@ struct yexp
 			{
 				outopnd.vword+=rsoptr(c_comma);
 			}
-			if(!proc_exp(sh,vsent[j],tfi,level,env))
+			ifn(proc_exp(sh,vsent[j],tfi,level,env))
 			{
 				return false;
 			}
@@ -120,11 +120,11 @@ struct yexp
 		}
 		rbuf<tsent> vsent;
 		ybase::split_param(sh,vsent,src.vword.sub(left+1,right),src);
-		if(!vsent.empty())
+		ifn(vsent.empty())
 		{
 			for(int j=0;j<vsent.count();j++)
 			{
-				if(!proc_exp(sh,vsent[j],tfi,level,env))
+				ifn(proc_exp(sh,vsent[j],tfi,level,env))
 				{
 					return false;
 				}
@@ -178,7 +178,7 @@ struct yexp
 		ybase::split_param(sh,vsent,second.vword,first);
 		for(int j=0;j<vsent.count();j++)
 		{
-			if(!proc_exp(sh,vsent[j],tfi,level,env))
+			ifn(proc_exp(sh,vsent[j],tfi,level,env))
 			{
 				return false;
 			}
@@ -235,7 +235,7 @@ struct yexp
 			for(int j=0;j<vparam.count();j++)
 			{
 				sent.vword=vparam[j];
-				if(!proc_exp(sh,sent,tfi,level,env))
+				ifn(proc_exp(sh,sent,tfi,level,env))
 				{
 					return false;
 				}
@@ -350,7 +350,7 @@ struct yexp
 		ybase::split_param(sh,vsent,src.vword.sub(left+1,right),src);
 		for(int j=0;j<vsent.count();j++)
 		{
-			if(!proc_exp(sh,vsent[j],tfi,level,env))
+			ifn(proc_exp(sh,vsent[j],tfi,level,env))
 			{
 				return false;
 			}
@@ -364,10 +364,10 @@ struct yexp
 		if(pfirst!=null)
 		{
 			vsent.push_front(*pfirst);//插入DOT前的对象
-			if(!ybase::is_point(pfirst->type))
+			ifn(ybase::is_point(pfirst->type))
 			{
 				vsent[0].vword.push_front(tword(rsoptr(c_addr)));
-				if(!proc_exp(sh,vsent[0],tfi,level,env))
+				ifn(proc_exp(sh,vsent[0],tfi,level,env))
 				{
 					return false;
 				}
@@ -465,7 +465,7 @@ struct yexp
 		if(pfirst!=null&&!ptfi->is_friend)
 		{
 			outopnd.vword+=pfirst->vword;
-			if(!param.empty())
+			ifn(param.empty())
 			{
 				outopnd.vword.push(tword(rsoptr(c_comma)));
 				outopnd.vword+=r_move(param.vword);
@@ -473,14 +473,14 @@ struct yexp
 		}
 		else
 		{
-			if(!param.empty())
+			ifn(param.empty())
 			{
 				outopnd.vword+=r_move(param.vword);
 			}
 		}
 		outopnd.vword.push(tword(rsoptr(c_sbk_r)));
 		//无括号调用添加括号递归处理
-		if(!proc_exp(sh,outopnd,tfi,level,env))
+		ifn(proc_exp(sh,outopnd,tfi,level,env))
 		{
 			return false;
 		}
@@ -504,7 +504,7 @@ struct yexp
 			return false;
 		}
 		rbuf<tword> temp=src.vword.sub(i,right+1);
-		if(!yfunctl::replace_ftl(sh,*tfi.ptci,temp,ptci))
+		ifn(yfunctl::replace_ftl(sh,*tfi.ptci,temp,ptci))
 		{
 			return false;
 		}
@@ -577,7 +577,7 @@ struct yexp
 		ybase::split_param(sh,vsent,src.vword.sub(left+1,right),src);
 		for(int j=0;j<vsent.count();j++)
 		{
-			if(!proc_exp(sh,vsent[j],tfi,level,env))
+			ifn(proc_exp(sh,vsent[j],tfi,level,env))
 			{
 				return false;
 			}
@@ -633,7 +633,7 @@ struct yexp
 			{
 				continue;
 			}
-			if(!yexp::proc_exp(sh,tfi.vsent[i],tfi,0,env))
+			ifn(yexp::proc_exp(sh,tfi.vsent[i],tfi,0,env))
 			{
 				return false;
 			}
@@ -688,7 +688,7 @@ struct yexp
 					return false;
 				}
 				tsent outopnd=src.sub(i+1,right);
-				if(!proc_exp(sh,outopnd,tfi,level,env))
+				ifn(proc_exp(sh,outopnd,tfi,level,env))
 				{
 					return false;
 				}
@@ -701,7 +701,7 @@ struct yexp
 				//[]函数指针调用
 				tsent outopnd;
 				outopnd.pos=src.pos;
-				if(!proc_point_call(sh,src,outopnd,tfi,level,i,env))
+				ifn(proc_point_call(sh,src,outopnd,tfi,level,i,env))
 				{
 					return false;
 				}
@@ -721,7 +721,7 @@ struct yexp
 					src.vword.get(i+1).val==rsoptr(c_addr)&&
 					yfind::is_class(sh,src.vword.get(i+3).val))
 				{
-					if(!proc_lisp(sh,src.sub(
+					ifn(proc_lisp(sh,src.sub(
 						i,right+1),outopnd,tfi,level,env))
 					{
 						return false;
@@ -729,7 +729,7 @@ struct yexp
 				}
 				else
 				{
-					if(!proc_mbk(sh,sopnd.pop(),src.sub(i+1,right),
+					ifn(proc_mbk(sh,sopnd.pop(),src.sub(i+1,right),
 						outopnd,tfi,level,env))
 					{
 						return false;
@@ -774,7 +774,7 @@ struct yexp
 				if(src.vword.get(i+1)==rsoptr(c_tbk_l)&&
 					yfind::find_ftl(*ptci,name)!=null)
 				{
-					if(!proc_ftl(sh,src,&first,
+					ifn(proc_ftl(sh,src,&first,
 						outopnd,tfi,level,i,ptci,env))
 					{
 						return false;
@@ -782,7 +782,7 @@ struct yexp
 				}
 				else
 				{
-					if(!proc_call(sh,src,&first,
+					ifn(proc_call(sh,src,&first,
 						outopnd,tfi,level,i,ptci,env))
 					{
 						return false;
@@ -799,7 +799,7 @@ struct yexp
 				}
 				tsent first=sopnd.pop();
 				first.vword.push_front(tword(rsoptr(c_mul)));
-				if(!proc_exp(sh,first,tfi,level,env))
+				ifn(proc_exp(sh,first,tfi,level,env))
 				{
 					return false;
 				}
@@ -815,7 +815,7 @@ struct yexp
 					return false;
 				}
 				rstr cur=src.vword[i].val;
-				if(!sh.optr.is_precede(soptr.top(),cur))
+				ifn(sh.optr.is_precede(soptr.top(),cur))
 				{
 					soptr.push(cur);
 					continue;
@@ -889,7 +889,7 @@ struct yexp
 				if(src.vword.get(i+1).val==rsoptr(c_sbk_l))
 				{
 					//临时变量
-					if(!proc_temp_var(sh,src,outopnd,tfi,level,i,env))
+					ifn(proc_temp_var(sh,src,outopnd,tfi,level,i,env))
 					{
 						return false;
 					}
@@ -897,7 +897,7 @@ struct yexp
 				else
 				{
 					//类名直接调用
-					if(!proc_class_call(sh,src,outopnd,tfi,level,i,env))
+					ifn(proc_class_call(sh,src,outopnd,tfi,level,i,env))
 					{
 						return false;
 					}
@@ -917,7 +917,7 @@ struct yexp
 					sopnd.push(r_move(outopnd));
 					continue;
 				}
-				if(!tci.is_friend)
+				ifn(tci.is_friend)
 				{
 					ptdi=yfind::find_data_member(tci,name);
 					if(ptdi!=null)
@@ -969,7 +969,7 @@ struct yexp
 						continue;
 					}
 				}
-				if(!proc_func_call(sh,src,outopnd,tfi,level,i,env))
+				ifn(proc_func_call(sh,src,outopnd,tfi,level,i,env))
 				{
 					rserror();
 					return false;

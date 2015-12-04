@@ -33,11 +33,11 @@ struct zjit
 	//将一个函数翻译成X86代码
 	static rbool compile_func_to_x86(tsh& sh,tfunc& tfi,tenv env)
 	{
-		if(!tfi.vasm.empty())
+		ifn(tfi.vasm.empty())
 		{
 			return true;
 		}
-		if(!zbin::compile_vword_to_vasm(sh,tfi,env))
+		ifn(zbin::compile_vword_to_vasm(sh,tfi,env))
 		{
 			return false;
 		}
@@ -332,12 +332,12 @@ struct zjit
 		}
 		int i=zbin::find_comma(sh,item.vstr);
 		int first;
-		if(!parse_opnd(sh,item,i-1,item.vstr.sub(1,i),item.ins.first,first))
+		ifn(parse_opnd(sh,item,i-1,item.vstr.sub(1,i),item.ins.first,first))
 		{
 			return false;
 		}
 		int second;
-		if(!parse_opnd(sh,item,i+1,item.vstr.sub(i+1),item.ins.second,second))
+		ifn(parse_opnd(sh,item,i+1,item.vstr.sub(i+1),item.ins.second,second))
 		{
 			return false;
 		}

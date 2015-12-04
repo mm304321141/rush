@@ -35,23 +35,23 @@ struct rdb
 
 	rbool open_off(rstr name,int off,rstr mode="r")
 	{
-		if(!file.open(name,mode))
+		ifn(file.open(name,mode))
 		{
 			return false;
 		}
 		file.set_off(off);
 		TL count;
-		if(!file.read(r_size(TL),&count))
+		ifn(file.read(r_size(TL),&count))
 		{
 			return false;
 		}
 		TL cmax;
-		if(!file.read(r_size(TL),&cmax))//todo: r_size(cmax)
+		ifn(file.read(r_size(TL),&cmax))//todo: r_size(cmax)
 		{
 			return false;
 		}
 		vindex.realloc_n_not_change(cmax);
-		if(!file.read(count*r_size(TA),vindex.begin()))
+		ifn(file.read(count*r_size(TA),vindex.begin()))
 		{
 			return false;
 		}
@@ -65,42 +65,42 @@ struct rdb
 
 	rbool open(rstr name,rstr mode="r")
 	{
-		if(!rfile::exist(name))
+		ifn(rfile::exist(name))
 		{
-			if(!file.open_n(name,"rw"))
+			ifn(file.open_n(name,"rw"))
 			{
 				return false;
 			}
 			TL count=0;
-			if(!file.write(r_size(TL),&count))
+			ifn(file.write(r_size(TL),&count))
 			{
 				return false;
 			}
-			if(!file.write(r_size(TL),&count))
+			ifn(file.write(r_size(TL),&count))
 			{
 				return false;
 			}
-			if(!file.close())
+			ifn(file.close())
 			{
 				return false;
 			}
 		}
-		if(!file.open(name,mode))
+		ifn(file.open(name,mode))
 		{
 			return false;
 		}
 		TL count;
-		if(!file.read(r_size(TL),&count))
+		ifn(file.read(r_size(TL),&count))
 		{
 			return false;
 		}
 		TL cmax;
-		if(!file.read(r_size(TL),&cmax))
+		ifn(file.read(r_size(TL),&cmax))
 		{
 			return false;
 		}
 		vindex.realloc_n_not_change(cmax);
-		if(!file.read(count*r_size(TA),vindex.begin()))
+		ifn(file.read(count*r_size(TA),vindex.begin()))
 		{
 			return false;
 		}
@@ -116,7 +116,7 @@ struct rdb
 	rstr operator[](int i)
 	{
 		rstr ret;
-		if(!read(i,ret))
+		ifn(read(i,ret))
 		{
 			null;
 		}
@@ -136,7 +136,7 @@ struct rdb
 		}
 		char flag;
 		TA off=vindex[i];
-		if(!file.read(off,r_size(char),&flag))
+		ifn(file.read(off,r_size(char),&flag))
 		{
 			return false;
 		}
@@ -150,13 +150,13 @@ struct rdb
 		}
 		TL len;
 		off+=r_size(char);
-		if(!file.read(off,r_size(TL),&len))
+		ifn(file.read(off,r_size(TL),&len))
 		{
 			return false;
 		}
 		data.buf.realloc_n(len);
 		off+=r_size(TL);
-		if(!file.read(off,data.count(),data.begin()))
+		ifn(file.read(off,data.count(),data.begin()))
 		{
 			return false;
 		}
@@ -171,29 +171,29 @@ struct rdb
 		}
 		char flag=c_null;
 		TA off=vindex[i];
-		if(!file.write(off,r_size(char),&flag))
+		ifn(file.write(off,r_size(char),&flag))
 		{
 			return false;
 		}
 		flag=c_real;
 		off=file.size();
 		vindex[i]=off;
-		if(!file.write(off,r_size(char),&flag))
+		ifn(file.write(off,r_size(char),&flag))
 		{
 			return false;
 		}
 		off+=r_size(char);
 		TL len=data.count();
-		if(!file.write(off,r_size(TL),&len))
+		ifn(file.write(off,r_size(TL),&len))
 		{
 			return false;
 		}
 		off+=r_size(TL);
-		if(!file.write(off,data.count(),data.begin()))
+		ifn(file.write(off,data.count(),data.begin()))
 		{
 			return false;
 		}
-		if(!file.write(get_index_off(i),r_size(TA),&vindex[i]))
+		ifn(file.write(get_index_off(i),r_size(TA),&vindex[i]))
 		{
 			return false;
 		}
@@ -204,7 +204,7 @@ struct rdb
 	{
 		if(vindex.cur_count>=vindex.max_count)
 		{
-			if(!extend())
+			ifn(extend())
 			{
 				return false;
 			}
@@ -213,27 +213,27 @@ struct rdb
 		off=file.size();
 		vindex.push(off);
 		char flag=c_real;
-		if(!file.write(off,r_size(char),&flag))
+		ifn(file.write(off,r_size(char),&flag))
 		{
 			return false;
 		}
 		off+=r_size(char);
 		TL len=data.count();
-		if(!file.write(off,r_size(TL),&len))
+		ifn(file.write(off,r_size(TL),&len))
 		{
 			return false;
 		}
 		off+=r_size(TL);
-		if(!file.write(off,data.count(),data.begin()))
+		ifn(file.write(off,data.count(),data.begin()))
 		{
 			return false;
 		}
 		int i=vindex.count()-1;
-		if(!file.write(get_index_off(i),r_size(TA),&vindex[i]))
+		ifn(file.write(get_index_off(i),r_size(TA),&vindex[i]))
 		{
 			return false;
 		}
-		if(!file.write(0,r_size(TL),&vindex.num))
+		ifn(file.write(0,r_size(TL),&vindex.num))
 		{
 			return false;
 		}
@@ -248,7 +248,7 @@ struct rdb
 		}
 		rbuf<uchar> temp;
 		temp.alloc(file.size()-get_data_off());
-		if(!file.read(get_data_off(),temp.size(),temp.begin()))
+		ifn(file.read(get_data_off(),temp.size(),temp.begin()))
 		{
 			return false;
 		}
@@ -258,17 +258,17 @@ struct rdb
 		{
 			vindex[i]+=(vindex.max_count-cmax)*r_size(TA);
 		}
-		if(!file.write(r_size(TL),r_size(TL),&vindex.max_count))
+		ifn(file.write(r_size(TL),r_size(TL),&vindex.max_count))
 		{
 			return false;
 		}
 		//这里必须用max_count,不能用num，因为刚开始只有8个字节
-		if(!file.write(r_size(TL)*2,
+		ifn(file.write(r_size(TL)*2,
 			vindex.max_count*r_size(TA),vindex.begin()))
 		{
 			return false;
 		}
-		if(!file.write(get_data_off(),temp.size(),temp.begin()))
+		ifn(file.write(get_data_off(),temp.size(),temp.begin()))
 		{
 			return false;
 		}

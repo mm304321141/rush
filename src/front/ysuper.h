@@ -79,7 +79,7 @@ struct ysuper
 		{
 			return match_multi(sh,reg.sub(1),src,arr);
 		}
-		if(!src.empty())
+		ifn(src.empty())
 		{
 			if(reg[0]=="_word")
 			{

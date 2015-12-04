@@ -72,7 +72,7 @@ struct yfind
 
 	static rbool is_end_part_optr(const tsh& sh,const rstr& s)
 	{
-		if(!sh.optr.is_optr(s))
+		ifn(sh.optr.is_optr(s))
 		{
 			return false;
 		}
