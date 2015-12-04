@@ -14,15 +14,15 @@
 	{
 		mov esi,this
 		mov edi,a
-		movb [esi],[edi]
-		movb [esi+1],[edi+1]
+		mov8 [esi],[edi]
+		mov8 [esi+1],[edi+1]
 	}
 
 	ushort(ushort a)
 	{
 		mov esi,this
-		movb [esi],a
-		movb [esi+1],[ebp+(s_off a+1)]
+		mov8 [esi],a
+		mov8 [esi+1],[ebp+(s_off a+1)]
 	}
 	
 	ushort(char a)
@@ -33,8 +33,8 @@
 	/*short toshort()
 	{
 		mov esi,this
-		movb s_ret,[esi]
-		movb [ebp+(s_off s_ret+1)],[esi+1]
+		mov8 s_ret,[esi]
+		mov8 [ebp+(s_off s_ret+1)],[esi+1]
 	}*/
 	
 	TYPE to<TYPE>()
@@ -58,16 +58,16 @@
 	{
 		mov esi,this
 		mov s_ret,0
-		movb s_ret,[esi]
-		movb [ebp+(s_off s_ret+1)],[esi+1]
+		mov8 s_ret,[esi]
+		mov8 [ebp+(s_off s_ret+1)],[esi+1]
 	}
 
 	uint touint()
 	{
 		mov esi,this
 		mov s_ret,0
-		movb s_ret,[esi]
-		movb [ebp+(s_off s_ret+1)],[esi+1]
+		mov8 s_ret,[esi]
+		mov8 [ebp+(s_off s_ret+1)],[esi+1]
 	}
 
 	rstr torstr()
@@ -80,29 +80,39 @@
 	{
 		mov esi,this
 		mov edi,a
-		movb [esi],[edi]
-		movb [esi+1],[edi+1]
+		mov8 [esi],[edi]
+		mov8 [esi+1],[edi+1]
 	}
 
 	void operator=(ushort a)
 	{
 		mov esi,this
-		movb [esi],a
-		movb [esi+1],[ebp+(s_off a+1)]
+		mov8 [esi],a
+		mov8 [esi+1],[ebp+(s_off a+1)]
 	}
 	
 	void operator=(int a)
 	{
 		mov esi,this
-		movb [esi],a
-		movb [esi+1],[ebp+(s_off a+1)]
+		mov8 [esi],a
+		mov8 [esi+1],[ebp+(s_off a+1)]
 	}
 
 	void operator=(uint a)
 	{
 		mov esi,this
-		movb [esi],a
-		movb [esi+1],[ebp+(s_off a+1)]
+		mov8 [esi],a
+		mov8 [esi+1],[ebp+(s_off a+1)]
+	}
+	
+	void operator*=(int a)
+	{
+		this=this*a
+	}
+	
+	void operator+=(int a)
+	{
+		this=this+a
 	}
 
 	void operator++()

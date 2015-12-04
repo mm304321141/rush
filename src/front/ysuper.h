@@ -26,7 +26,7 @@ struct ysuper
 			rserror(v.get(i),"miss mac $ {");
 			return false;
 		}
-		mitem.param=ybase::vword_to_vstr(v.sub(left,right));
+		mitem.param=ybase::trans_vword_to_vstr(v.sub(left,right));
 		left=right;
 		right=ybase::find_symm_bbk(sh,v,left);
 		if(right>=v.count())
@@ -34,7 +34,7 @@ struct ysuper
 			rserror(v.get(i),"miss mac $ }");
 			return false;
 		}
-		mitem.vstr=ybase::vword_to_vstr(v.sub(left+1,right));
+		mitem.vstr=ybase::trans_vword_to_vstr(v.sub(left+1,right));
 		if(vmac.exist(mitem))
 		{
 			vmac.erase(mitem);
@@ -51,7 +51,7 @@ struct ysuper
 		for(int j=i+2;j<=v.count();j++)
 		{
 			rbuf<tword> arr;
-			rbuf<rstr> src=ybase::vword_to_vstr(v.sub(i+1,j));
+			rbuf<rstr> src=ybase::trans_vword_to_vstr(v.sub(i+1,j));
 			if(match_here(sh,mitem.param,src,arr))
 			{
 				ifn(replace_super_word(v[i],mitem.vstr,arr))
@@ -85,7 +85,7 @@ struct ysuper
 			{
 				tword temp;
 				temp.multi+=src[0];
-				arr.push_move(temp);
+				arr.push(r_move(temp));
 				if(match_here(sh,reg.sub(1),src.sub(1),arr))
 				{
 					return true;
@@ -126,7 +126,7 @@ struct ysuper
 		{
 			tword temp;
 			temp.multi=src.sub(0,i);
-			arr.push_move(temp);
+			arr.push(r_move(temp));
 			if(match_here(sh,reg,src.sub(i),arr))
 			{
 				return true;
@@ -201,7 +201,7 @@ struct ysuper
 				{
 					temp=ybase::add_quote(temp);
 				}
-				dst.push_move(temp);
+				dst.push(r_move(temp));
 				i+=2;
 				ret=true;
 			}

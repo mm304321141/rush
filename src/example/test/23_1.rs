@@ -5,16 +5,16 @@ rush是强类型语言，没有强制转换，
 
 void main()
 {
-	a=2.touint
+	a=int(2).touint
 	printl typeof(a)
 
-	a=2.to<uint>
+	a=int(2).to<uint>
 	printl typeof(a)
 	
 	b=uint(2)
 	printl typeof(b)
 	
-	c=2.torstr
+	c=int(2).torstr
 	printl typeof(c)
 	
 	d="123".toint

@@ -6,11 +6,11 @@
 //简单替换
 struct yrep
 {
-	static rbool typeof_replace(tsh& sh,tfunc& tfi,tenv env)
+	static rbool replace_typeof(tsh& sh,tfunc& tfi,tenv env)
 	{
 		for(int i=0;i<tfi.vsent.count();i++)
 		{
-			if(!typeof_replace(sh,tfi,tfi.vsent[i],env))
+			if(!replace_typeof_one(sh,tfi,tfi.vsent[i],env))
 			{
 				return false;
 			}
@@ -18,7 +18,7 @@ struct yrep
 		return true;
 	}
 
-	static rbool typeof_replace(tsh& sh,tfunc& tfi,tsent& sent,tenv env)
+	static rbool replace_typeof_one(tsh& sh,tfunc& tfi,tsent& sent,tenv env)
 	{
 		rbuf<tword>& v=sent.vword;
 		for(int i=0;i<v.count();i++)
@@ -48,7 +48,7 @@ struct yrep
 			}
 			else
 			{
-				if(!yexp::p_exp(sh,dst,tfi,0,env))
+				if(!yexp::proc_exp(sh,dst,tfi,0,env))
 				{
 					return false;
 				}
@@ -60,15 +60,15 @@ struct yrep
 		return true;
 	}
 
-	static void fpoint_replace(const tsh& sh,tfunc& tfi)
+	static void replace_fpoint(const tsh& sh,tfunc& tfi)
 	{
 		for(int i=0;i<tfi.vsent.count();++i)
 		{
-			fpoint_replace(sh,*tfi.ptci,tfi.vsent[i].vword);
+			replace_fpoint_v(sh,*tfi.ptci,tfi.vsent[i].vword);
 		}
 	}
 
-	static void fpoint_replace(const tsh& sh,const tclass& tci,rbuf<tword>& v)
+	static void replace_fpoint_v(const tsh& sh,const tclass& tci,rbuf<tword>& v)
 	{
 		for(int i=0;i<v.count();i++)
 		{
@@ -82,7 +82,7 @@ struct yrep
 			int left;
 			if(v.get(i+2).val==rsoptr(c_dot))
 			{
-				ptci=yfind::class_search(sh,v.get(i+1).val);
+				ptci=yfind::find_class(sh,v.get(i+1).val);
 				if(null==ptci)
 				{
 					continue;
@@ -94,16 +94,16 @@ struct yrep
 			{
 				name=v.get(i+1).val;
 				ptci=&tci;
-				ptfi=yfind::func_search(*ptci,name);
+				ptfi=yfind::find_func(*ptci,name);
 				if(null==ptfi)
 				{
-					ptci=sh.m_main;	
+					ptci=sh.pmain;
 				}
 				left=i+2;
 			}
 			if(v.get(left)!=rsoptr(c_sbk_l))
 			{
-				ptfi=yfind::func_search(*ptci,name);
+				ptfi=yfind::find_func(*ptci,name);
 				if(null==ptfi)
 				{
 					continue;
@@ -126,7 +126,7 @@ struct yrep
 				{
 					vtype.push(vsent[j].vword.get(0).val);
 				}
-				ptfi=yfind::func_search_same(*ptci,name,vtype);
+				ptfi=yfind::find_func_same(*ptci,name,vtype);
 				if(null==ptfi)
 				{
 					continue;
@@ -139,19 +139,19 @@ struct yrep
 		ybase::arrange(v);
 	}
 
-	static void const_replace(const tsh& sh,rbuf<tsent>& vsent)
+	static void replace_const(const tsh& sh,rbuf<tsent>& vsent)
 	{
 		for(int i=0;i<vsent.count();++i)
 		{
-			if(sh.m_key.is_asm_ins(vsent[i].vword.get_bottom().val))
+			if(sh.key.is_asm_ins(vsent[i].vword.get_bottom().val))
 			{
 				continue;
 			}
-			const_replace(sh,vsent[i].vword);
+			replace_const_v(sh,vsent[i].vword);
 		}
 	}
 
-	static void const_replace(const tsh& sh,rbuf<tword>& v)
+	static void replace_const_v(const tsh& sh,rbuf<tword>& v)
 	{
 		for(int i=0;i<v.count();i++)
 		{
@@ -159,7 +159,7 @@ struct yrep
 			{
 				continue;
 			}
-			if(v[i].is_cint()&&v.get(i+1).val==rsoptr(c_dot))
+			/*if(v[i].is_cint()&&v.get(i+1).val==rsoptr(c_dot))
 			{
 				v[i].multi.push(rskey(c_int));
 				v[i].multi.push(rsoptr(c_sbk_l));
@@ -174,8 +174,8 @@ struct yrep
 				v[i].multi.push(v[i].val);
 				v[i].multi.push(rsoptr(c_sbk_r));
 				v[i].val.clear();
-			}
-			elif(v[i].is_cstr()&&
+			}*/
+			if(v[i].is_cstr()&&
 				(v.get(i+1).val==rsoptr(c_dot)||
 				yfind::is_rstr_optr(sh,v.get(i+1).val)||
 				yfind::is_rstr_optr(sh,v.get(i-1).val)))
@@ -194,11 +194,11 @@ struct yrep
 	{
 		for(int i=0;i<vsent.count();i++)
 		{
-			replace_neg(sh,vsent[i].vword);
+			replace_neg_v(sh,vsent[i].vword);
 		}
 	}
 
-	static void replace_neg(const tsh& sh,rbuf<tword>& v)
+	static void replace_neg_v(const tsh& sh,rbuf<tword>& v)
 	{
 		for(int i=0;i<v.count()-1;i++)
 		{
@@ -223,11 +223,11 @@ struct yrep
 		}
 	}
 
-	static rbool size_off_to_zero(const tsh& sh,tfunc& tfi)
+	static rbool trans_size_off_to_zero(const tsh& sh,tfunc& tfi)
 	{
 		for(int i=0;i<tfi.vsent.count();++i)
 		{
-			if(!size_off_to_zero(sh,tfi.vsent[i].vword))
+			if(!trans_size_off_to_zero_v(sh,tfi.vsent[i].vword))
 			{
 				rserror(tfi.vsent[i],"size_off_to_zero error");
 				return false;
@@ -236,7 +236,7 @@ struct yrep
 		return true;
 	}
 
-	static rbool size_off_to_zero(const tsh& sh,rbuf<tword>& v)
+	static rbool trans_size_off_to_zero_v(const tsh& sh,rbuf<tword>& v)
 	{
 		for(int i=0;i<v.count();i++)
 		{
@@ -264,7 +264,7 @@ struct yrep
 					return false;
 				}
 				v[i].multi.push(v[i].val);
-				v[i].multi+=ybase::vword_to_vstr(v.sub(i+2,right));
+				v[i].multi+=ybase::trans_vword_to_vstr(v.sub(i+2,right));
 				ybase::clear_word_val(v,i+1,right+1);
 				v[i].val=rstr("0");
 				i=right;
@@ -274,11 +274,11 @@ struct yrep
 		return true;
 	}
 
-	static rbool size_off_replace(const tsh& sh,tfunc& tfi)
+	static rbool replace_size_off(const tsh& sh,tfunc& tfi)
 	{
 		for(int i=0;i<tfi.vsent.count();++i)
 		{
-			if(!yrep::size_off_replace(sh,tfi.vsent[i].vword,tfi))
+			if(!yrep::replace_size_off_v(sh,tfi.vsent[i].vword,tfi))
 			{
 				rserror(tfi.vsent[i],"size_off_replace error");
 				return false;
@@ -287,7 +287,7 @@ struct yrep
 		return true;
 	}
 
-	static rbool size_off_replace(const tsh& sh,rbuf<tword>& v,const tfunc& tfi)
+	static rbool replace_size_off_v(const tsh& sh,rbuf<tword>& v,const tfunc& tfi)
 	{
 		for(int i=0;i<v.count();i++)
 		{
@@ -308,9 +308,10 @@ struct yrep
 				}
 				else
 				{
-					tclass* ptci=yfind::class_search(sh,name);
+					tclass* ptci=yfind::find_class(sh,name);
 					if(null==ptci)
 					{
+						rserror(name);
 						return false;
 					}
 					v[i].val=ptci->size;
@@ -318,9 +319,10 @@ struct yrep
 			}
 			elif(v[i].multi[0]==rskey(c_s_off))
 			{
-				tdata* ptdi=yfind::local_search(tfi,name);
+				tdata* ptdi=yfind::find_local(tfi,name);
 				if(null==ptdi)
 				{
+					rserror();
 					return false;
 				}
 				v[i].val=ptdi->off;
@@ -331,11 +333,11 @@ struct yrep
 			}
 			v[i].multi.clear();
 		}
-		ifn(sh.m_key.is_asm_ins(v.get_bottom().val))
+		ifn(sh.key.is_asm_ins(v.get_bottom().val))
 		{
 			return true;
 		}
-		if(sh.m_mode!=tsh::c_gpp)
+		if(sh.mode!=tsh::c_gpp)
 		{
 			for(int i=1;i<v.count();i++)
 			{
@@ -343,7 +345,7 @@ struct yrep
 				{
 					continue;
 				}
-				tdata* ptdi=yfind::local_search(tfi,v[i].val);
+				tdata* ptdi=yfind::find_local(tfi,v[i].val);
 				if(ptdi==null)
 				{
 					continue;
@@ -372,19 +374,19 @@ struct yrep
 		return true;
 	}
 
-	static void array_var_replace(const tsh& sh,const rstr& name,tfunc& tfi)
+	static void replace_array_var(const tsh& sh,const rstr& name,tfunc& tfi)
 	{
 		for(int i=0;i<tfi.vsent.count();i++)
 		{
-			if(sh.m_key.is_asm_ins(tfi.vsent[i].vword.get_bottom().val))
+			if(sh.key.is_asm_ins(tfi.vsent[i].vword.get_bottom().val))
 			{
 				continue;
 			}
-			array_var_replace_v(sh,name,tfi.vsent[i].vword);
+			replace_array_var_v(sh,name,tfi.vsent[i].vword);
 		}
 	}
 
-	static void array_var_replace_v(const tsh& sh,const rstr& name,rbuf<tword>& v)
+	static void replace_array_var_v(const tsh& sh,const rstr& name,rbuf<tword>& v)
 	{
 		for(int j=0;j<v.count();j++)
 		{
@@ -401,15 +403,15 @@ struct yrep
 		ybase::arrange(v);
 	}
 
-	static rbool local_var_replace(const tsh& sh,tfunc& tfi)
+	static rbool replace_local_var(const tsh& sh,tfunc& tfi)
 	{
 		for(int i=0;i<tfi.vsent.count();i++)
 		{
-			if(sh.m_key.is_asm_ins(tfi.vsent[i].vword.get_bottom().val))
+			if(sh.key.is_asm_ins(tfi.vsent[i].vword.get_bottom().val))
 			{
 				continue;
 			}
-			if(!local_var_replace(sh,i,tfi))
+			if(!replace_local_var_v(sh,i,tfi))
 			{
 				return false;
 			}
@@ -418,7 +420,7 @@ struct yrep
 		return true;
 	}
 
-	static rbool local_var_replace(const tsh& sh,int i,tfunc& tfi)
+	static rbool replace_local_var_v(const tsh& sh,int i,tfunc& tfi)
 	{
 		rbuf<tword>& v=tfi.vsent[i].vword;
 		if(v.count()<2||
@@ -428,7 +430,7 @@ struct yrep
 			return true;
 		}
 		tdata tdi;
-		if(!ymemb::a_data_define(sh,tdi,v))
+		if(!ymemb::parse_data(sh,tdi,v))
 		{
 			return false;
 		}
@@ -440,13 +442,13 @@ struct yrep
 		elif(v.count()==5&&v[2].val==rsoptr(c_mbk_l))
 		{
 			ybase::clear_word_val(v,1,5);
-			array_var_replace(sh,tdi.name,tfi);
+			replace_array_var(sh,tdi.name,tfi);
 		}
 		//如int a(1)这样的定义千万不能重复调用构造函数
 		rbool bstruct=v.count()>2&&v[2].val==rsoptr(c_sbk_l);
 		ybase::arrange(v);
 		//排除重复定义的
-		tdata* ptdi=yfind::local_search(tfi,tdi.name);
+		tdata* ptdi=yfind::find_local(tfi,tdi.name);
 		if(null==ptdi)
 		{
 			tfi.local.push(tdi);
@@ -509,7 +511,7 @@ struct yrep
 			{
 				return true;
 			}
-			int type=sh.m_key.get_key_index(tfi.vsent[j].vword.get_left().val);
+			int type=sh.key.get_key_index(tfi.vsent[j].vword.get_left().val);
 			if(ybase::is_jmp_ins(type))
 			{
 				return true;
@@ -518,15 +520,15 @@ struct yrep
 		return false;
 	}
 
-	static rbool var_struct_replace(const tsh& sh,const tfunc& tfi)
+	static rbool replace_var_struct(const tsh& sh,const tfunc& tfi)
 	{
 		for(int i=0;i<tfi.vsent.count();++i)
 		{
-			if(sh.m_key.is_asm_ins(tfi.vsent[i].vword.get_bottom().val))
+			if(sh.key.is_asm_ins(tfi.vsent[i].vword.get_bottom().val))
 			{
 				continue;
 			}
-			if(!var_struct_replace(sh,tfi.vsent[i].vword,tfi))
+			if(!replace_var_struct_v(sh,tfi.vsent[i].vword,tfi))
 			{
 				rserror(tfi.vsent[i],"var_struct_replace error");
 				return false;
@@ -535,7 +537,7 @@ struct yrep
 		return true;
 	}
 
-	static rbool var_struct_replace(const tsh& sh,rbuf<tword>& v,const tfunc& tfi)
+	static rbool replace_var_struct_v(const tsh& sh,rbuf<tword>& v,const tfunc& tfi)
 	{
 		//暂时只处理a(1)，忽略this.a(1)
 		int left=1;
@@ -543,7 +545,7 @@ struct yrep
 		{
 			return true;
 		}
-		tdata* ptdi=yfind::local_search(tfi,v.get(0).val);
+		tdata* ptdi=yfind::find_local(tfi,v.get(0).val);
 		if(ptdi==null)
 		{
 			return true;
@@ -588,7 +590,7 @@ struct yrep
 	->
 	(a.b).to<int>
 	*/
-	static rbool trans_replace(const tsh& sh,rbuf<tword>& v)
+	static rbool replace_trans(const tsh& sh,rbuf<tword>& v)
 	{
 		for(int i=0;i<v.count();i++)
 		{
@@ -632,7 +634,7 @@ struct yrep
 				src+=v[i+3];
 				ybase::clear_word_val(v,i,i+4);
 			}
-			v[i].multi+=ybase::vword_to_vstr(src);
+			v[i].multi+=ybase::trans_vword_to_vstr(src);
 			v[i].multi+=rsoptr(c_dot);
 			v[i].multi+=rskey(c_to);
 			v[i].multi+=rsoptr(c_tbk_l);
@@ -640,7 +642,7 @@ struct yrep
 			v[i].multi+=rsoptr(c_tbk_r);
 			if(ybase::arrange(v))
 			{
-				return trans_replace(sh,v);
+				return replace_trans(sh,v);
 			}
 			return true;
 		}

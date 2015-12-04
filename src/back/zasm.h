@@ -10,7 +10,7 @@
 //其它类型的引用是对引用进行判断
 struct zasm
 {
-	static rbool process(tsh& sh,tfunc& tfi)
+	static rbool proc(tsh& sh,tfunc& tfi)
 	{
 		for(int i=0;i<tfi.vsent.count();i++)
 		{
@@ -22,11 +22,11 @@ struct zasm
 			}
 			if(tconf::c_op_match)
 			{
-				yopt::op_match(sh,vasm);
+				yopt::optimize_match(sh,vasm);
 			}
 			if(tconf::c_op_merge)
 			{
-				yopt::op_add_sub(sh,vasm);
+				yopt::optimize_add_sub(sh,vasm);
 			}
 			for(int j=0;j<vasm.count();j++)
 			{
@@ -35,6 +35,8 @@ struct zasm
 			tfi.vasm+=vasm;
 		}
 		add_asm_ebp(sh,tfi);
+		tfi.vsent.free();
+		tfi.vword.free();
 		return true;
 	}
 
@@ -160,9 +162,9 @@ struct zasm
 		tfunc& tfi,int level=0)
 	{
 		rstr name=src.vword.get_bottom().val;
-		if(sh.m_key.is_asm_ins(name)||ybase::is_tag<tword>(src.vword))
+		if(sh.key.is_asm_ins(name)||ybase::is_tag<tword>(src.vword))
 		{
-			vasm+=ybase::vword_to_vstr(src.vword);
+			vasm+=ybase::trans_vword_to_vstr(src.vword);
 			return true;
 		}
 		//返回常量
@@ -175,7 +177,7 @@ struct zasm
 					rsoptr(c_comma),src.vword[0].val);
 				return true;
 			}
-			elif(sh.m_key.is_asm_reg(src.vword[0].val))
+			elif(sh.key.is_asm_reg(src.vword[0].val))
 			{
 				vasm+=rf::vstr(rskey(c_mov),rskey(c_ebx),
 					rsoptr(c_comma),src.vword[0].val);
@@ -207,7 +209,7 @@ struct zasm
 			return true;
 		}
 		//返回变量
-		tdata* ptdi=yfind::local_search(tfi,
+		tdata* ptdi=yfind::find_local(tfi,
 			get_src_in(sh,src).vword.get(0).val);
 		if(ptdi!=null)
 		{
@@ -245,7 +247,7 @@ struct zasm
 		tfunc& tfi,int level)
 	{
 		tdata retval;
-		if(!a_exp(sh,get_src_in(sh,src),vasm,retval,tfi,level))
+		if(!parse_exp(sh,get_src_in(sh,src),vasm,retval,tfi,level))
 		{
 			return false;
 		}
@@ -294,7 +296,7 @@ struct zasm
 	}
 	
 	//解析表达式生成汇编代码
-	static rbool a_exp(tsh& sh,const tsent& src,rbuf<tasm>& vasm,tdata& retval,
+	static rbool parse_exp(tsh& sh,const tsent& src,rbuf<tasm>& vasm,tdata& retval,
 		tfunc& tfi,int level=0)
 	{
 		if(level>c_rs_deep)
@@ -336,7 +338,7 @@ struct zasm
 			for(int i=vsent.count()-1;i>=0;i--)
 			{
 				//todo:已有类型数组无需重新获取
-				if(!yexp::p_exp(sh,vsent[i],tfi,level,tenv()))
+				if(!yexp::proc_exp(sh,vsent[i],tfi,level,tenv()))
 				{
 					return false;
 				}
@@ -353,7 +355,7 @@ struct zasm
 			}
 			tsent sent=src;
 			sent.vword=vlisp[3];
-			if(!yexp::p_exp(sh,sent,tfi,level,tenv()))
+			if(!yexp::proc_exp(sh,sent,tfi,level,tenv()))
 			{
 				return false;
 			}
@@ -382,20 +384,20 @@ struct zasm
 		yexp::get_vsent(vlisp,vsent,src);
 		for(int i=vsent.count()-1;i>=0;i--)
 		{
-			if(!yexp::p_exp(sh,vsent[i],tfi,level,tenv()))
+			if(!yexp::proc_exp(sh,vsent[i],tfi,level,tenv()))
 			{
 				return false;
 			}
 		}
 		rstr cname=src.vword.get(1).val;
 		rstr fname=src.vword.get(3).val;//p_exp已经合并了name_dec
-		tclass* ptci=yfind::class_search(sh,cname);
+		tclass* ptci=yfind::find_class(sh,cname);
 		if(null==ptci)
 		{
 			rserror("");
 			return false;
 		}
-		tfunc* ptfi=yfind::func_search_dec(*ptci,fname);
+		tfunc* ptfi=yfind::find_func_dec(*ptci,fname);
 		if(ptfi==null)
 		{
 			rserror("");
@@ -405,7 +407,7 @@ struct zasm
 		if(tconf::c_op_empty_func&&
 			yfind::is_empty_struct_type(sh,ptci->name)&&
 			(yfind::is_destruct(sh,*ptfi)||
-			yfind::is_emptystruct(sh,*ptfi)))
+			yfind::is_empty_struct(sh,*ptfi)))
 		{
 			return true;
 		}
@@ -446,7 +448,7 @@ struct zasm
 				rsoptr(c_comma),size);
 			//递归处理子表达式
 			tdata retval;
-			if(!a_exp(sh,src_in,vasm,retval,tfi,level))
+			if(!parse_exp(sh,src_in,vasm,retval,tfi,level))
 			{
 				return false;
 			}
@@ -491,7 +493,7 @@ struct zasm
 			src.vword.get(1).val==rsoptr(c_addr)&&
 			src.vword[0].val==rsoptr(c_mbk_l))
 		{
-			rbuf<rstr> vstr=ybase::vword_to_vstr(src.vword);
+			rbuf<rstr> vstr=ybase::trans_vword_to_vstr(src.vword);
 			vstr.push_front(rskey(c_push));
 			vasm+=vstr;
 		}
@@ -510,14 +512,14 @@ struct zasm
 		{
 			vasm+=rf::vstr(rskey(c_push),src.vword[0].val);
 		}
-		elif(sh.m_key.is_asm_reg(src.vword[0].val))
+		elif(sh.key.is_asm_reg(src.vword[0].val))
 		{
 			vasm+=rf::vstr(rskey(c_push),src.vword[0].val);
 		}
 		else
 		{
 			rstr name=src_in.vword.get(0).val;
-			tdata* ptdi=yfind::local_search(tfi,name);
+			tdata* ptdi=yfind::find_local(tfi,name);
 			if(ptdi==null)
 			{
 				tfi.name.printl();
@@ -535,7 +537,7 @@ struct zasm
 				if(yfind::is_op_pass_type(sh,dst.type)&&
 					dst.type==src.type)
 				{
-					vasm.m_count-=3;
+					vasm.cur_count-=3;
 					vasm+=rf::vstr(rskey(c_push),rsoptr(c_mbk_l),
 						rskey(c_ebp),rsoptr(c_plus),
 						rstr(ptdi->off),rsoptr(c_mbk_r));
@@ -543,7 +545,7 @@ struct zasm
 				}
 				if(ybase::is_quote(dst.type)&&ybase::is_quote(src.type))
 				{
-					vasm.m_count-=3;
+					vasm.cur_count-=3;
 					vasm+=rf::vstr(rskey(c_push),rsoptr(c_mbk_l),
 						rskey(c_ebp),rsoptr(c_plus),
 						rstr(ptdi->off),rsoptr(c_mbk_r));
@@ -551,7 +553,7 @@ struct zasm
 				}
 				if(ybase::is_quote(dst.type))
 				{
-					vasm.m_count-=3;
+					vasm.cur_count-=3;
 					vasm+=rf::vstr(rskey(c_lea),rskey(c_esi),
 						rsoptr(c_comma),rsoptr(c_mbk_l),
 						rskey(c_ebp),rsoptr(c_plus),
@@ -644,12 +646,12 @@ struct zasm
 		}
 		for(int i=0;i<start;i+=3)
 		{
-			tclass* ptci=yfind::class_search_t(sh,type);
+			tclass* ptci=yfind::find_class_t(sh,type);
 			if(null==ptci)
 			{
 				return false;
 			}
-			tdata* ptdi=yfind::data_member_search(*ptci,v.get(right).val);
+			tdata* ptdi=yfind::find_data_member(*ptci,v.get(right).val);
 			if(null==ptdi)
 			{
 				return false;
@@ -755,12 +757,12 @@ struct zasm
 			vasm+=rf::vstr(rskey(c_push),rskey(c_esi));
 		}
 		vasm+=rf::vstr(rskey(c_push),rskey(c_edi));
-		tclass* ptci=yfind::class_search_t(sh,src);
+		tclass* ptci=yfind::find_class_t(sh,src);
 		if(ptci==null)
 		{
 			return false;
 		}
-		tfunc* pcopystruct=yfind::copystruct_search(*ptci);
+		tfunc* pcopystruct=yfind::find_copy_struct(*ptci);
 		if(pcopystruct==null)
 		{
 			return false;
@@ -780,12 +782,12 @@ struct zasm
 		{
 			return true;
 		}
-		tclass* ptci=yfind::class_search(sh,type);
+		tclass* ptci=yfind::find_class(sh,type);
 		if(ptci==null)
 		{
 			return false;
 		}
-		tfunc* pdestruct=yfind::destruct_search(*ptci);
+		tfunc* pdestruct=yfind::find_destruct(*ptci);
 		if(pdestruct==null)
 		{
 			return false;

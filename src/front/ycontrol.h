@@ -141,7 +141,7 @@ struct ycontrol
 			v[i].multi.push("if");
 			v[i].multi.push("!");
 			v[i].multi.push("(");
-			v[i].multi+=ybase::vword_to_vstr(vcond);
+			v[i].multi+=ybase::trans_vword_to_vstr(vcond);
 			v[i].multi.push(")");
 			i=pos;
 		}
@@ -209,10 +209,10 @@ struct ycontrol
 						v[pos].multi.push(rskey(c_else));
 						v[pos].multi.push(rskey(c_if));
 					}
-					v[pos].multi+=ybase::vword_to_vstr(val);
+					v[pos].multi+=ybase::trans_vword_to_vstr(val);
 					v[pos].multi.push(rsoptr(c_equal_equal));
 					v[pos].multi.push(rsoptr(c_sbk_l));
-					v[pos].multi+=ybase::vword_to_vstr(vcond);
+					v[pos].multi+=ybase::trans_vword_to_vstr(vcond);
 					v[pos].multi.push(rsoptr(c_sbk_r));
 				}
 				else
@@ -248,7 +248,7 @@ struct ycontrol
 				if(ybase::is_quote(tfi.retval.type))
 				{
 					//todo: 应放在后端处理
-					if(sh.m_mode==tsh::c_gpp)
+					if(sh.mode==tsh::c_gpp)
 					{
 						result+=sent;
 						result+=rsoptr(c_semi);
@@ -338,7 +338,7 @@ struct ycontrol
 			int cur_id=id;
 			id++;
 			rbuf<tword> center=v.sub(left+1,right);
-			ifn(replace_break_continue(sh,center,cur_id))
+			ifn(replace_break_and_continue(sh,center,cur_id))
 			{
 				return false;
 			}
@@ -382,7 +382,7 @@ struct ycontrol
 		return true;
 	}
 
-	static rbool replace_break_continue(const tsh& sh,rbuf<tword>& v,int cur_id)
+	static rbool replace_break_and_continue(const tsh& sh,rbuf<tword>& v,int cur_id)
 	{
 		rbuf<tword> result;
 		for(int i=0;i<v.count();i++)

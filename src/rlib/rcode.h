@@ -4,12 +4,12 @@
 
 struct rcode
 {
-	static rstr gbk_to_utf8(const rstr& s)
+	static rstr trans_gbk_to_utf8(const rstr& s)
 	{
-		return utf16_to_utf8(gbk_to_utf16(s));
+		return trans_utf16_to_utf8(trans_gbk_to_utf16(s));
 	}
 
-	static rstr gbk_to_utf16(rstr s)
+	static rstr trans_gbk_to_utf16(rstr s)
 	{
 		rstr result;
 		int size=xf::gbk_to_utf16(s.cstr_t(),null,0);
@@ -23,11 +23,11 @@ struct rcode
 		{
 			return rstr();
 		}
-		result.m_buf.m_count-=2;
+		result.buf.cur_count-=2;
 		return r_move(result);
 	}
 
-	static rstr utf16_to_gbk(rstr s)
+	static rstr trans_utf16_to_gbk(rstr s)
 	{
 		rstr result;
 		int size=xf::utf16_to_gbk(s.cstrw_t(),null,0);
@@ -45,12 +45,12 @@ struct rcode
 		return r_move(result);
 	}
 
-	static rstr utf8_to_gbk(const rstr& s)
+	static rstr trans_utf8_to_gbk(const rstr& s)
 	{
-		return utf16_to_gbk(utf8_to_utf16(s));
+		return trans_utf16_to_gbk(trans_utf8_to_utf16(s));
 	}
 
-	static rstr utf8_to_utf16(const rstr& s)
+	static rstr trans_utf8_to_utf16(const rstr& s)
 	{
 		ushort temp;
 		rstr result;
@@ -93,7 +93,7 @@ struct rcode
 		return r_move(result);
 	}
 
-	static rstr utf16_to_utf8(const rstr& s)
+	static rstr trans_utf16_to_utf8(const rstr& s)
 	{
 		rstr result;
 		if(s.count()%2!=0)
@@ -135,9 +135,9 @@ struct rcode
 		temp.push((uchar)0xfe);
 		if(is_utf8_txt(s))
 		{
-			return temp+utf8_to_utf16(s.sub(3));
+			return temp+trans_utf8_to_utf16(s.sub(3));
 		}
-		return temp+gbk_to_utf16(s);
+		return temp+trans_gbk_to_utf16(s);
 	}
 
 	static rstr add_utf8_head(const rstr& s)
@@ -162,20 +162,20 @@ struct rcode
 		temp.push((uchar)0xbf);
 		if(is_utf16_txt(s))
 		{
-			return temp+utf16_to_utf8(s.sub(2));
+			return temp+trans_utf16_to_utf8(s.sub(2));
 		}
-		return temp+gbk_to_utf8(s);
+		return temp+trans_gbk_to_utf8(s);
 	}
 
 	static rstr to_gbk_txt(const rstr& s)
 	{
 		if(is_utf8_txt(s))
 		{
-			return utf8_to_gbk(s.sub(3));
+			return trans_utf8_to_gbk(s.sub(3));
 		}
 		if(is_utf16_txt(s))
 		{
-			return utf16_to_gbk(s.sub(2));
+			return trans_utf16_to_gbk(s.sub(2));
 		}
 		return r_move(s);
 	}
@@ -253,9 +253,9 @@ struct rcode
 	}
 
 	//返回所需缓存区大小
-	static int gbk_to_utf8_c(const uchar* src,uchar* dst)
+	static int trans_gbk_to_utf8_c(const uchar* src,uchar* dst)
 	{
-		rstr s=gbk_to_utf8(src);
+		rstr s=trans_gbk_to_utf8(src);
 		s.push((uchar)0);
 		if(dst!=null)
 		{
@@ -264,32 +264,9 @@ struct rcode
 		return s.count();
 	}
 
-	static int gbk_to_utf16_c(const uchar* src,uchar* dst)
+	static int trans_gbk_to_utf16_c(const uchar* src,uchar* dst)
 	{
-		rstr s=gbk_to_utf16(src);
-		s.push((uchar)0);
-		s.push((uchar)0);
-		if(dst!=null)
-		{
-			xf::memcpy(dst,s.begin(),s.count());
-		}
-		return s.count();
-	}
-
-	static int utf8_to_gbk_c(const uchar* src,uchar* dst)
-	{
-		rstr s=utf8_to_gbk(src);
-		s.push((uchar)0);
-		if(dst!=null)
-		{
-			xf::memcpy(dst,s.begin(),s.count());
-		}
-		return s.count();
-	}
-
-	static int utf8_to_utf16_c(const uchar* src,uchar* dst)
-	{
-		rstr s=utf8_to_utf16(src);
+		rstr s=trans_gbk_to_utf16(src);
 		s.push((uchar)0);
 		s.push((uchar)0);
 		if(dst!=null)
@@ -299,19 +276,42 @@ struct rcode
 		return s.count();
 	}
 
-	static int utf16_to_gbk_c(const uchar* src,uchar* dst)
+	static int trans_utf8_to_gbk_c(const uchar* src,uchar* dst)
+	{
+		rstr s=trans_utf8_to_gbk(src);
+		s.push((uchar)0);
+		if(dst!=null)
+		{
+			xf::memcpy(dst,s.begin(),s.count());
+		}
+		return s.count();
+	}
+
+	static int trans_utf8_to_utf16_c(const uchar* src,uchar* dst)
+	{
+		rstr s=trans_utf8_to_utf16(src);
+		s.push((uchar)0);
+		s.push((uchar)0);
+		if(dst!=null)
+		{
+			xf::memcpy(dst,s.begin(),s.count());
+		}
+		return s.count();
+	}
+
+	static int trans_utf16_to_gbk_c(const uchar* src,uchar* dst)
 	{
 		rstr s;
 		for(const uchar* p=src;;p+=2)
 		{
 			if(*p==0&&*(p+1)==0)
 			{
-				s.set_size(p-src);
+				s.set_size((int)(p-src));
 				xf::memcpy(s.begin(),src,s.count());
 				break;
 			}
 		}
-		s=utf16_to_gbk(s);
+		s=trans_utf16_to_gbk(s);
 		s.push((uchar)0);
 		if(dst!=null)
 		{
@@ -320,19 +320,19 @@ struct rcode
 		return s.count();
 	}
 
-	static int utf16_to_utf8_c(const uchar* src,uchar* dst)
+	static int trans_utf16_to_utf8_c(const uchar* src,uchar* dst)
 	{
 		rstr s;
 		for(const uchar* p=src;;p+=2)
 		{
 			if(*p==0&&*(p+1)==0)
 			{
-				s.set_size(p-src);
+				s.set_size((int)(p-src));
 				xf::memcpy(s.begin(),src,s.count());
 				break;
 			}
 		}
-		s=utf16_to_utf8(s);
+		s=trans_utf16_to_utf8(s);
 		s.push((uchar)0);
 		if(dst!=null)
 		{

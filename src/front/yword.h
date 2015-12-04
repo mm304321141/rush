@@ -5,7 +5,7 @@
 //词法分析
 struct yword
 {
-	static rbool analyse(const tsh& sh,rstr& src,rbuf<tword>& result,const tfile* pfile)
+	static rbool parse(const tsh& sh,rstr& src,rbuf<tword>& result,const tfile* pfile)
 	{
 		result.clear();
 		tword cur_word;
@@ -15,7 +15,7 @@ struct yword
 		uchar* start;
 		uchar* p;
 		rstr stemp;
-		stemp.set_size(sh.m_optr.m_optr_max);
+		stemp.set_size(sh.optr.optr_max);
 		for(p=src.cstr();*p!=0;++p)
 		{
 			start=p;
@@ -73,7 +73,7 @@ struct yword
 					continue;
 				}
 			}
-			len=get_optr_s_len(sh,p,src.end()-p,stemp);
+			len=get_optr_s_len(sh,p,(int)(src.end()-p),stemp);
 			if(len)
 			{
 				cur_word.val=rstr(p,p+len);
@@ -115,10 +115,23 @@ struct yword
 			}
 			elif(rstr::is_number(*p))
 			{
-				for(++p;*p!=0&&(rstr::is_number(*p)||r_char('_')==*p||
-					rstr::is_alpha(*p));++p)
+				for(++p;;++p)
 				{
-					;
+					if(*p==0)
+					{
+						break;
+					}
+					if(rstr::is_number(*p)||rstr::is_alpha(*p)||r_char('.')==*p||
+						r_char('_')==*p)
+					{
+						continue;
+					}
+					if((r_char('-')==*p||r_char('+')==*p)&&(*(p-1)==r_char('E')||
+						*(p-1)==r_char('e')))
+					{
+						continue;
+					}
+					break;
 				}
 				cur_word.val=rstr(start,p);
 				result.push(cur_word);
@@ -232,18 +245,18 @@ struct yword
 
 	static int get_optr_s_len(const tsh& sh,const uchar* s,int len,rstr& stemp)
 	{
-		for(int i=sh.m_optr.m_optr_max;i>0;i--)
+		for(int i=sh.optr.optr_max;i>0;i--)
 		{
 			if(len<i)
 			{
 				continue;
 			}
 			xf::memcpy(stemp.begin(),s,i);
-			stemp.m_buf.m_count=i;
-			int pos=r_find_b<rstr>(sh.m_optr.m_optr_s,stemp);//这里是瓶颈
-			if(pos<sh.m_optr.m_optr_s.count())
+			stemp.buf.cur_count=i;
+			int pos=r_find_b<rstr>(sh.optr.optr_s,stemp);//这里是瓶颈
+			if(pos<sh.optr.optr_s.count())
 			{
-				return sh.m_optr.m_optr_s[pos].count();
+				return sh.optr.optr_s[pos].count();
 			}
 		}
 		return 0;

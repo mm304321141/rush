@@ -18,26 +18,26 @@ struct rdic_i
 template<typename T>
 struct rdic
 {
-	rset<rdic_i<T> > m_set;
+	rset<rdic_i<T> > set;
 
 	void clear()
 	{
-		m_set.clear();
+		set.clear();
 	}
 
 	T* begin() const
 	{
-		return (T*)(m_set.begin());
+		return (T*)(set.begin());
 	}
 
 	T* end() const
 	{
-		return (T*)(m_set.end());
+		return (T*)(set.end());
 	}
 
 	T* next(T* p) const
 	{
-		return (T*)(m_set.next((rdic_i<T>*)p));
+		return (T*)(set.next((rdic_i<T>*)p));
 	}
 
 	rstr get_key(T* p) const
@@ -47,26 +47,26 @@ struct rdic
 
 	rbool empty() const
 	{
-		return m_set.empty();
+		return set.empty();
 	}
 
 	int count() const
 	{
-		return m_set.count();
+		return set.count();
 	}
 
 	rbool exist(const rstr& key) const
 	{
 		rdic_i<T> item;
 		item.key=key;
-		return m_set.exist(item);
+		return set.exist(item);
 	}
 
 	T* find(const rstr& key) const
 	{
 		rdic_i<T> item;
 		item.key=key;
-		return (T*)(m_set.find(item));
+		return (T*)(set.find(item));
 	}
 
 	void insert(const rstr& key,const T& val)
@@ -74,15 +74,15 @@ struct rdic
 		rdic_i<T> item;
 		item.key=key;
 		item.val=val;
-		m_set.insert(item);
+		set.insert(item);
 	}
 
 	T& operator[](const rstr& key)
 	{
 		rdic_i<T> item;
 		item.key=key;
-		m_set.insert_c(item);
-		rdic_i<T>* p=m_set.find(item);
+		set.insert_c(item);
+		rdic_i<T>* p=set.find(item);
 		return p->val;
 	}
 };

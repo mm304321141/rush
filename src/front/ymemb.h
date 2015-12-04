@@ -7,49 +7,47 @@
 //zclass::vword->vdata,vfunc,vmac
 struct ymemb
 {
-	static rbool process(tsh& sh)
+	static rbool proc(tsh& sh)
 	{
-		for(tclass* p=sh.m_class.begin();
-			p!=sh.m_class.end();p=sh.m_class.next(p))
+		tclass* p;
+		for_set(p,sh.s_class)
 		{
-			ifn(a_class(sh,*p))
+			ifn(parse_class(sh,*p))
 			{
 				return false;
 			}
 		}
-		for(tclass* p=sh.m_class.begin();
-			p!=sh.m_class.end();p=sh.m_class.next(p))
+		for_set(p,sh.s_class)
 		{
-			ifn(recursion_get_size(sh,*p))
+			ifn(obtain_size_recursion(sh,*p))
 			{
 				return false;
 			}
 			if(p->name==rskey(c_main))
 			{
-				sh.m_main_data.set_size(p->size);
+				sh.main_data.set_size(p->size);
 			}
 		}
 		//简便起见，重复获取参数大小也没关系
-		for(tclass* p=sh.m_class.begin();
-			p!=sh.m_class.end();p=sh.m_class.next(p))
+		for_set(p,sh.s_class)
 		{
-			obtain_size_func(sh,*p);
+			obtain_size_func_all(sh,*p);
 		}
 		return true;
 	}
 
 	//解析一个类
-	static rbool a_class(tsh& sh,tclass& tci)
+	static rbool parse_class(tsh& sh,tclass& tci)
 	{
 		if(tci.vword.empty())
 		{
 			return true;
 		}
-		ifn(analyse(sh,tci))
+		ifn(parse(sh,tci))
 		{
 			return false;
 		}
-		ifn(yautof::auto_add_func(sh,tci))
+		ifn(yautof::add_func(sh,tci))
 		{
 			return false;
 		}
@@ -57,7 +55,7 @@ struct ymemb
 		return true;
 	}
 
-	static rbool recursion_get_size(tsh& sh,tclass& tci,int level=0)
+	static rbool obtain_size_recursion(tsh& sh,tclass& tci,int level=0)
 	{
 		if(level>c_rs_deep)
 		{
@@ -76,30 +74,30 @@ struct ymemb
 			{
 				tci.vdata[i].off=size;
 				tci.vdata[i].size=c_point_size;
-				size+=tci.vdata[i].size*tci.vdata[i].count;
+				size+=tci.vdata[i].get_space();
 			}
 			else
 			{
-				tclass* ptci=yfind::class_search(sh,tci.vdata[i].type);
+				tclass* ptci=yfind::find_class(sh,tci.vdata[i].type);
 				if(null==ptci)
 				{
 					rserror(rstr("can't find ")+tci.vdata[i].type);
 					return false;
 				}
-				if(!recursion_get_size(sh,*ptci,level))
+				if(!obtain_size_recursion(sh,*ptci,level))
 				{
 					return false;
 				}
 				tci.vdata[i].off=size;
 				tci.vdata[i].size=ptci->size;
-				size+=tci.vdata[i].size*tci.vdata[i].count;
+				size+=tci.vdata[i].get_space();
 			}
 		}
 		tci.size=size;
 		return true;
 	}
 
-	static rbool analyse(tsh& sh,tclass& tci)
+	static rbool parse(tsh& sh,tclass& tci)
 	{
 		rbuf<tword>& v=tci.vword;
 		int i;
@@ -119,22 +117,24 @@ struct ymemb
 					rserror(v.get(i),"miss }");
 					return false;
 				}
-				ifn(enum_add(sh,tci,v.sub(left+1,right)))
+				ifn(add_enum(sh,tci,v.sub(left+1,right)))
 				{
 					return false;
 				}
 				i=right;
+				continue;
 			}
-			elif(v[i].val==rskey(c_mac))
+			if(v[i].val==rskey(c_mac))
 			{
 				int right;
-				if(!mac_add(sh,tci,v,i,right))
+				if(!add_mac(sh,tci,v,i,right))
 				{
 					return false;
 				}
 				i=right;
+				continue;
 			}
-			elif(v[i].val==rskey(c_template))
+			if(v[i].val==rskey(c_template))
 			{
 				int left=v.find(rsoptr(c_bbk_l),i+1);
 				if(left>=v.count())
@@ -148,65 +148,73 @@ struct ymemb
 					rserror(v.get(i),"miss }");
 					return false;
 				}
-				if(!func_add(sh,tci,v.sub(i,right+1)))
+				if(!add_func(sh,tci,v.sub(i,right+1)))
 				{
 					return false;
 				}
 				i=right;
+				continue;
 			}
-			else
+			for(int j=i;j<v.count();j++)
 			{
-				for(int j=i;j<v.count();j++)
+				if(v[j].val==rsoptr(c_semi))
 				{
-					if(v[j].val==rsoptr(c_semi))
+					if(v.get(i).val==rskey(c_extern)&&
+						v.get(j-1).val==rsoptr(c_sbk_r))
 					{
-						if(!data_add(sh,tci,v.sub(i,j)))
+						if(!add_func(sh,tci,v.sub(i,j)))
 						{
 							return false;
 						}
 						i=j;
 						break;
 					}
-					if(v[j].val==rsoptr(c_sbk_l))
+					if(!add_data(sh,tci,v.sub(i,j)))
 					{
-						j=ybase::find_symm_sbk(sh,v,j);
-						if(j>=v.count())
+						return false;
+					}
+					i=j;
+					break;
+				}
+				if(v[j].val==rsoptr(c_sbk_l))
+				{
+					j=ybase::find_symm_sbk(sh,v,j);
+					if(j>=v.count())
+					{
+						rserror(v.get(i));
+						return false;
+					}
+					if(v.get(j+1).val==rsoptr(c_bbk_l))
+					{
+						int right=ybase::find_symm_bbk(sh,v,j+1);
+						if(right>=v.count())
 						{
 							rserror(v.get(i));
 							return false;
 						}
-						if(v.get(j+1).val==rsoptr(c_bbk_l))
-						{
-							int right=ybase::find_symm_bbk(sh,v,j+1);
-							if(right>=v.count())
-							{
-								rserror(v.get(i));
-								return false;
-							}
-							if(!func_add(sh,tci,v.sub(i,right+1)))
-							{
-								return false;
-							}
-							i=right;
-							break;
-						}
-					}
-					if(v[j].pos!=v.get(j+1).pos)
-					{
-						if(!data_add(sh,tci,v.sub(i,j+1)))
+						if(!add_func(sh,tci,v.sub(i,right+1)))
 						{
 							return false;
 						}
-						i=j;
+						i=right;
 						break;
 					}
+				}
+				if(v[j].pos!=v.get(j+1).pos)
+				{
+					if(!add_data(sh,tci,v.sub(i,j+1)))
+					{
+						return false;
+					}
+					i=j;
+					break;
 				}
 			}
 		}
 		return true;
 	}
 
-	static rbool enum_add(const tsh& sh,tclass& tci,const rbuf<tword>& v)
+	static rbool add_enum(const tsh& sh,tclass& tci,const rbuf<tword>& v)
 	{
 		uint enum_val=0;
 		for(int j=0;j<v.count();j++)
@@ -249,7 +257,7 @@ struct ymemb
 		return true;
 	}
 
-	static rbool mac_add(const tsh& sh,tclass& tci,const rbuf<tword>& v,int i,int& right)
+	static rbool add_mac(const tsh& sh,tclass& tci,const rbuf<tword>& v,int i,int& right)
 	{
 		if(v.get(i+1).val=="$")
 		{
@@ -277,7 +285,7 @@ struct ymemb
 				return false;
 			}
 			rbuf<rbuf<rstr> > temp=r_split_a<rstr>(
-				ybase::vword_to_vstr(v.sub(left+1,right)),
+				ybase::trans_vword_to_vstr(v.sub(left+1,right)),
 				rsoptr(c_comma));
 			for(int j=0;j<temp.count();j++)
 			{
@@ -343,8 +351,14 @@ struct ymemb
 		return true;
 	}
 
-	static rbool a_data_define(const tsh& sh,tdata& item,const rbuf<tword>& vword)
+	static rbool parse_data(const tsh& sh,tdata& item,const rbuf<tword>& vword)
 	{
+		if(vword.count()==3&&vword[0].val==rsoptr(c_dot)&&
+			vword[1].val==rsoptr(c_dot)&&vword[2].val==rsoptr(c_dot))
+		{
+			item.type="...";
+			return true;
+		}
 		int pos=vword.find(tword(rsoptr(c_equal)));
 		if(pos<vword.count())
 		{
@@ -363,6 +377,12 @@ struct ymemb
 					item.param.push(vword[i]);
 				}
 			}
+		}
+		int start=0;
+		if(vword.get_left().val==rskey(c_extern))
+		{
+			start++;
+			item.is_extern=true;
 		}
 		//process func template
 		if(vword.get(1).val==rsoptr(c_tbk_l))
@@ -391,10 +411,10 @@ struct ymemb
 		}
 		else
 		{
-			item.type=vword.get(0).val;
+			item.type=vword.get(start).val;
 			if(yfind::is_class_t(sh,item.type))
 			{
-				item.name=vword.get(1).val;
+				item.name=vword.get(start+1).val;
 			}
 			else
 			{
@@ -409,21 +429,25 @@ struct ymemb
 			rserror(vword.get(0),"miss data type or name");
 			return false;
 		}
-		item.count=1;
-		if(vword.get(2)==rsoptr(c_mbk_l))
+		if(vword.get(start+2)==rsoptr(c_mbk_l))
 		{
-			if(vword.get(4)!=rsoptr(c_mbk_r))
+			if(vword.get(start+4)!=rsoptr(c_mbk_r))
 			{
 				rserror(vword.get(0),"data array error");
 				return false;
 			}
 			//保存数组个数
-			item.count=vword.get(3).val.toint();
+			item.count=vword.get(start+3).val.toint();
+			if(item.count<0)//llvm和GNU均允许0长数组
+			{
+				rserror(vword.get(0),"data array error");
+				return false;
+			}
 		}
 		return true;
 	}
 
-	static rbool lambda_a_func_define(const tsh& sh,tfunc& item,const rbuf<tword>& v)
+	static rbool parse_func_lambda(const tsh& sh,tfunc& item,const rbuf<tword>& v)
 	{
 		if(v.get(1)!=rsoptr(c_sbk_l))
 		{
@@ -438,7 +462,7 @@ struct ymemb
 			return false;
 		}
 		rbuf<tword> param=v.sub(2,right);
-		rbuf<rbuf<tword> > list=ybase::comma_split<tword>(sh,param);
+		rbuf<rbuf<tword> > list=ybase::split_comma<tword>(sh,param);
 		int i=0;
 		//如果第一个参数只有类型，则表明是返回值
 		if(!list.empty()&&list[0].count()==1&&
@@ -459,7 +483,7 @@ struct ymemb
 				continue;
 			}
 			tdata ditem;
-			ifn(a_data_define(sh,ditem,list[i]))
+			ifn(parse_data(sh,ditem,list[i]))
 			{
 				return false;
 			}
@@ -468,13 +492,13 @@ struct ymemb
 		return true;
 	}
 
-	static rbool a_func_define(const tsh& sh,tfunc& item,const rbuf<tword>& v,
+	static rbool parse_func(const tsh& sh,tfunc& item,const rbuf<tword>& v,
 		rbool lambda=false)
 	{
 		item.name.clear();
 		if(v.get_bottom().val.sub(0,7)=="_LAMBDA")
 		{
-			return lambda_a_func_define(sh,item,v);
+			return parse_func_lambda(sh,item,v);
 		}
 		int start=0;
 		for(;start<v.count();start++)
@@ -499,6 +523,10 @@ struct ymemb
 			elif(v[start].val=="final")
 			{
 				item.is_final=true;
+			}
+			elif(v[start].val=="asm")
+			{
+				item.is_asm=true;
 			}
 			else
 			{
@@ -550,7 +578,7 @@ struct ymemb
 		{
 			item.name+="_SELF";
 		}
-		elif(sh.m_optr.is_optr(v.get(start).val))
+		elif(sh.optr.is_optr(v.get(start).val))
 		{
 			item.name=v.get(start).val;
 			if(v.get(start).val==rsoptr(c_mbk_l))
@@ -580,11 +608,11 @@ struct ymemb
 				rserror(v.get(0),"miss )");
 				return false;
 			}
-			list=ybase::comma_split<tword>(sh,v.sub(start+1,right));
+			list=ybase::split_comma<tword>(sh,v.sub(start+1,right));
 		}
 		else
 		{
-			list=ybase::comma_split<tword>(sh,v.sub(start));
+			list=ybase::split_comma<tword>(sh,v.sub(start));
 		}
 		for(int i=0;i<list.count();i++)
 		{
@@ -593,29 +621,34 @@ struct ymemb
 				continue;
 			}
 			tdata ditem;
-			ifn(a_data_define(sh,ditem,list[i]))
+			ifn(parse_data(sh,ditem,list[i]))
 			{
 				return false;
 			}
-			if(ditem.count>1)
+			if(ditem.type=="...")
+			{
+				item.is_vararg=true;
+				continue;
+			}
+			if(ditem.is_array())
 			{
 				//todo 如果该类型的指针没有事先定义会出错
 				ditem.type="rp<"+ditem.type+">";
-				ditem.count=1;
+				ditem.count=-1;
 			}
 			item.param.push(ditem);
 		}
 		return true;
 	}
 
-	static rbool data_add(const tsh& sh,tclass& tci,const rbuf<tword>& v)
+	static rbool add_data(const tsh& sh,tclass& tci,const rbuf<tword>& v)
 	{
 		if(v.empty())
 		{
 			return true;
 		}
 		tdata item;
-		if(!a_data_define(sh,item,v))
+		if(!parse_data(sh,item,v))
 		{
 			return false;
 		}
@@ -656,7 +689,7 @@ struct ymemb
 			return false;
 		}
 		v[tbk_left-1].val+=rstr::join<rstr>(
-			ybase::vword_to_vstr(v.sub(tbk_left,tbk_right+1)),
+			ybase::trans_vword_to_vstr(v.sub(tbk_left,tbk_right+1)),
 			rstr());
 		ybase::clear_word_val(v,tbk_left,tbk_right+1);
 		ybase::arrange(v);
@@ -687,10 +720,30 @@ struct ymemb
 		return false;
 	}
 	
-	static rbool func_add(tsh& sh,tclass& tci,const rbuf<tword>& v,
+	static rbool add_func(tsh& sh,tclass& tci,const rbuf<tword>& v,
 		rbool check_tl=true)
 	{
 		tfunc item;
+		if(v.get_left().val==rskey(c_extern)&&v.get_right().val==rsoptr(c_sbk_r))
+		{
+			item.is_extern=true;
+			item.is_friend=true;
+			item.pos=v.get_left().pos;
+			item.ptci=&tci;
+			if(!parse_func(sh,item,v.sub(1)))
+			{
+				return false;
+			}
+			obtain_size_func(sh,item);
+			item.name_dec=item.get_dec();
+			if(tci.vfunc.exist(item))
+			{
+				rserror(v.get_bottom(),"func redefined");
+				return false;
+			}
+			tci.vfunc.insert(item);
+			return true;
+		}
 		int left=v.find(tword(rsoptr(c_bbk_l)));
 		if(left>=v.count())
 		{
@@ -718,18 +771,18 @@ struct ymemb
 			}
 			else
 			{
-				func_tl_part(sh,item,vhead);
+				part_func_tl(sh,item,vhead);
 			}
 		}
 		if(item.vtl.empty())
 		{
-			if(!a_func_define(sh,item,vhead))
+			if(!parse_func(sh,item,vhead))
 			{
 				return false;
 			}
 			if(item.name.sub(0,7)!="_LAMBDA")
 			{
-				add_this_func(sh,item);
+				add_this(sh,item);
 			}
 			obtain_size_func(sh,item);
 			item.name_dec=item.get_dec();
@@ -746,9 +799,9 @@ struct ymemb
 			tci.vfunc.insert(item);
 			if(item.is_macro)
 			{
-				sh.m_macro[item.name]=tci.vfunc.find(item);
+				sh.dic_macro[item.name]=tci.vfunc.find(item);
 			}
-			if(!default_param_proc(sh,*tci.vfunc.find(item)))
+			if(!proc_default_param(sh,*tci.vfunc.find(item)))
 			{
 				return false;
 			}
@@ -767,9 +820,10 @@ struct ymemb
 		return true;
 	}
 
-	static void obtain_size_func(const tsh& sh,tclass& tci)
+	static void obtain_size_func_all(const tsh& sh,tclass& tci)
 	{
-		for(tfunc* p=tci.vfunc.begin();p!=tci.vfunc.end();p=tci.vfunc.next(p))
+		tfunc* p;
+		for_set(p,tci.vfunc)
 		{
 			obtain_size_func(sh,*p);
 		}
@@ -784,7 +838,7 @@ struct ymemb
 		}
 	}
 
-	static void cpp_tl_replace(const tsh& sh,rbuf<tword>& v)
+	static void replace_cpp_tl(const tsh& sh,rbuf<tword>& v)
 	{
 		int sbk_left=v.count();
 		if(v.get_top()!=rsoptr(c_tbk_r))
@@ -807,18 +861,18 @@ struct ymemb
 		{
 			return;
 		}
-		v[sbk_left].multi+=ybase::vword_to_vstr(v.sub(tbk_left,tbk_right+1));
+		v[sbk_left].multi+=ybase::trans_vword_to_vstr(v.sub(tbk_left,tbk_right+1));
 		v[sbk_left].multi+=rsoptr(c_sbk_l);
 		v[sbk_left].val.clear();
 		ybase::clear_word_val(v,0,tbk_right+1);
 		ybase::arrange(v);
 	}
 
-	static void func_tl_part(const tsh& sh,tfunc& item,rbuf<tword>& v)
+	static void part_func_tl(const tsh& sh,tfunc& item,rbuf<tword>& v)
 	{
 		if(v.get_left()==rskey(c_template))
 		{
-			cpp_tl_replace(sh,v);
+			replace_cpp_tl(sh,v);
 		}
 		int left=v.count();
 		if(v.get_top()!=rsoptr(c_tbk_r))
@@ -852,7 +906,7 @@ struct ymemb
 		{
 			return;
 		}
-		rbuf<rstr> vsrc=ybase::vword_to_vstr(
+		rbuf<rstr> vsrc=ybase::trans_vword_to_vstr(
 			temp.sub(left+1,temp.count()-1));
 		rbuf<rbuf<rstr> > vdst=r_split_a<rstr>(vsrc,rsoptr(c_comma));
 		if(vdst.empty())
@@ -867,7 +921,7 @@ struct ymemb
 		}
 	}
 
-	static void add_this_func(const tsh& sh,tfunc& tfi)
+	static void add_this(const tsh& sh,tfunc& tfi)
 	{
 		if(tfi.ptci->is_friend)
 		{
@@ -882,7 +936,7 @@ struct ymemb
 		}
 	}
 
-	static rbool default_param_proc(const tsh& sh,tfunc& tfi)
+	static rbool proc_default_param(const tsh& sh,tfunc& tfi)
 	{
 		int i;
 		for(i=0;i<tfi.param.count();i++)

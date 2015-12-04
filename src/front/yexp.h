@@ -7,17 +7,18 @@
 struct yexp
 {
 	//处理函数名调用
-	static rbool p_func_call(tsh& sh,const tsent& src,tsent& outopnd,
+	static rbool proc_func_call(tsh& sh,const tsent& src,tsent& outopnd,
 		tfunc& tfi,int level,int& i,tenv env)
 	{
 		tclass* ptci=tfi.ptci;
 		rstr fname=src.vword[i].val;
-		tfunc* ptfi=yfind::func_search(*ptci,fname);
+		tfunc* ptfi=yfind::find_func(*ptci,fname);
 		if(ptfi==null)
 		{
-			ptci=sh.m_main;
-			if(!p_call(sh,src,null,outopnd,tfi,level,i,ptci,env))
+			ptci=sh.pmain;
+			if(!proc_call(sh,src,null,outopnd,tfi,level,i,ptci,env))
 			{
+				rserror();
 				return false;
 			}
 			return true;
@@ -25,8 +26,9 @@ struct yexp
 		//函数重载不能友元和非友元共存，友元标志很重要。
 		if(ptfi->is_friend)
 		{
-			if(!p_call(sh,src,null,outopnd,tfi,level,i,ptci,env))
+			if(!proc_call(sh,src,null,outopnd,tfi,level,i,ptci,env))
 			{
+				rserror();
 				return false;
 			}
 		}
@@ -35,8 +37,9 @@ struct yexp
 			tsent first;
 			first.type=ptci->name+rsoptr(c_addr);
 			first.vword+=rskey(c_this);
-			if(!p_call(sh,src,&first,outopnd,tfi,level,i,ptci,env))
+			if(!proc_call(sh,src,&first,outopnd,tfi,level,i,ptci,env))
 			{
+				rserror();
 				return false;
 			}
 		}
@@ -44,7 +47,7 @@ struct yexp
 	}
 
 	//处理[]函数指针直接调用
-	static rbool p_point_call(tsh& sh,const tsent& src,tsent& outopnd,
+	static rbool proc_point_call(tsh& sh,const tsent& src,tsent& outopnd,
 		tfunc& tfi,int level,int& i,tenv env)
 	{
 		int left=i+1;
@@ -75,7 +78,7 @@ struct yexp
 			{
 				outopnd.vword+=rsoptr(c_comma);
 			}
-			if(!p_exp(sh,vsent[j],tfi,level,env))
+			if(!proc_exp(sh,vsent[j],tfi,level,env))
 			{
 				return false;
 			}
@@ -105,7 +108,7 @@ struct yexp
 		return true;
 	}
 
-	static rbool p_temp_var(tsh& sh,const tsent& src,tsent& outopnd,
+	static rbool proc_temp_var(tsh& sh,const tsent& src,tsent& outopnd,
 		tfunc& tfi,int level,int& i,tenv env)
 	{
 		int left=i+1;
@@ -121,7 +124,7 @@ struct yexp
 		{
 			for(int j=0;j<vsent.count();j++)
 			{
-				if(!p_exp(sh,vsent[j],tfi,level,env))
+				if(!proc_exp(sh,vsent[j],tfi,level,env))
 				{
 					return false;
 				}
@@ -149,7 +152,7 @@ struct yexp
 	}
 	
 	//处理类名直接调用
-	static rbool p_class_call(tsh& sh,const tsent& src,tsent& outopnd,
+	static rbool proc_class_call(tsh& sh,const tsent& src,tsent& outopnd,
 		tfunc& tfi,int level,int& i,tenv env)
 	{
 		if(src.vword.get(i+1).val!=rsoptr(c_dot))
@@ -158,36 +161,36 @@ struct yexp
 			return false;
 		}
 		rstr cname=src.vword[i].val;
-		tclass* ptci=yfind::class_search(sh,cname);
+		tclass* ptci=yfind::find_class(sh,cname);
 		if(ptci==null)
 		{
 			rserror(src,"can't find class name");
 			return false;
 		}
 		i+=2;
-		return p_call(sh,src,null,outopnd,tfi,level,i,ptci,env);
+		return proc_call(sh,src,null,outopnd,tfi,level,i,ptci,env);
 	}
 
-	static rbool p_mbk(tsh& sh,const tsent& first,const tsent& second,
+	static rbool proc_mbk(tsh& sh,const tsent& first,const tsent& second,
 		tsent& outopnd,tfunc& tfi,int level,tenv env)
 	{
 		rbuf<tsent> vsent;
 		ybase::split_param(sh,vsent,second.vword,first);
 		for(int j=0;j<vsent.count();j++)
 		{
-			if(!p_exp(sh,vsent[j],tfi,level,env))
+			if(!proc_exp(sh,vsent[j],tfi,level,env))
 			{
 				return false;
 			}
 		}
 		vsent.push_front(first);
-		tclass* ptci=yfind::class_search_t(sh,first.type);
+		tclass* ptci=yfind::find_class_t(sh,first.type);
 		if(ptci==null)
 		{
 			rserror(first,"can't find func mbk");
 			return false;
 		}
-		tfunc* ptfi=ymatch::find_replace(sh,*ptci,"[]",vsent);
+		tfunc* ptfi=ymatch::find_and_replace(sh,*ptci,"[]",vsent);
 		if(null==ptfi)
 		{
 			rserror(first,"can't find func mbk");
@@ -197,7 +200,7 @@ struct yexp
 		return true;
 	}
 
-	static rbool p_lisp(tsh& sh,const tsent& src,tsent& outopnd,
+	static rbool proc_lisp(tsh& sh,const tsent& src,tsent& outopnd,
 		tfunc& tfi,int level,tenv env)
 	{
 		if(src.vword.get_bottom().val!=rsoptr(c_mbk_l)&&
@@ -213,8 +216,8 @@ struct yexp
 		rstr cname=src.vword.get(1).val;
 		rbuf<rbuf<tword> > vlisp;
 		get_vlisp(sh,src.vword,vlisp);
-		rstr fname=rstr::join<rstr>(ybase::vword_to_vstr(vlisp.get(1)),"");
-		ptci=yfind::class_search(sh,cname);
+		rstr fname=rstr::join<rstr>(ybase::trans_vword_to_vstr(vlisp.get(1)),"");
+		ptci=yfind::find_class(sh,cname);
 		if(ptci!=null)
 		{
 			if(vlisp.count()!=3)
@@ -222,7 +225,7 @@ struct yexp
 				rserror(src,"lisp exp miss");
 				return false;
 			}
-			ptfi=yfind::func_search_dec(*ptci,fname);
+			ptfi=yfind::find_func_dec(*ptci,fname);
 			rbuf<tsent> vsent;
 			tsent sent;
 			sent.pos=src.pos;
@@ -232,7 +235,7 @@ struct yexp
 			for(int j=0;j<vparam.count();j++)
 			{
 				sent.vword=vparam[j];
-				if(!p_exp(sh,sent,tfi,level,env))
+				if(!proc_exp(sh,sent,tfi,level,env))
 				{
 					return false;
 				}
@@ -241,7 +244,7 @@ struct yexp
 
 			if(ptfi==null)
 			{
-				ptfi=ymatch::find_replace(sh,*ptci,fname,vsent);
+				ptfi=ymatch::find_and_replace(sh,*ptci,fname,vsent);
 				if(ptfi==null)
 				{
 					rserror(src,"lisp exp miss");
@@ -267,17 +270,17 @@ struct yexp
 			}
 			sent.vword=vlisp[1];
 			sent.pos=src.pos;
-			ifn(p_exp(sh,sent,tfi,level,env))
+			ifn(proc_exp(sh,sent,tfi,level,env))
 			{
 				return false;
 			}
-			ptci=yfind::class_search_t(sh,sent.type);
+			ptci=yfind::find_class_t(sh,sent.type);
 			if(ptci==null)
 			{
 				rserror(src,"lisp exp miss");
 				return false;
 			}
-			tdata* ptdi=yfind::data_member_search(
+			tdata* ptdi=yfind::find_data_member(
 				*ptci,vlisp[2].get(0).val);
 			if(ptdi==null)
 			{
@@ -307,30 +310,37 @@ struct yexp
 			tsent sent;
 			sent.pos=src.pos;
 			sent.vword=vlisp[i];
-			vsent.push_move(sent);
+			vsent.push(r_move(sent));
 		}
 	}
 
 	static void get_vlisp(const tsh& sh,rbuf<tword> v,rbuf<rbuf<tword> >& vlisp)
 	{
-		vlisp=ybase::comma_split<tword>(sh,v.sub(1,v.count()-1));
+		vlisp=ybase::split_comma<tword>(sh,v.sub(1,v.count()-1));
 	}
 	
-	//处理变参中括号调用,变参不能重载
-	static rbool p_mbk_param(tsh& sh,const tsent& src,const tsent* pfirst,tsent& outopnd,
+	//处理变参中括号调用或C变参，变参不能重载
+	static rbool proc_vararg(tsh& sh,const tsent& src,const tsent* pfirst,tsent& outopnd,
 		tfunc& tfi,int level,int& i,const tclass* ptci,tenv env)
 	{
 		rstr cname=ptci->name;
 		rstr fname=src.vword[i].val;
 		int left=i+1;
 		int right;
-		right=ybase::find_symm_mbk(sh,src.vword,left);
+		if(src.vword.get(left).val==rsoptr(c_sbk_l))
+		{
+			right=ybase::find_symm_sbk(sh,src.vword,left);
+		}
+		else
+		{
+			right=ybase::find_symm_mbk(sh,src.vword,left);
+		}
 		if(right>=src.vword.count())
 		{
 			rserror(src,"call miss )");
 			return false;
 		}
-		tfunc* ptfi=yfind::func_search(*ptci,fname);
+		tfunc* ptfi=yfind::find_func(*ptci,fname);
 		if(null==ptfi)
 		{
 			rserror(src,"p_mbk_param can't find call");
@@ -340,7 +350,7 @@ struct yexp
 		ybase::split_param(sh,vsent,src.vword.sub(left+1,right),src);
 		for(int j=0;j<vsent.count();j++)
 		{
-			if(!p_exp(sh,vsent[j],tfi,level,env))
+			if(!proc_exp(sh,vsent[j],tfi,level,env))
 			{
 				return false;
 			}
@@ -357,7 +367,7 @@ struct yexp
 			if(!ybase::is_point(pfirst->type))
 			{
 				vsent[0].vword.push_front(tword(rsoptr(c_addr)));
-				if(!p_exp(sh,vsent[0],tfi,level,env))
+				if(!proc_exp(sh,vsent[0],tfi,level,env))
 				{
 					return false;
 				}
@@ -409,7 +419,7 @@ struct yexp
 	}
 	
 	//无括号call
-	static rbool p_call_n(tsh& sh,const tsent& src,const tsent* pfirst,tsent& outopnd,
+	static rbool proc_call_n(tsh& sh,const tsent& src,const tsent* pfirst,tsent& outopnd,
 		tfunc& tfi,int level,int& i,const tclass* ptci,tenv env)
 	{
 		rstr cname=ptci->name;
@@ -420,7 +430,7 @@ struct yexp
 		if(i+1==src.vword.count()-1||
 			yfind::is_end_part_optr(sh,src.vword.get(i+1).val))
 		{
-			ptfi=yfind::func_search_empty_param_m(
+			ptfi=yfind::find_func_empty_param_m(
 				*ptci,fname,pfirst==null);
 			if(ptfi==null)
 			{
@@ -430,11 +440,11 @@ struct yexp
 		}
 		else
 		{
-			ptfi=yfind::func_search_multi_param_m(
+			ptfi=yfind::find_func_multi_param_m(
 				*ptci,fname,pfirst==null);
 			if(ptfi==null)
 			{
-				ptfi=yfind::func_search_empty_param_m(
+				ptfi=yfind::find_func_empty_param_m(
 					*ptci,fname,pfirst==null);
 			}
 			else
@@ -470,7 +480,7 @@ struct yexp
 		}
 		outopnd.vword.push(tword(rsoptr(c_sbk_r)));
 		//无括号调用添加括号递归处理
-		if(!p_exp(sh,outopnd,tfi,level,env))
+		if(!proc_exp(sh,outopnd,tfi,level,env))
 		{
 			return false;
 		}
@@ -478,7 +488,7 @@ struct yexp
 		return true;
 	}
 
-	static rbool p_ftl(tsh& sh,tsent src,const tsent* pfirst,tsent& outopnd,
+	static rbool proc_ftl(tsh& sh,tsent src,const tsent* pfirst,tsent& outopnd,
 		tfunc& tfi,int level,int& i,tclass* ptci,tenv env)
 	{
 		int left=i+1;
@@ -494,13 +504,13 @@ struct yexp
 			return false;
 		}
 		rbuf<tword> temp=src.vword.sub(i,right+1);
-		if(!yfunctl::ftl_replace(sh,*tfi.ptci,temp,ptci))
+		if(!yfunctl::replace_ftl(sh,*tfi.ptci,temp,ptci))
 		{
 			return false;
 		}
 		src.vword[right]=temp.get_bottom();
 		i=right;
-		return p_call(sh,src,pfirst,outopnd,tfi,level,i,ptci,env);
+		return proc_call(sh,src,pfirst,outopnd,tfi,level,i,ptci,env);
 	}
 
 	static rbool set_vsent(const tsh& sh,tpos pos,rbuf<tsent>& vsent,
@@ -511,16 +521,16 @@ struct yexp
 		word.pos=pos;
 		sent.pos=pos;
 		tdynamic item;
-		item.key=tfi.sdynamic.count();
+		item.key=tfi.s_dynamic.count();
 		for(int k=0;k<vsent.count();k++)
 		{
-			item.vparam+=ybase::vword_to_vstr(vsent[k].vword);
+			item.vparam+=ybase::trans_vword_to_vstr(vsent[k].vword);
 		}
-		tfi.sdynamic.insert(item);
+		tfi.s_dynamic.insert(item);
 
 		vsent.clear();
 
-		ybase::push_twi(sent.vword,word,rstr((uint)(&tfi.sdynamic.find(item)->vparam)));
+		ybase::push_twi(sent.vword,word,rstr((uint)(&tfi.s_dynamic.find(item)->vparam)));
 		vsent.push(sent);
 
 		sent.vword.clear();
@@ -534,24 +544,26 @@ struct yexp
 		return true;
 	}
 
-	static rbool p_call(tsh& sh,const tsent& src,const tsent* pfirst,tsent& outopnd,
+	static rbool proc_call(tsh& sh,const tsent& src,const tsent* pfirst,tsent& outopnd,
 		tfunc& tfi,int level,int& i,const tclass* ptci,tenv env)
 	{
 		rstr cname=ptci->name;
 		rstr fname=src.vword[i].val;
-		if(src.vword.get(i+1).val==rsoptr(c_mbk_l))
+		tfunc* ptfi=yfind::find_func(*ptci,fname);
+		if(ptfi!=null&&ptfi->is_vararg&&src.vword.get(i+1).val==rsoptr(c_sbk_l)||
+			src.vword.get(i+1).val==rsoptr(c_mbk_l))
 		{
-			return p_mbk_param(sh,src,pfirst,outopnd,tfi,level,i,ptci,env);
+			return proc_vararg(sh,src,pfirst,outopnd,tfi,level,i,ptci,env);
 		}
 		if(pfirst!=null&&ybase::get_tname(pfirst->type)==rskey(c_var)&&
-			null==yfind::func_search(*ptci,fname))
+			null==yfind::find_func(*ptci,fname))
 		{
 			return false;
 			//a.test  ->   a["test"]
 		}
 		if(src.vword.get(i+1).val!=rsoptr(c_sbk_l))
 		{
-			return p_call_n(sh,src,pfirst,outopnd,tfi,level,i,ptci,env);
+			return proc_call_n(sh,src,pfirst,outopnd,tfi,level,i,ptci,env);
 		}
 		int left=i+1;
 		int right;
@@ -565,12 +577,11 @@ struct yexp
 		ybase::split_param(sh,vsent,src.vword.sub(left+1,right),src);
 		for(int j=0;j<vsent.count();j++)
 		{
-			if(!p_exp(sh,vsent[j],tfi,level,env))
+			if(!proc_exp(sh,vsent[j],tfi,level,env))
 			{
 				return false;
 			}
 		}
-		tfunc* ptfi=yfind::func_search(*ptci,fname);
 		if(ptfi!=null&&ptfi->is_dynamic)
 		{
 			ifn(set_vsent(sh,src.vword[i].pos,vsent,tfi,level,env))
@@ -589,7 +600,7 @@ struct yexp
 		{
 			vsent.push_front(*pfirst);//插入DOT前的对象
 		}
-		ptfi=ymatch::find_replace(sh,*ptci,fname,vsent);
+		ptfi=ymatch::find_and_replace(sh,*ptci,fname,vsent);
 		if(null==ptfi)
 		{
 			if(pfirst==null)
@@ -598,7 +609,7 @@ struct yexp
 				return false;
 			}
 			vsent.pop_front();
-			ptfi=ymatch::find_replace(sh,*ptci,fname,vsent);
+			ptfi=ymatch::find_and_replace(sh,*ptci,fname,vsent);
 			if(ptfi==null||!ptfi->is_friend)
 			{
 				rserror(src,"p_call can't find call");
@@ -610,11 +621,11 @@ struct yexp
 		return true;
 	}
 
-	static rbool p_exp_all(tsh& sh,tfunc& tfi,tenv env)
+	static rbool proc_exp_all(tsh& sh,tfunc& tfi,tenv env)
 	{
 		for(int i=0;i<tfi.vsent.count();++i)
 		{
-			if(sh.m_key.is_asm_ins(tfi.vsent[i].vword.get_bottom().val))
+			if(sh.key.is_asm_ins(tfi.vsent[i].vword.get_bottom().val))
 			{
 				continue;
 			}
@@ -622,7 +633,7 @@ struct yexp
 			{
 				continue;
 			}
-			if(!yexp::p_exp(sh,tfi.vsent[i],tfi,0,env))
+			if(!yexp::proc_exp(sh,tfi.vsent[i],tfi,0,env))
 			{
 				return false;
 			}
@@ -631,7 +642,7 @@ struct yexp
 	}
 	
 	//表达式标准化，并设置dst.type
-	static rbool p_exp(tsh& sh,tsent& src,tfunc& tfi,int level,tenv env)
+	static rbool proc_exp(tsh& sh,tsent& src,tfunc& tfi,int level,tenv env)
 	{
 		tclass& tci=*tfi.ptci;
 		if(level>c_rs_deep)
@@ -657,15 +668,15 @@ struct yexp
 				outopnd.pos=src.pos;
 				outopnd.vword.push(src.vword[i]);
 				outopnd.type=ybase::get_ctype(sh,src.vword[i]);
-				sopnd.push_move(outopnd);
+				sopnd.push(r_move(outopnd));
 			}
-			elif(sh.m_key.is_asm_reg(src.vword[i].val))
+			elif(sh.key.is_asm_reg(src.vword[i].val))
 			{
 				tsent outopnd;
 				outopnd.pos=src.pos;
 				outopnd.vword.push(src.vword[i]);
 				outopnd.type=rskey(c_int);
-				sopnd.push_move(outopnd);
+				sopnd.push(r_move(outopnd));
 			}
 			elif(src.vword[i].val==rsoptr(c_sbk_l))
 			{
@@ -677,11 +688,11 @@ struct yexp
 					return false;
 				}
 				tsent outopnd=src.sub(i+1,right);
-				if(!p_exp(sh,outopnd,tfi,level,env))
+				if(!proc_exp(sh,outopnd,tfi,level,env))
 				{
 					return false;
 				}
-				sopnd.push_move(outopnd);
+				sopnd.push(r_move(outopnd));
 				i=right;
 			}
 			elif(src.vword.get(i+1)==rsoptr(c_mbk_l)&&
@@ -690,11 +701,11 @@ struct yexp
 				//[]函数指针调用
 				tsent outopnd;
 				outopnd.pos=src.pos;
-				if(!p_point_call(sh,src,outopnd,tfi,level,i,env))
+				if(!proc_point_call(sh,src,outopnd,tfi,level,i,env))
 				{
 					return false;
 				}
-				sopnd.push_move(outopnd);
+				sopnd.push(r_move(outopnd));
 			}
 			elif(src.vword[i].val==rsoptr(c_mbk_l))
 			{
@@ -710,7 +721,7 @@ struct yexp
 					src.vword.get(i+1).val==rsoptr(c_addr)&&
 					yfind::is_class(sh,src.vword.get(i+3).val))
 				{
-					if(!p_lisp(sh,src.sub(
+					if(!proc_lisp(sh,src.sub(
 						i,right+1),outopnd,tfi,level,env))
 					{
 						return false;
@@ -718,13 +729,13 @@ struct yexp
 				}
 				else
 				{
-					if(!p_mbk(sh,sopnd.pop(),src.sub(i+1,right),
+					if(!proc_mbk(sh,sopnd.pop(),src.sub(i+1,right),
 						outopnd,tfi,level,env))
 					{
 						return false;
 					}
 				}
-				sopnd.push_move(outopnd);
+				sopnd.push(r_move(outopnd));
 				i=right;
 			}
 			elif(src.vword[i].val==rsoptr(c_dot))
@@ -737,7 +748,7 @@ struct yexp
 				i++;
 				rstr name=src.vword.get(i).val;
 				tsent first=sopnd.pop();
-				tclass* ptci=yfind::class_search_t(sh,first.type);
+				tclass* ptci=yfind::find_class_t(sh,first.type);
 				if(null==ptci)
 				{
 					rserror(src,". can't find class name");
@@ -746,7 +757,7 @@ struct yexp
 				tsent outopnd;
 				outopnd.pos=src.pos;
 				//数据成员和函数成员不可以同名
-				tdata* ptdi=yfind::data_member_search(*ptci,name);
+				tdata* ptdi=yfind::find_data_member(*ptci,name);
 				if(ptdi!=null)
 				{
 					outopnd.type=ptdi->type;
@@ -761,9 +772,9 @@ struct yexp
 					continue;
 				}
 				if(src.vword.get(i+1)==rsoptr(c_tbk_l)&&
-					yfind::ftl_search(*ptci,name)!=null)
+					yfind::find_ftl(*ptci,name)!=null)
 				{
-					if(!p_ftl(sh,src,&first,
+					if(!proc_ftl(sh,src,&first,
 						outopnd,tfi,level,i,ptci,env))
 					{
 						return false;
@@ -771,13 +782,13 @@ struct yexp
 				}
 				else
 				{
-					if(!p_call(sh,src,&first,
+					if(!proc_call(sh,src,&first,
 						outopnd,tfi,level,i,ptci,env))
 					{
 						return false;
 					}
 				}
-				sopnd.push_move(outopnd);
+				sopnd.push(r_move(outopnd));
 			}
 			elif(src.vword[i].val==rsoptr(c_arrow_r))
 			{
@@ -788,15 +799,15 @@ struct yexp
 				}
 				tsent first=sopnd.pop();
 				first.vword.push_front(tword(rsoptr(c_mul)));
-				if(!p_exp(sh,first,tfi,level,env))
+				if(!proc_exp(sh,first,tfi,level,env))
 				{
 					return false;
 				}
-				sopnd.push_move(first);
+				sopnd.push(r_move(first));
 				src.vword[i].val=rsoptr(c_dot);
 				i--;
 			}
-			elif(sh.m_optr.is_optr(src.vword[i].val))
+			elif(sh.optr.is_optr(src.vword[i].val))
 			{
 				if(soptr.empty())
 				{
@@ -804,7 +815,7 @@ struct yexp
 					return false;
 				}
 				rstr cur=src.vword[i].val;
-				if(!sh.m_optr.precede(soptr.top(),cur))
+				if(!sh.optr.is_precede(soptr.top(),cur))
 				{
 					soptr.push(cur);
 					continue;
@@ -817,19 +828,19 @@ struct yexp
 				}
 				rbuf<tsent> vsent;
 				vsent.push(sopnd.pop());
-				tclass* ptci=yfind::class_search_t(sh,vsent[0].type);
+				tclass* ptci=yfind::find_class_t(sh,vsent[0].type);
 				tfunc* ptfi;
 				tsent outopnd;
 				outopnd.pos=src.pos;
 				if(ptci!=null)
 				{
-					ptfi=ymatch::find_replace(sh,
+					ptfi=ymatch::find_and_replace(sh,
 						*ptci,theta,vsent);
 					if(ptfi!=null)
 					{
 						set_func(sh,outopnd,
 							vsent,ptfi);
-						sopnd.push_move(outopnd);
+						sopnd.push(r_move(outopnd));
 						i--;
 						continue;
 					}
@@ -840,30 +851,30 @@ struct yexp
 					return false;
 				}
 				vsent.push_front(sopnd.pop());
-				ptci=yfind::class_search_t(sh,vsent[0].type);
+				ptci=yfind::find_class_t(sh,vsent[0].type);
 				if(ptci!=null)
 				{
-					ptfi=ymatch::find_replace(sh,
+					ptfi=ymatch::find_and_replace(sh,
 						*ptci,theta,vsent);
 					if(ptfi!=null)
 					{
 						set_func(sh,outopnd,
 							vsent,ptfi);
-						sopnd.push_move(outopnd);
+						sopnd.push(r_move(outopnd));
 						i--;
 						continue;
 					}
 				}
-				ptci=yfind::class_search_t(sh,vsent[1].type);
+				ptci=yfind::find_class_t(sh,vsent[1].type);
 				if(ptci!=null)
 				{
-					ptfi=ymatch::find_replace(sh,
+					ptfi=ymatch::find_and_replace(sh,
 						*ptci,theta,vsent);
 					if(ptfi!=null)
 					{
 						set_func(sh,outopnd,
 							vsent,ptfi);
-						sopnd.push_move(outopnd);
+						sopnd.push(r_move(outopnd));
 						i--;
 						continue;
 					}
@@ -878,7 +889,7 @@ struct yexp
 				if(src.vword.get(i+1).val==rsoptr(c_sbk_l))
 				{
 					//临时变量
-					if(!p_temp_var(sh,src,outopnd,tfi,level,i,env))
+					if(!proc_temp_var(sh,src,outopnd,tfi,level,i,env))
 					{
 						return false;
 					}
@@ -886,29 +897,29 @@ struct yexp
 				else
 				{
 					//类名直接调用
-					if(!p_class_call(sh,src,outopnd,tfi,level,i,env))
+					if(!proc_class_call(sh,src,outopnd,tfi,level,i,env))
 					{
 						return false;
 					}
 				}
-				sopnd.push_move(outopnd);
+				sopnd.push(r_move(outopnd));
 			}
 			else
 			{
 				rstr name=src.vword[i].val;
 				tsent outopnd;
 				outopnd.pos=src.pos;
-				tdata* ptdi=yfind::local_search(tfi,name);
+				tdata* ptdi=yfind::find_local(tfi,name);
 				if(ptdi!=null)
 				{
 					outopnd.vword+=src.vword[i];
 					outopnd.type=ptdi->type;
-					sopnd.push_move(outopnd);
+					sopnd.push(r_move(outopnd));
 					continue;
 				}
 				if(!tci.is_friend)
 				{
-					ptdi=yfind::data_member_search(tci,name);
+					ptdi=yfind::find_data_member(tci,name);
 					if(ptdi!=null)
 					{
 						//类成员变量增加this
@@ -921,11 +932,11 @@ struct yexp
 						outopnd.vword+=src.vword[i];
 						outopnd.vword+=tword(rsoptr(c_mbk_r));
 						outopnd.type=ptdi->type;
-						sopnd.push_move(outopnd);
+						sopnd.push(r_move(outopnd));
 						continue;
 					}
 				}
-				ptdi=yfind::data_member_search(*sh.m_main,name);
+				ptdi=yfind::find_data_member(*sh.pmain,name);
 				if(ptdi!=null)
 				{
 					//全局变量
@@ -937,12 +948,12 @@ struct yexp
 					outopnd.vword+=src.vword[i];
 					outopnd.vword+=tword(rsoptr(c_mbk_r));
 					outopnd.type=ptdi->type;
-					sopnd.push_move(outopnd);
+					sopnd.push(r_move(outopnd));
 					continue;
 				}
 				if(env.ptfi!=null)
 				{
-					ptdi=yfind::local_search(*env.ptfi,name);
+					ptdi=yfind::find_local(*env.ptfi,name);
 					if(ptdi!=null)
 					{
 						//环境变量
@@ -954,15 +965,16 @@ struct yexp
 						outopnd.vword+=src.vword[i];
 						outopnd.vword+=tword(rsoptr(c_mbk_r));
 						outopnd.type=ptdi->type;
-						sopnd.push_move(outopnd);
+						sopnd.push(r_move(outopnd));
 						continue;
 					}
 				}
-				if(!p_func_call(sh,src,outopnd,tfi,level,i,env))
+				if(!proc_func_call(sh,src,outopnd,tfi,level,i,env))
 				{
+					rserror();
 					return false;
 				}
-				sopnd.push_move(outopnd);
+				sopnd.push(r_move(outopnd));
 			}
 		}
 		if(sopnd.count()!=1)

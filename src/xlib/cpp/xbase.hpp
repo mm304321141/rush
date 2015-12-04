@@ -38,6 +38,11 @@
 #include <windows.h>
 #endif
 
+//todo __GNUC__>=4 && __GNUC_MINOR__>=8
+#if _MSC_VER>=1700 || defined(__MINGW32__)
+#define SUPPORT_MOVE
+#endif
+
 #include <utility>
 #include <new>
 
@@ -108,10 +113,16 @@ struct R_CRITICAL_SECTION
 #define null nullptr
 #define elif else if
 #define ifn(a) if(!(a))
+#define for_set(a,b) for((a)=(b).begin();(a)!=(b).end();(a)=(b).next(a))
+
+#ifdef SUPPORT_MOVE
+#define r_move(a) (std::move(a))
+#else
+#define r_move(a) (a)
+#endif
 
 #define r_char(a) a
 #define r_size(a) ((int)sizeof(a))
-#define r_move(a) (std::move(a))
 #define r_max(a,b) ((a)>(b)?(a):(b))
 #define r_min(a,b) ((a)>(b)?(b):(a))
 #define r_cond(cond,a,b) ((cond)?(a):(b))

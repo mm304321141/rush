@@ -23,6 +23,34 @@
 		mov [edi],[esi]
 	}
 	
+	TYPE to<TYPE>()
+	{
+		xf.error
+	}
+	
+	template<>
+	float to<float>()
+	{
+		return tofloat()
+	}
+	
+	template<>
+	double to<double>()
+	{
+		return todouble()
+	}
+	
+	template<>
+	int to<int>()
+	{
+		return toint()
+	}
+	
+	float tofloat()
+	{
+		return this
+	}
+	
 	double todouble()
 	{
 		return double(this)

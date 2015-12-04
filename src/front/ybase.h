@@ -8,7 +8,8 @@ struct ybase
 {
 	static void print_vclass(const tsh& sh)
 	{
-		for(tclass* p=sh.m_class.begin();p!=sh.m_class.end();p=sh.m_class.next(p))
+		tclass* p;
+		for_set(p,sh.s_class)
 		{
 			p->name.printl();
 		}
@@ -45,7 +46,7 @@ struct ybase
 				rf::print("\t");
 			}
 			//rf::print(rstr(tfi.vsent[i].pos.line)+" ");
-			rstr::join<rstr>(vword_to_vstr(tfi.vsent[i].vword)," ").printl();
+			rstr::join<rstr>(trans_vword_to_vstr(tfi.vsent[i].vword)," ").printl();
 		}
 		rf::printl();
 	}
@@ -62,7 +63,8 @@ struct ybase
 
 	static void print_func_dec(const tclass& tci)
 	{
-		for(tfunc* p=tci.vfunc.begin();p!=tci.vfunc.end();p=tci.vfunc.next(p))
+		tfunc* p;
+		for_set(p,tci.vfunc)
 		{
 			get_func_declare(tci,*p).printl();
 		}
@@ -85,7 +87,7 @@ struct ybase
 	{
 		error(rstr("file: ")+get_file_name(sent.pos.file)+
 			rstr("\nline: ")+rstr(sent.pos.line)+rstr("\n")+e);
-		rstr::join<rstr>(vword_to_vstr(sent.vword)," ").printl();
+		rstr::join<rstr>(trans_vword_to_vstr(sent.vword)," ").printl();
 		error(get_src_str(sent.vword.get_bottom()));
 	}
 
@@ -108,7 +110,7 @@ struct ybase
 		rf::printl(e);
 	}
 
-	static rstr vword_to_s(rbuf<tword>& v)
+	static rstr trans_vword_to_s(rbuf<tword>& v)
 	{
 		rstr s;
 		for(int i=0;i<v.count();i++)
@@ -160,7 +162,14 @@ struct ybase
 	static rbuf<rstr> get_func_declare_call(const tsh& sh,const tclass& tci,const tfunc& tfi)
 	{
 		rbuf<rstr> ret;
-		ret+=rskey(c_call);
+		if(tfi.is_extern)
+		{
+			ret+=rskey(c_calle);
+		}
+		else
+		{
+			ret+=rskey(c_call);
+		}
 		ret+=rsoptr(c_mbk_l);
 		ret+=rsoptr(c_addr);
 		ret+=rsoptr(c_comma);
@@ -189,9 +198,9 @@ struct ybase
 
 	static rstr get_main_name(const tsh& sh)
 	{
-		rstr name=sh.m_main_file;
+		rstr name=sh.main_file;
 		name=rdir::get_name(name);
-		name=rdir::get_prev_dir(sh.m_main_file)+name.sub(
+		name=rdir::get_prev_dir(sh.main_file)+name.sub(
 			0,name.count()-rdir::get_suffix(name).count()-1);
 		return r_move(name);
 	}
@@ -248,7 +257,7 @@ struct ybase
 
 	static rbool is_optr_func(const tsh& sh,const tfunc& tfi)
 	{
-		if(sh.m_optr.is_optr(tfi.name))
+		if(sh.optr.is_optr(tfi.name))
 		{
 			return true;
 		}
@@ -286,33 +295,33 @@ struct ybase
 		const rbuf<tword>& v,const tsent& src)
 	{
 		vsent.clear();
-		rbuf<rbuf<tword> > vparam=comma_split<tword>(sh,v);
+		rbuf<rbuf<tword> > vparam=split_comma<tword>(sh,v);
 		for(int i=0;i<vparam.count();i++)
 		{
 			tsent sent;
 			sent.pos=src.pos;
 			sent.vword=r_move(vparam[i]);
-			vsent.push_move(sent);
+			vsent.push(r_move(sent));
 		}
 	}
 
 	static void split_param(const tsh& sh,rbuf<tsent>& vsent,const rbuf<tword>& v)
 	{
 		vsent.clear();
-		rbuf<rbuf<tword> > vparam=comma_split<tword>(sh,v);
+		rbuf<rbuf<tword> > vparam=split_comma<tword>(sh,v);
 		for(int i=0;i<vparam.count();i++)
 		{
 			tsent sent;
 			sent.vword=r_move(vparam[i]);
-			vsent.push_move(sent);
+			vsent.push(r_move(sent));
 		}
 	}
 
 	template<typename T>
-	static rbuf<rbuf<T> > comma_split(const tsh& sh,rbuf<T> v)
+	static rbuf<rbuf<T> > split_comma(const tsh& sh,rbuf<T> v)
 	{
 		rbuf<rbuf<T> > result;
-		v.push_move(T(rsoptr(c_comma)));
+		v.push(r_move(T(rsoptr(c_comma))));
 		int count1=0;
 		int count2=0;
 		int start=0;
@@ -341,11 +350,11 @@ struct ybase
 				rbuf<T> item;
 				for(int j=start;j<i;j++)
 				{
-					item.push_move(v[j]);
+					item.push(r_move(v[j]));
 				}
 				ifn(item.empty())
 				{
-					result.push_move(item);
+					result.push(r_move(item));
 				}
 				start=i+1;
 			}
@@ -354,7 +363,7 @@ struct ybase
 	}
 
 	//允许空元素
-	static rbuf<rbuf<tword> > comma_split_e(const tsh& sh,rbuf<tword> v)
+	static rbuf<rbuf<tword> > split_comma_e(const tsh& sh,rbuf<tword> v)
 	{
 		rbuf<rbuf<tword> > result;
 		v.push(tword(rsoptr(c_comma)));
@@ -385,9 +394,9 @@ struct ybase
 				rbuf<tword> item;
 				for(int j=start;j<i;j++)
 				{
-					item.push_move(v[j]);
+					item.push(r_move(v[j]));
 				}
-				result.push_move(item);
+				result.push(r_move(item));
 				start=i+1;
 			}
 		}
@@ -395,7 +404,7 @@ struct ybase
 	}
 
 	//带尖括号的split
-	static rbuf<tsent> comma_split_t(const tsh& sh,rbuf<tword> v)
+	static rbuf<tsent> split_comma_t(const tsh& sh,rbuf<tword> v)
 	{
 		rbuf<tsent> result;
 		v.push(tword(rsoptr(c_comma)));
@@ -435,11 +444,11 @@ struct ybase
 				tsent item;
 				for(int j=start;j<i;j++)
 				{
-					item.vword.push_move(v[j]);
+					item.vword.push(r_move(v[j]));
 				}
 				ifn(item.vword.empty())
 				{
-					result.push_move(item);
+					result.push(r_move(item));
 				}
 				start=i+1;
 			}
@@ -544,7 +553,7 @@ struct ybase
 		return v.count();
 	}
 
-	static rbuf<rstr> vword_to_vstr(const rbuf<tword>& v)
+	static rbuf<rstr> trans_vword_to_vstr(const rbuf<tword>& v)
 	{
 		rbuf<rstr> ret(v.count());
 		for(int i=0;i<v.count();i++)
@@ -608,7 +617,7 @@ struct ybase
 			return false;
 		}
 		rbuf<tword> wlist(src.count()*2);
-		wlist.m_count=0;
+		wlist.cur_count=0;
 		for(int i=0;i<src.count();i++)
 		{
 			if(src[i].empty())
@@ -624,13 +633,13 @@ struct ybase
 					word.pos=src[i].pos;
 					ifn(word.val.empty())
 					{
-						wlist.push_move(word);
+						wlist.push(r_move(word));
 					}
 				}
 			}
 			else
 			{
-				wlist.push_move(src[i]);
+				wlist.push(r_move(src[i]));
 			}
 		}
 		src=r_move(wlist);
@@ -649,7 +658,7 @@ struct ybase
 			return false;
 		}
 		rbuf<tsent> result(vsent.count()*2);
-		result.m_count=0;
+		result.cur_count=0;
 		for(int i=0;i<vsent.count();++i)
 		{
 			rbuf<rbuf<tword> > v=r_split_a<tword>(
@@ -665,7 +674,7 @@ struct ybase
 				sent.vword=r_move(v[j]);
 				ifn(sent.vword.empty())
 				{
-					result.push_move(sent);
+					result.push(r_move(sent));
 				}
 			}
 		}

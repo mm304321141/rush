@@ -5,11 +5,11 @@
 template<typename T>
 struct rbuf
 {
-	T* m_p;
-	int m_count;
-	int m_max;
-	uchar m_block[16];
-	//当分配小内存时，m_p指向m_block，无需new可提高效率
+	T* point;
+	int cur_count;
+	int max_count;
+	uchar block[16];
+	//当分配小内存时，point指向block，无需new可提高效率
 
 	~rbuf<T>()
 	{
@@ -33,7 +33,7 @@ struct rbuf
 		alloc(num);
 		for(int i=0;i<num;i++)
 		{
-			m_p[i]=a;
+			point[i]=a;
 		}
 	}
 
@@ -43,64 +43,68 @@ struct rbuf
 		copy(a);
 	}
 
+#ifdef SUPPORT_MOVE
 	rbuf<T>(rbuf<T>&& a)
 	{
 		move(a);
 	}
+#endif
 
 	void move(rbuf<T>& a)
 	{
 #ifndef _RS
-		if(a.m_p==(T*)(a.m_block))
+		if(a.point==(T*)(a.block))
 		{
-			xf::memcpy(this,&a,r_size(a));
-			m_p=(T*)m_block;
+			xf::memcpy(this,&a,r_size(rbuf<T>));
+			point=(T*)block;
 		}
 		else
 		{
-			m_p=a.m_p;
-			m_count=a.m_count;
-			m_max=a.m_max;
+			point=a.point;
+			cur_count=a.cur_count;
+			max_count=a.max_count;
 		}
 #else
-		if(a.m_p==&a.m_block)
+		if(a.point==&a.block)
 		{
-			xf::memcpy(this,&a,r_size(a));
-			m_p=&m_block;
+			xf::memcpy(this,&a,r_size(rbuf<T>));
+			point=&block;
 		}
 		else
 		{
-			m_p=a.m_p;
-			m_count=a.m_count;
-			m_max=a.m_max;
+			point=a.point;
+			cur_count=a.cur_count;
+			max_count=a.max_count;
 		}
 #endif
-		a.init();//如果move后对象不再使用可以只置空a.m_p
+		a.init();//如果move后对象不再使用可以只置空a.point
 	}
 
 	//如果复制指针一定要处理好等于号，不支持自己复制自己
 	void operator=(const rbuf<T>& a)
 	{
-		if(a.m_p!=m_p)
+		if(a.point!=point)
 		{
 			copy(a);
 		}
 	}
 
+#ifdef SUPPORT_MOVE
 	void operator=(rbuf<T>&& a)
 	{
 		free_x();
 		move(a);
 	}
+#endif
 
 	friend rbuf<T> operator+(const rbuf<T>& a,const rbuf<T>& b)
 	{
 		int total=a.count()+b.count();
-		int max=r_max(a.m_max,b.m_max);
+		int max=r_max(a.max_count,b.max_count);
 		rbuf<T> ret;
 		if(total>max)
 		{
-			ret.alloc_not_change(extend_num(total));
+			ret.alloc_not_change(get_extend_num(total));
 		}
 		else
 		{
@@ -115,51 +119,53 @@ struct rbuf
 		{
 			ret[i+a.count()]=b[i];
 		}
-		ret.m_count=total;
+		ret.cur_count=total;
 		return r_move(ret);
 	}
 
 	void operator+=(const rbuf<T>& a)
 	{
 		int total=a.count()+count();
-		if(total>m_max)
+		if(total>max_count)
 		{
-			realloc_not_change(extend_num(total));
+			realloc_not_change(get_extend_num(total));
 		}
 		for(int i=count();i<total;i++)
 		{
-			m_p[i]=a[i-count()];
+			point[i]=a[i-count()];
 		}
-		m_count=total;
+		cur_count=total;
 	}
 
+#ifdef SUPPORT_MOVE
 	void operator+=(rbuf<T>&& a)
 	{
 		int total=a.count()+count();
-		if(total>m_max)
+		if(total>max_count)
 		{
-			realloc_not_change(extend_num(total));
+			realloc_not_change(get_extend_num(total));
 		}
 		for(int i=count();i<total;i++)
 		{
-			m_p[i]=r_move(a[i-count()]);
+			point[i]=r_move(a[i-count()]);
 		}
-		m_count=total;
-	}
-
-	void operator+=(const T& a)
-	{
-		this->push(a);
+		cur_count=total;
 	}
 
 	void operator+=(T&& a)
 	{
 		this->push(a);
 	}
+#endif
+
+	void operator+=(const T& a)
+	{
+		this->push(a);
+	}
 
 	T& operator[](int num) const
 	{
-		return m_p[num];
+		return point[num];
 	}
 
 	friend rbool operator==(const rbuf<T>& a,const rbuf<T>& b)
@@ -185,9 +191,9 @@ struct rbuf
 
 	void init()
 	{
-		m_p=null;
-		m_count=0;
-		m_max=0;
+		point=null;
+		cur_count=0;
+		max_count=0;
 	}
 
 	static T* next(void* p)
@@ -202,98 +208,95 @@ struct rbuf
 
 	int size() const 
 	{
-		return m_count*r_size(T);
+		return cur_count*r_size(T);
 	}
 
 	int count() const
 	{
-		return m_count;
+		return cur_count;
 	}
 
 	T* begin() const 
 	{
-		return m_p;
+		return point;
 	}
 
 	T* end() const 
 	{
-		return m_p+count();
+		return point+count();
 	}
 
 	T* rbegin() const 
 	{
-		if(0==m_count)
+		if(0==cur_count)
 		{
 			return null;
 		}
 		else
 		{
-			return m_p+count()-1;
+			return point+count()-1;
 		}
 	}
 
 	T* rend() const 
 	{
-		if(0==m_count)
+		if(0==cur_count)
 		{
 			return null;
 		}
 		else
 		{
-			return m_p-1;
+			return point-1;
 		}
 	}
 
 	rbool empty() const 
 	{
-		return 0==m_count;
+		return 0==cur_count;
 	}
 
 	void clear()
 	{
-		m_count=0;
+		cur_count=0;
 	}
 
-	static int extend_num(int num)
+	static int get_extend_num(int num)
 	{
 		return r_cond(num<16,16,num*2);
 	}
 	
-	//应判断m_count是否太大,否则在64位上m_count++有可能归零
+	//应判断num是否太大,否则在64位上num++有可能归零
 	void push(const T& a)
 	{
-		if(m_count>=m_max)
+		if(cur_count>=max_count)
 		{
-			realloc_not_change(extend_num(m_count));
+			realloc_not_change(get_extend_num(cur_count));
 		}
-		m_p[count()]=a;
-		m_count++;
+		point[count()]=a;
+		cur_count++;
 	}
 
+#ifdef SUPPORT_MOVE
 	void push(T&& a)
 	{
-		if(m_count>=m_max)
+		if(cur_count>=max_count)
 		{
-			realloc_not_change(extend_num(m_count));
+			realloc_not_change(get_extend_num(cur_count));
 		}
-		m_p[count()]=a;
-		m_count++;
+		point[count()]=a;
+		cur_count++;
 	}
-
-	void push_move(const T& a)
-	{
-		this->push(r_move(a));
-	}
+#endif
 
 	T pop()
 	{
-		m_count--;
-		return m_p[count()];
+		cur_count--;
+		return point[count()];
 	}
 
 	T pop_front()
 	{
-		T ret=r_move(m_p[0]);
+		T ret=r_move(point[0]);
 		erase(0);
 		return r_move(ret);
 	}
@@ -306,19 +309,19 @@ struct rbuf
 
 	T& top() const 
 	{
-		return m_p[count()-1];
+		return point[count()-1];
 	}
 
 	T& bottom() const 
 	{
-		return m_p[0];
+		return point[0];
 	}
 
 	T get_top() const 
 	{
 		if(count()>0)
 		{
-			return m_p[count()-1];
+			return point[count()-1];
 		}
 		return T();
 	}
@@ -332,7 +335,7 @@ struct rbuf
 	{
 		if(count()>0)
 		{
-			return m_p[0];
+			return point[0];
 		}
 		return T();
 	}
@@ -350,9 +353,9 @@ struct rbuf
 		}
 		for(int i=num;i<count()-1;++i)
 		{
-			*(m_p+i)=r_move(*(m_p+i+1));
+			*(point+i)=r_move(*(point+i+1));
 		}
-		m_count--;
+		cur_count--;
 		return true;
 	}
 
@@ -364,9 +367,9 @@ struct rbuf
 		}
 		for(int i=0;i<count()-end;i++)//count()-(end-begin)-begin
 		{
-			m_p[i+begin]=r_move(m_p[end+i]);//删除的元素稍后析构
+			point[i+begin]=r_move(point[end+i]);//删除的元素稍后析构
 		}
-		m_count-=end-begin;
+		cur_count-=end-begin;
 		return true;
 	}
 
@@ -376,16 +379,16 @@ struct rbuf
 		{
 			return false;
 		}
-		if(m_count>=m_max)
+		if(cur_count>=max_count)
 		{
-			realloc_not_change(extend_num(m_count));
+			realloc_not_change(get_extend_num(cur_count));
 		}
 		for(int i=count();i>pos;--i)
 		{
-			m_p[i]=r_move(m_p[i-1]);
+			point[i]=r_move(point[i-1]);
 		}
-		m_p[pos]=a;
-		m_count++;
+		point[pos]=a;
+		cur_count++;
 		return true;
 	}
 
@@ -395,19 +398,19 @@ struct rbuf
 		{
 			return false;
 		}
-		if(m_max<m_count+a.count())
+		if(max_count<cur_count+a.count())
 		{
 			realloc_not_change(a.count()+count());
 		}
 		for(int i=0;i<count()-pos;i++)
 		{
-			m_p[a.count()+count()-1-i]=r_move(m_p[count()-1-i]);
+			point[a.count()+count()-1-i]=r_move(point[count()-1-i]);
 		}
 		for(int i=0;i<a.count();i++)
 		{
-			m_p[pos+i]=a[i];
+			point[pos+i]=a[i];
 		}
-		m_count+=a.count();
+		cur_count+=a.count();
 		return true;
 	}
 
@@ -419,9 +422,9 @@ struct rbuf
 		if(num*r_size(T)<=16)
 		{
 #ifndef _RS
-			return (T*)m_block;
+			return (T*)block;
 #else
-			return &m_block;
+			return &block;
 #endif
 		}
 		return r_new<T>(num);
@@ -430,18 +433,18 @@ struct rbuf
 	void v_delete()
 	{
 #ifdef _RGPP
-		r_delete<T>(m_p);
+		r_delete<T>(point);
 		return;
 #endif
 #ifndef _RS
-		if(m_p!=(T*)m_block)
+		if(point!=(T*)block)
 		{
-			r_delete<T>(m_p);
+			r_delete<T>(point);
 		}
 #else
-		if(m_p!=&m_block)
+		if(point!=&block)
 		{
-			r_delete<T>(m_p);
+			r_delete<T>(point);
 		}
 #endif
 	}
@@ -449,7 +452,7 @@ struct rbuf
 	//这里的重复代码可用宏或者模板简化
 	void alloc(int num)
 	{
-		if(m_p!=null)
+		if(point!=null)
 		{
 			return;
 		}
@@ -458,14 +461,14 @@ struct rbuf
 			init();
 			return;
 		}
-		m_p=v_new(num);
-		m_max=num;
-		m_count=m_max;
+		point=v_new(num);
+		max_count=num;
+		cur_count=max_count;
 	}
 
 	void alloc_not_change(int num)
 	{
-		if(m_p!=null)
+		if(point!=null)
 		{
 			return;
 		}
@@ -474,13 +477,13 @@ struct rbuf
 			init();
 			return;
 		}
-		m_p=v_new(num);
-		m_max=num;
+		point=v_new(num);
+		max_count=num;
 	}
 
 	void realloc(int num)
 	{
-		if(null==m_p)
+		if(null==point)
 		{
 			alloc(num);
 			return;
@@ -491,12 +494,12 @@ struct rbuf
 			return;
 		}
 		realloc_not_change_in(num);
-		m_count=m_max;
+		cur_count=max_count;
 	}
 
 	void realloc_not_change(int num)
 	{
-		if(null==m_p)
+		if(null==point)
 		{
 			alloc_not_change(num);
 			return;
@@ -512,20 +515,20 @@ struct rbuf
 	void realloc_not_change_in(int num)
 	{
 		T* p=v_new(num);
-		int copy_size=r_min(num,m_count);
+		int copy_size=r_min(num,cur_count);
 		for(int i=0;i<copy_size;i++)
 		{
-			p[i]=r_move(m_p[i]);
+			p[i]=r_move(point[i]);
 		}
 		v_delete();
-		m_p=p;
-		m_max=num;
+		point=p;
+		max_count=num;
 	}
 	
 	//不复制原有的元素
 	void realloc_n(int num)
 	{
-		if(null==m_p)
+		if(null==point)
 		{
 			alloc(num);
 			return;
@@ -536,14 +539,14 @@ struct rbuf
 			return;
 		}
 		v_delete();
-		m_p=v_new(num);
-		m_max=num;
-		m_count=m_max;
+		point=v_new(num);
+		max_count=num;
+		cur_count=max_count;
 	}
 
 	void realloc_n_not_change(int num)
 	{
-		if(null==m_p)
+		if(null==point)
 		{
 			alloc_not_change(num);
 			return;
@@ -554,13 +557,13 @@ struct rbuf
 			return;
 		}
 		v_delete();
-		m_p=v_new(num);
-		m_max=num;
+		point=v_new(num);
+		max_count=num;
 	}
 	
 	void free_x()
 	{
-		if(null!=m_p)//m_p为空时rbuf必须保证m_count和m_max也为空
+		if(null!=point)//point为空时rbuf必须保证cur_count和max_count也为空
 		{
 			v_delete();
 		}
@@ -574,15 +577,15 @@ struct rbuf
 
 	void copy(const rbuf<T>& a)
 	{
-		if(m_max<a.count())
+		if(max_count<a.count())
 		{
-			realloc_n_not_change(a.m_max);
+			realloc_n_not_change(a.max_count);
 		}
 		for(int i=0;i<a.count();i++)
 		{
-			m_p[i]=a[i];
+			point[i]=a[i];
 		}
-		m_count=a.count();
+		cur_count=a.count();
 	}
 
 	T get(int i) const
@@ -593,7 +596,7 @@ struct rbuf
 		}
 		else 
 		{
-			return m_p[i];
+			return point[i];
 		}
 	}
 
@@ -611,7 +614,7 @@ struct rbuf
 		rbuf<T> ret(temp);//alloc会判断temp<0的情况，所以不需要判断begin>=end
 		for(int i=0;i<temp;i++)
 		{
-			ret[i]=m_p[begin+i];
+			ret[i]=point[begin+i];
 		}
 		return r_move(ret);
 	}
@@ -621,11 +624,16 @@ struct rbuf
 		return sub(begin,count());
 	}
 
+	rbuf<T> sub_trim(int num) const
+	{
+		return sub(0,count()-num);
+	}
+
 	rbool exist(const T& a) const
 	{
 		for(int i=0;i<count();i++)
 		{
-			if(a==m_p[i])
+			if(a==point[i])
 			{
 				return true;
 			}
@@ -637,7 +645,7 @@ struct rbuf
 	{
 		for(int i=begin;i<count();i++)
 		{
-			if(a==m_p[i])
+			if(a==point[i])
 			{
 				return i;
 			}
@@ -649,7 +657,7 @@ struct rbuf
 	{
 		for(int i=count()-1;i>=0;i--)
 		{
-			if(a==m_p[i])
+			if(a==point[i])
 			{
 				return i;
 			}
@@ -661,7 +669,7 @@ struct rbuf
 	{
 		for(int i=0;i<count();i++)
 		{
-			m_p[i].print();
+			point[i].print();
 		}
 	}
 
@@ -669,7 +677,7 @@ struct rbuf
 	{
 		for(int i=0;i<count();i++)
 		{
-			m_p[i].printl();
+			point[i].printl();
 		}
 	}
 #ifdef _RS
@@ -679,7 +687,7 @@ struct rbuf
 		for i=0;i<count;i++
 			if i!=0
 				ret+=s
-			ret+=m_p[i].torstr
+			ret+=point[i].torstr
 		return ret
 	}
 	
@@ -687,7 +695,7 @@ struct rbuf
 	{
 		rbuf<T> ret
 		for i=0;i<count;i++
-			ret.push(T[f,m_p[i]])
+			ret.push(T[f,point[i]])
 		return ret
 	}
 	

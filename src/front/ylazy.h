@@ -29,7 +29,7 @@ struct ylazy
 		int& tid,rbuf<tsent>& vsent,tsent& sent,tenv env)
 	{
 		rbuf<tword>& v=sent.vword;
-		if(sh.m_key.is_asm_ins(v.get_bottom().val))
+		if(sh.key.is_asm_ins(v.get_bottom().val))
 		{
 			vsent.push(sent);
 			return true;
@@ -45,7 +45,7 @@ struct ylazy
 			{
 				continue;
 			}
-			tclass* ptci=yfind::class_search(sh,v.get(i-2).val);
+			tclass* ptci=yfind::find_class(sh,v.get(i-2).val);
 			if(null==ptci)
 			{
 				continue;
@@ -77,7 +77,7 @@ struct ylazy
 			temp.vword+=tdi.name;
 			temp.vword+=rsoptr(c_equal);
 			temp.vword+=rskey(c_ebx);
-			ifn(yexp::p_exp(sh,temp,tfi,0,env))
+			ifn(yexp::proc_exp(sh,temp,tfi,0,env))
 			{
 				return false;
 			}
@@ -86,7 +86,7 @@ struct ylazy
 			ybase::clear_word_val(v,left,right+1);
 			v[left].val=tdi.name;
 			ybase::arrange(v);
-			ifn(yexp::p_exp(sh,sent,tfi,0,env))
+			ifn(yexp::proc_exp(sh,sent,tfi,0,env))
 			{
 				return false;
 			}
@@ -165,7 +165,7 @@ struct ylazy
 		{
 			return false;
 		}
-		rbuf<rbuf<tword> > param=ybase::comma_split<tword>(sh,v.sub(6,v.count()-2));
+		rbuf<rbuf<tword> > param=ybase::split_comma<tword>(sh,v.sub(6,v.count()-2));
 		if(param.count()!=2)
 		{
 			return false;
@@ -216,7 +216,7 @@ struct ylazy
 		{
 			return false;
 		}
-		rbuf<rbuf<tword> > param=ybase::comma_split<tword>(sh,v.sub(6,v.count()-2));
+		rbuf<rbuf<tword> > param=ybase::split_comma<tword>(sh,v.sub(6,v.count()-2));
 		if(param.count()!=2)
 		{
 			return false;

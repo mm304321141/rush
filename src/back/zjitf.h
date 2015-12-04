@@ -93,9 +93,14 @@ struct zjitf
 		return a>>b; 
 	}
 
-	static void _float_to_double(float a,double* b)
+	static void f_to_d(float a,double* b)
 	{
 		*b=a;
+	}
+
+	static void d_to_f(double* a,float* b)
+	{
+		*b=(float)(*a);
 	}
 
 	//当返回double时X86的ABI是通过xmm返回
@@ -120,19 +125,14 @@ struct zjitf
 #endif
 	}
 
-	static void* get_hins()
-	{
-		return get_psh()->m_hins;
-	}
-
 	static void set_main_ret(int a)
 	{
-		get_psh()->m_ret=a;
+		get_psh()->ret_val=a;
 	}
 
 	static tfunc* get_cur_func(uchar* pasm)
 	{
-		taddr* p=get_psh()->m_addr.find(taddr((uint)pasm,(uint)pasm+1,null));
+		taddr* p=get_psh()->addr.find(taddr((uint)pasm,(uint)pasm+1,null));
 		if(p==null)
 		{
 			return null;
@@ -142,19 +142,19 @@ struct zjitf
 
 	static rset<tclass>* get_vclass()
 	{
-		return &get_psh()->m_class;
+		return &get_psh()->s_class;
 	}
 
 	static void* find_dll_q(const char* name)
 	{
 		tsh& sh=*get_psh();
-		if(sh.m_dll_func.exist(name))
+		if(sh.dll_func.exist(name))
 		{
-			return sh.m_dll_func[name];
+			return sh.dll_func[name];
 		}
-		if(sh.m_func_list.exist(name))
+		if(sh.func_list.exist(name))
 		{
-			return sh.m_func_list[name];
+			return sh.func_list[name];
 		}
 		return find_dll_full(name);
 	}
@@ -167,23 +167,26 @@ struct zjitf
 	static void init_addr_list(tsh& sh)
 	{
 #ifndef _RS
-		rsjf("addl",zjitf::addl);
-		rsjf("subl",zjitf::subl);
-		rsjf("imull",zjitf::imull);
-		rsjf("idivl",zjitf::idivl);
-		rsjf("imodl",zjitf::imodl);
-		rsjf("cgsbl",zjitf::cgsbl);
-		rsjf("clsbl",zjitf::clsbl);
-		rsjf("faddl",zjitf::faddl);
-		rsjf("fsubl",zjitf::fsubl);
-		rsjf("fmull",zjitf::fmull);
-		rsjf("fdivl",zjitf::fdivl);
-		rsjf("fcgsbl",zjitf::fcgsbl);
-		rsjf("fclsbl",zjitf::fclsbl);
+		rsjf("addl",addl);
+		rsjf("subl",subl);
+		rsjf("imull",imull);
+		rsjf("idivl",idivl);
+		rsjf("imodl",imodl);
+		rsjf("cgsbl",cgsbl);
+		rsjf("clsbl",clsbl);
+		rsjf("faddl",faddl);
+		rsjf("fsubl",fsubl);
+		rsjf("fmull",fmull);
+		rsjf("fdivl",fdivl);
+		rsjf("fcgsbl",fcgsbl);
+		rsjf("fclsbl",fclsbl);
 
-		rsjf("bshl",zjitf::bshl);
-		rsjf("bshr",zjitf::bshr);
-		rsjf("bsar",zjitf::bsar);
+		rsjf("bshl",bshl);
+		rsjf("bshr",bshr);
+		rsjf("bsar",bsar);
+
+		rsjf("d_to_f",d_to_f);
+		rsjf("f_to_d",f_to_d);
 
 		rsjf("printf",xf::printf);
 		rsjf("_vsnprintf",xf::vsnprintf);

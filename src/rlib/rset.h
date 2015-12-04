@@ -15,9 +15,9 @@ struct rset_i
 template<typename T>
 struct rset
 {
-	rset_i<T>* m_root;
-	rset_i<T>* m_nil;//todo:m_nil可用null代替?
-	int m_count;
+	rset_i<T>* proot;
+	rset_i<T>* pnil;//todo:pnil可用null代替?
+	int num;
 
 	enum
 	{
@@ -27,28 +27,28 @@ struct rset
 
 	~rset<T>()
 	{
-		clear_x(m_root);
-		r_delete<rset_i<T> >(m_nil);
+		clear_x(proot);
+		r_delete<rset_i<T> >(pnil);
 	}
 
 	rset<T>()
 	{
-		m_nil=r_new<rset_i<T> >(1);
+		pnil=r_new<rset_i<T> >(1);
 		init();
 	}
 
 	rset<T>(const rset<T>& a)
 	{
-		m_nil=r_new<rset_i<T> >(1);
+		pnil=r_new<rset_i<T> >(1);
 		init();
 		//用递归拷贝更快
-		copy_x(a.m_nil,a.m_root);
+		copy_x(a.pnil,a.proot);
 	}
 
 	void operator=(const rset<T>& a)
 	{
 		clear();
-		copy_x(a.m_nil,a.m_root);
+		copy_x(a.pnil,a.proot);
 	}
 
 	void copy_x(const rset_i<T>* xnil,const rset_i<T>* x)
@@ -63,7 +63,8 @@ struct rset
 	
 	void copy_all(const rset<T>& a)
 	{
-		for(T* p=a.begin();p!=a.end();p=a.next(p))
+		T* p;
+		for_set(p,a)
 		{
 			insert(*p);
 		}
@@ -71,24 +72,24 @@ struct rset
 
 	void init()
 	{
-		m_nil->father=m_nil;
-		m_nil->left=m_nil;
-		m_nil->right=m_nil;
-		m_nil->col=c_black;
+		pnil->father=pnil;
+		pnil->left=pnil;
+		pnil->right=pnil;
+		pnil->col=c_black;
 
-		m_root=m_nil;
-		m_count=0;
+		proot=pnil;
+		num=0;
 	}
 
 	void clear()
 	{
-		clear_x(m_root);
+		clear_x(proot);
 		init();
 	}
 
 	void clear_x(rset_i<T>* x)
 	{
-		if(x!=m_nil)
+		if(x!=pnil)
 		{
 			clear_x(x->left);
 			clear_x(x->right);
@@ -98,31 +99,31 @@ struct rset
 
 	rbool empty() const
 	{
-		return m_count==0;
+		return num==0;
 	}
 
 	int count() const
 	{
-		return m_count;
+		return num;
 	}
 
-	void left_rotate(rset_i<T>* x)
+	void rotate_left(rset_i<T>* x)
 	{
 		rset_i<T>* y;
-		if(x->right==m_nil)
+		if(x->right==pnil)
 		{
 			return;
 		}
 		y=x->right;
 		x->right=y->left;
-		if(y->left!=m_nil)
+		if(y->left!=pnil)
 		{
 			y->left->father=x;
 		}
 		y->father=x->father;
-		if(x->father==m_nil)
+		if(x->father==pnil)
 		{
-			m_root=y;
+			proot=y;
 		}
 		elif(x->father->left==x)
 		{
@@ -136,23 +137,23 @@ struct rset
 		x->father=y;
 	}
 
-	void right_rotate(rset_i<T>* x)
+	void rotate_right(rset_i<T>* x)
 	{
 		rset_i<T>* y;
-		if(x->left==m_nil)
+		if(x->left==pnil)
 		{
 			return;
 		}
 		y=x->left;
 		x->left=y->right;
-		if(y->right!=m_nil)
+		if(y->right!=pnil)
 		{
 			y->right->father=x;
 		}
 		y->father=x->father;
-		if(x->father==m_nil)
+		if(x->father==pnil)
 		{
-			m_root=y;
+			proot=y;
 		}
 		elif(x->father->left==x)
 		{
@@ -167,7 +168,7 @@ struct rset
 	}
 
 	//重复代码需简化
-	void insert_fixup(rset_i<T>* z)
+	void fixup_insert(rset_i<T>* z)
 	{
 		rset_i<T>* y;
 		while(z->father->col==c_red) 
@@ -187,11 +188,11 @@ struct rset
 					if(z==z->father->right) 
 					{ 
 						z=z->father; 
-						left_rotate(z); 
+						rotate_left(z); 
 					} 
 					z->father->col=c_black; 
 					z->father->father->col=c_red; 
-					right_rotate(z->father->father); 
+					rotate_right(z->father->father); 
 				}
 			} 
 			else 
@@ -209,22 +210,22 @@ struct rset
 					if(z==z->father->left) 
 					{ 
 						z=z->father; 
-						right_rotate(z); 
+						rotate_right(z); 
 					} 
 					z->father->col=c_black; 
 					z->father->father->col=c_red; 
-					left_rotate(z->father->father);
+					rotate_left(z->father->father);
 				}
 			} 
 		} 
-		m_root->col=c_black; 
+		proot->col=c_black; 
 	}
 
 	void insert_p(rset_i<T>* z)
 	{
-		rset_i<T>* y=m_nil;
-		rset_i<T>* x=m_root;
-		while(x!=m_nil)
+		rset_i<T>* y=pnil;
+		rset_i<T>* x=proot;
+		while(x!=pnil)
 		{
 			y=x;
 			if(z->key<x->key)
@@ -237,9 +238,9 @@ struct rset
 			}
 		}
 		z->father=y;
-		if(y==m_nil)
+		if(y==pnil)
 		{
-			m_root=z;
+			proot=z;
 		}
 		elif(z->key<y->key)
 		{
@@ -249,10 +250,10 @@ struct rset
 		{
 			y->right=z;
 		}
-		z->left=m_nil;
-		z->right=m_nil;
+		z->left=pnil;
+		z->right=pnil;
 		z->col=c_red;
-		insert_fixup(z);
+		fixup_insert(z);
 	}
 
 	void insert(const T& a)
@@ -260,7 +261,7 @@ struct rset
 		rset_i<T>* p=r_new<rset_i<T> >();
 		p->key=a;
 		insert_p(p);
-		m_count++;
+		num++;
 	}
 
 	void insert_c(const T& a)
@@ -272,10 +273,10 @@ struct rset
 		insert(a);
 	}
 
-	void erase_fixup(rset_i<T>* x)
+	void fixup_erase(rset_i<T>* x)
 	{
 		rset_i<T>* w;
-		while(x!=m_root&&x->col==c_black)
+		while(x!=proot&&x->col==c_black)
 		{
 			if(x==x->father->left)
 			{
@@ -284,7 +285,7 @@ struct rset
 				{
 					w->col=c_black;
 					x->father->col=c_red;
-					left_rotate(x->father);
+					rotate_left(x->father);
 					w=x->father->right;
 				}
 				if(w->left->col==c_black&&w->right->col==c_black)
@@ -298,14 +299,14 @@ struct rset
 					{
 						w->left->col=c_black;
 						w->col=c_red;
-						right_rotate(w);
+						rotate_right(w);
 						w=x->father->right;
 					}
 					w->col=x->father->col;
 					x->father->col=c_black;
 					w->right->col=c_black;
-					left_rotate(x->father);
-					x=m_root;
+					rotate_left(x->father);
+					x=proot;
 				}
 			}
 			else
@@ -315,7 +316,7 @@ struct rset
 				{
 					w->col=c_black;
 					x->father->col=c_red;
-					right_rotate(x->father);
+					rotate_right(x->father);
 					w=x->father->left;
 				}
 				if(w->right->col==c_black&&w->left->col==c_black)
@@ -329,14 +330,14 @@ struct rset
 					{
 						w->right->col=c_black;
 						w->col=c_red;
-						left_rotate(w);
+						rotate_left(w);
 						w=x->father->left;
 					}
 					w->col=x->father->col;
 					x->father->col=c_black;
 					w->left->col=c_black;
-					right_rotate(x->father);
-					x=m_root;
+					rotate_right(x->father);
+					x=proot;
 				}
 			}
 		}
@@ -345,9 +346,9 @@ struct rset
 
 	void transplant(rset_i<T>* u,rset_i<T>* v)
 	{
-		if(u->father==m_nil)
+		if(u->father==pnil)
 		{
-			m_root=v;
+			proot=v;
 		}
 		elif(u==u->father->left)
 		{
@@ -365,12 +366,12 @@ struct rset
 		rset_i<T>* y=z;
 		rset_i<T>* x;
 		int y_original_col=y->col;
-		if(z->left==m_nil)
+		if(z->left==pnil)
 		{
 			x=z->right;
 			transplant(z,z->right);
 		}
-		elif(z->right==m_nil)
+		elif(z->right==pnil)
 		{
 			x=z->left;
 			transplant(z,z->left);
@@ -397,35 +398,35 @@ struct rset
 		}
 		if(y_original_col==c_black)
 		{
-			erase_fixup(x);
+			fixup_erase(x);
 		}
 	}
 
 	void erase(const T& a)
 	{
-		rset_i<T>* x=search(m_root,a);
-		if(x!=m_nil)
+		rset_i<T>* x=search(proot,a);
+		if(x!=pnil)
 		{
 			erase_p(x);
 			r_delete<rset_i<T> >(x);
-			m_count--;
+			num--;
 		}
 	}
 
 	bool exist(const T& a) const
 	{
-		return search(m_root,a)!=m_nil;
+		return search(proot,a)!=pnil;
 	}
 
 	rset_i<T>* successor(const rset_i<T>* x) const
 	{
 		rset_i<T>* y;
-		if(x->right!=m_nil)
+		if(x->right!=pnil)
 		{
 			return minimum(x->right);
 		}
 		y=x->father;
-		while(y!=m_nil&&x==y->right)
+		while(y!=pnil&&x==y->right)
 		{
 			x=y;
 			y=y->father;
@@ -436,12 +437,12 @@ struct rset
 	rset_i<T>* predecessor(const rset_i<T>* x) const
 	{
 		rset_i<T>* y;
-		if(x->left!=m_nil)
+		if(x->left!=pnil)
 		{
 			return maximum(x->left);
 		}
 		y=x->father;
-		while(y!=m_nil&&x==y->left)
+		while(y!=pnil&&x==y->left)
 		{
 			x=y;
 			y=y->father;
@@ -451,7 +452,7 @@ struct rset
 
 	rset_i<T>* minimum(const rset_i<T>* x) const
 	{
-		while(x->left!=m_nil)
+		while(x->left!=pnil)
 		{
 			x=x->left;
 		}
@@ -460,7 +461,7 @@ struct rset
 
 	rset_i<T>* maximum(const rset_i<T>* x) const
 	{
-		while(x->right!=m_nil)
+		while(x->right!=pnil)
 		{
 			x=x->right;
 		}
@@ -469,7 +470,7 @@ struct rset
 
 	rset_i<T>* search(const rset_i<T>* x,const T& a) const
 	{
-		while(x!=m_nil&&r_not_equal<T>(a,x->key))
+		while(x!=pnil&&r_not_equal<T>(a,x->key))
 		{
 			if(a<x->key)
 			{
@@ -485,8 +486,8 @@ struct rset
 
 	T* find(const T& a) const
 	{
-		rset_i<T>* x=search(m_root,a);
-		if(x==m_nil)
+		rset_i<T>* x=search(proot,a);
+		if(x==pnil)
 		{
 			return null;
 		}
@@ -496,7 +497,7 @@ struct rset
 	T* next(const void* p) const
 	{
 		rset_i<T>* x=successor((rset_i<T>*)p);
-		if(x==m_nil)
+		if(x==pnil)
 		{
 			return null;
 		}
@@ -506,7 +507,7 @@ struct rset
 	T* prev(const void* p) const
 	{
 		rset_i<T>* x=predecessor((rset_i<T>*)p);
-		if(x==m_nil)
+		if(x==pnil)
 		{
 			return null;
 		}
@@ -515,8 +516,8 @@ struct rset
 
 	T* begin() const
 	{
-		rset_i<T>* x=minimum(m_root);
-		if(x==m_nil)
+		rset_i<T>* x=minimum(proot);
+		if(x==pnil)
 		{
 			return null;
 		}

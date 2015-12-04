@@ -38,15 +38,15 @@
 	{
 		mov edi,this
 		mov [edi],0
-		movb [edi],a
+		mov8 [edi],a
 	}
 
 	int(ushort a)
 	{
 		mov edi,this
 		mov [edi],0
-		movb [edi],a
-		movb [edi+1],[ebp+(s_off a+1)]
+		mov8 [edi],a
+		mov8 [edi+1],[ebp+(s_off a+1)]
 	}
 
 	TYPE to<TYPE>()
@@ -76,8 +76,8 @@
 	ushort toushort()
 	{
 		mov esi,this
-		movb s_ret,[esi]
-		movb [ebp+(s_off s_ret+1)],[esi+1]
+		mov8 s_ret,[esi]
+		mov8 [ebp+(s_off s_ret+1)],[esi+1]
 	}
 
 	int toint()
@@ -113,7 +113,7 @@
 	char tochar()
 	{
 		mov esi,this
-		movb s_ret,[esi]
+		mov8 s_ret,[esi]
 	}
 
 	void operator=(int a)

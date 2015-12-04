@@ -13,9 +13,9 @@ struct rlist_i
 template<typename T>
 struct rlist
 {
-	rlist_i<T>* m_front;
-	rlist_i<T>* m_rear;
-	int m_count;
+	rlist_i<T>* front;
+	rlist_i<T>* rear;
+	int num;
 
 	~rlist<T>()
 	{
@@ -30,7 +30,8 @@ struct rlist
 	rlist<T>(rlist<T>& a)
 	{
 		init();
-		for(T* p=a.begin();p!=a.end();p=a.next(p))
+		T* p;
+		for_set(p,a)
 		{
 			this->push(*p);
 		}
@@ -39,7 +40,8 @@ struct rlist
 	void operator=(rlist<T>& a)
 	{
 		clear();
-		for(T* p=a.begin();p!=a.end();p=a.next(p))
+		T* p;
+		for_set(p,a)
 		{
 			this->push(*p);
 		}
@@ -47,35 +49,35 @@ struct rlist
 
 	void init()
 	{
-		m_front=null;
-		m_rear=null;
-		m_count=0;
+		front=null;
+		rear=null;
+		num=0;
 	}
 
 	void clear()
 	{
-		while(m_front!=null)
+		while(front!=null)
 		{
-			m_rear=m_front->next;
-			r_delete<rlist_i<T> >(m_front);
-			m_front=m_rear;
+			rear=front->next;
+			r_delete<rlist_i<T> >(front);
+			front=rear;
 		}
 		init();
 	}
 
 	rbool empty() const
 	{
-		return m_count==0;
+		return num==0;
 	}
 
 	int count() const
 	{
-		return m_count;
+		return num;
 	}
 
 	T& top() const
 	{
-		return *(T*)m_rear;
+		return *(T*)rear;
 	}
 
 	void push(const T& a)
@@ -83,33 +85,33 @@ struct rlist
 		rlist_i<T>* p=r_new<rlist_i<T> >();
 		p->val=a;
 		p->next=null;
-		p->prev=m_rear;
+		p->prev=rear;
 		if(empty())
 		{
-			m_front=p;
-			m_rear=p;
+			front=p;
+			rear=p;
 		}
 		else
 		{
-			m_rear->next=p;
-			m_rear=p;
+			rear->next=p;
+			rear=p;
 		}
-		m_count++;
+		num++;
 	}
 
 	T pop()
 	{
-		m_count--;
-		rlist_i<T>* p=m_rear;
+		num--;
+		rlist_i<T>* p=rear;
 		T ret=p->val;
-		m_rear=p->prev;
-		if(m_rear!=null)
+		rear=p->prev;
+		if(rear!=null)
 		{
-			m_rear->next=null;
+			rear->next=null;
 		}
 		if(empty())
 		{
-			m_front=null;
+			front=null;
 		}
 		r_delete<rlist_i<T> >(p);
 		return ret;
@@ -119,34 +121,34 @@ struct rlist
 	{
 		rlist_i<T>* p=r_new<rlist_i<T> >();
 		p->val=a;
-		p->next=m_front;
+		p->next=front;
 		p->prev=null;
 		if(empty())
 		{
-			m_front=p;
-			m_rear=p;
+			front=p;
+			rear=p;
 		}
 		else
 		{
-			m_front->prev=p;
-			m_front=p;
+			front->prev=p;
+			front=p;
 		}
-		m_count++;
+		num++;
 	}
 
 	T pop_front()
 	{
-		m_count--;
-		rlist_i<T>* p=m_front;
+		num--;
+		rlist_i<T>* p=front;
 		T ret=p->val;
-		m_front=p->next;
-		if(m_front!=null)
+		front=p->next;
+		if(front!=null)
 		{
-			m_front->prev=null;
+			front->prev=null;
 		}
 		if(empty())
 		{
-			m_rear=null;
+			rear=null;
 		}
 		r_delete<rlist_i<T> >(p);
 		return ret;
@@ -172,13 +174,13 @@ struct rlist
 		cur->prev=p;
 		if(p->prev==null)
 		{
-			m_front=p;
+			front=p;
 		}
 		if(p->next==null)
 		{
-			m_rear=p;
+			rear=p;
 		}
-		m_count++;
+		num++;
 	}
 
 	void insert(int pos,const T& a)
@@ -195,11 +197,11 @@ struct rlist
 		rlist_i<T>* cur=(rlist_i<T>*)pos;
 		if(cur->prev==null)
 		{
-			m_front=cur->next;
+			front=cur->next;
 		}
 		if(cur->next==null)
 		{
-			m_rear=cur->prev;
+			rear=cur->prev;
 		}
 		if(cur->prev!=null)
 		{
@@ -210,7 +212,7 @@ struct rlist
 			cur->next->prev=cur->prev;
 		}
 		r_delete<rlist_i<T> >(cur);
-		m_count--;
+		num--;
 	}
 
 	void erase(int pos)
@@ -220,7 +222,7 @@ struct rlist
 
 	T* index(int n) const
 	{
-		rlist_i<T>* p=m_front;
+		rlist_i<T>* p=front;
 		for(;n;n--)
 		{
 			if(p==null)
@@ -240,7 +242,7 @@ struct rlist
 
 	T* begin() const
 	{
-		return (T*)m_front;
+		return (T*)front;
 	}
 
 	static T* end()

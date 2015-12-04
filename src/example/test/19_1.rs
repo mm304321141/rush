@@ -9,10 +9,14 @@ void main()
 	printl sum[1,99,3]
 	printl sum[1,2,3,4]
 	printl sum[1,sum[1,2,5],3,4]
+	
+	printl sum(1,2)
+	printl sum(1,2,3)
+	printl sum(1,99,3)
 }
 
 #ifndef _RGPP
-int sum(int count)
+int sum(int count,...)
 {
 	//sub esp,sizeof(s_local)
 	//push ebp
@@ -36,7 +40,7 @@ int sum(int count)
 	//这里有编译器自动增加的语句
 }
 #else
-int sum(int count)
+int sum(int count,...)
 {
 	rstr temp=count//防止G++对整数进行优化（最高-O2），或者可以-O0，VC++没有此问题
 	int* p=&count+1

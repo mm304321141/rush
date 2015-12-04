@@ -85,8 +85,15 @@
 		this=a;
 	}
 	
-	//void operator=(uint a)
-	//{
+	void operator*=(int a)
+	{
+		this=this*a
+	}
+	
+	void operator+=(int a)
+	{
+		this=this+a
+	}
 
 	void operator++()
 	{

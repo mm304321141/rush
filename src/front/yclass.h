@@ -3,62 +3,66 @@
 #include "yfind.h"
 
 //提取所有类
-//m_file.vword->m_class.vword
+//s_file.vword->s_class.vword
 struct yclass
 {	
-	static rbool process(tsh& sh)
+	static rbool proc(tsh& sh)
 	{
-		basic_type_add(sh);
-		for(tfile* p=sh.m_file.begin();p!=sh.m_file.end();p=sh.m_file.next(p))
+		add_basic_type(sh);
+		tfile* p;
+		for_set(p,sh.s_file)
 		{
 			if(!extract_class(sh,p->vword))
 			{
 				return false;
 			}
 		}
-		main_add(sh);
-		for(tfile* p=sh.m_file.begin();p!=sh.m_file.end();p=sh.m_file.next(p))
+		add_main(sh);
+		for_set(p,sh.s_file)
 		{
 			if(!proc_class_again(sh,p->vword))
 			{
 				return false;
 			}
 		}
-		if(!inherit_proc_all(sh))
+		if(!proc_inherit_all(sh))
 		{
 			return false;
 		}
-		for(tfile* p=sh.m_file.begin();p!=sh.m_file.end();p=sh.m_file.next(p))
+		for_set(p,sh.s_file)
 		{
-			p->cont.m_buf.free();
+			p->cont.buf.free();
 			p->vword.free();
+			p->tab_list.free();
+			//如果不提示文件对应行的内容可以释放
+			p->line_list.free();
 		}
 		return true;
 	}
 
-	static void main_add(tsh& sh)
+	static void add_main(tsh& sh)
 	{
-		sh.m_main=yfind::class_search(sh,rskey(c_main));
-		if(sh.m_main==null)
+		sh.pmain=yfind::find_class(sh,rskey(c_main));
+		if(sh.pmain==null)
 		{
 			tclass item;
 			item.name=rskey(c_main);
-			sh.m_class.insert(item);
-			sh.m_main=yfind::class_search(sh,rskey(c_main));	
+			sh.s_class.insert(item);
+			sh.pmain=yfind::find_class(sh,rskey(c_main));	
 		}
-		sh.m_main->is_friend=true;
+		sh.pmain->is_friend=true;
 	}
 
 	static rbool proc_class_again(tsh& sh,const rbuf<tword>& v)
 	{
 		for(int i=0;i<v.count();i++)
 		{
-			sh.m_main->vword.push(v[i]);
+			sh.pmain->vword.push(v[i]);
 		}
 		return true;
 	}
 
-	static rbool name_part(const tsh& sh,tclass& tci,rbuf<tword>& name_w)
+	static rbool part_name(const tsh& sh,tclass& tci,rbuf<tword>& name_w)
 	{
 		rbuf<tword> father;
 		int colonpos=r_find_a<tword>(name_w,tword(rsoptr(c_colon)));
@@ -74,7 +78,7 @@ struct yclass
 				return false;
 			}
 			name_w.erase(colonpos,name_w.count());
-			tci.vfather=ybase::comma_split_t(sh,father);
+			tci.vfather=ybase::split_comma_t(sh,father);
 		}
 		int pos=r_find_a<tword>(name_w,tword(rsoptr(c_tbk_l)));
 		if(pos<name_w.count())
@@ -139,7 +143,7 @@ struct yclass
 			return true;
 		}
 		rbuf<rbuf<tword> > vparam;
-		vparam=ybase::comma_split<tword>(sh,v.sub(left+1,right));
+		vparam=ybase::split_comma<tword>(sh,v.sub(left+1,right));
 		if(vparam.empty())
 		{
 			return true;
@@ -221,7 +225,7 @@ struct yclass
 			{
 				v[j].clear();
 			}
-			ifn(class_add(sh,item,name_w))
+			ifn(add_class(sh,item,name_w))
 			{
 				return false;
 			}
@@ -231,9 +235,9 @@ struct yclass
 		return true;
 	}
 
-	static rbool class_add(tsh& sh,tclass& tci,rbuf<tword>& name_w)
+	static rbool add_class(tsh& sh,tclass& tci,rbuf<tword>& name_w)
 	{
-		ifn(name_part(sh,tci,name_w))
+		ifn(part_name(sh,tci,name_w))
 		{
 			return false;
 		}
@@ -244,11 +248,11 @@ struct yclass
 		}
 		if(tci.vtl.empty())
 		{
-			sh.m_class.insert(tci);
+			sh.s_class.insert(tci);
 		}
 		else
 		{
-			sh.m_classtl.insert(tci);
+			sh.s_class_tl.insert(tci);
 		}
 		return true;
 	}
@@ -260,26 +264,26 @@ struct yclass
 		item.size=size;
 		if(!yfind::is_class(sh,item.name))
 		{
-			sh.m_class.insert(item);
+			sh.s_class.insert(item);
 		}
 	}
 
-	static void basic_type_add(tsh& sh)
+	static void add_basic_type(tsh& sh)
 	{
 		insert_type(sh,rskey(c_void),0);
 		insert_type(sh,rskey(c_rd8),1);
 		insert_type(sh,rskey(c_rd16),2);
 		insert_type(sh,rskey(c_rd32),4);
 		insert_type(sh,rskey(c_rd64),8);
-		insert_type(sh,rskey(c_rdp),sh.m_point_size);
+		insert_type(sh,rskey(c_rdp),sh.point_size);
 	}
 
-	static rbool inherit_proc_all(tsh& sh)
+	static rbool proc_inherit_all(tsh& sh)
 	{
-		for(tclass* p=sh.m_class.begin();
-			p!=sh.m_class.end();p=sh.m_class.next(p))
+		tclass* p;
+		for_set(p,sh.s_class)
 		{
-			if(!inherit_proc(sh,*p))
+			if(!proc_inherit(sh,*p))
 			{
 				return false;
 			}
@@ -293,7 +297,7 @@ struct yclass
 	//模板实例暂时不能继承如 C:A<int>
 	//如果定义同名函数会调用子类的函数，所以不要用覆盖和隐藏
 	//后面自动生成构造、析构、拷贝构造、operator=不会继承，但用户定义的会继承
-	static rbool inherit_proc(tsh& sh,tclass& tci,int level=0)
+	static rbool proc_inherit(tsh& sh,tclass& tci,int level=0)
 	{
 		if(level>c_rs_deep)
 		{
@@ -309,17 +313,17 @@ struct yclass
 		for(int i=0;i<tci.vfather.count();i++)
 		{
 			rstr cname=tci.vfather[i].vword.get(0).val;
-			tclass* ptci=yfind::class_search(sh,cname);
+			tclass* ptci=yfind::find_class(sh,cname);
 			if(ptci==null)
 			{
-				ptci=yfind::classtl_search(sh,cname);
+				ptci=yfind::find_classtl(sh,cname);
 				if(ptci==null)
 				{
 					rserror("inherit can't find "+cname);
 					return false;
 				}
 			}
-			if(!inherit_proc(sh,*ptci,level))
+			if(!proc_inherit(sh,*ptci,level))
 			{
 				return false;
 			}

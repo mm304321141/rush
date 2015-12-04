@@ -6,11 +6,11 @@
 //宏替换类
 struct ymac
 {
-	static rbool func_mac_replace(const tsh& sh,rbuf<tsent>& vsent)
+	static rbool replace_func_mac(const tsh& sh,rbuf<tsent>& vsent)
 	{
 		for(int i=0;i<vsent.count();++i)
 		{
-			ifn(func_mac_replace(sh,vsent[i].vword))
+			ifn(replace_func_mac_v(sh,vsent[i].vword))
 			{
 				rserror(vsent[i],"func mac error");
 				return false;
@@ -20,7 +20,7 @@ struct ymac
 		return true;
 	}
 
-	static rbool func_mac_replace(const tsh& sh,rbuf<tword>& v)
+	static rbool replace_func_mac_v(const tsh& sh,rbuf<tword>& v)
 	{
 		if(v.get(0)!=rsoptr(c_sharp))
 		{
@@ -38,12 +38,12 @@ struct ymac
 			return false;
 		}
 		rbuf<rbuf<tword> > temp;
-		temp=ybase::comma_split_e(sh,v.sub(left+1,right));
+		temp=ybase::split_comma_e(sh,v.sub(left+1,right));
 		rbuf<tword> head=v.sub(1,left+1);
 		rbuf<tword> result;
 		if(temp.count()==1&&yfind::is_class(sh,temp[0].get_top().val))
 		{
-			tclass* ptci=yfind::class_search(sh,temp[0].get_top().val);
+			tclass* ptci=yfind::find_class(sh,temp[0].get_top().val);
 			if(ptci==null)
 			{
 				return false;
@@ -61,8 +61,8 @@ struct ymac
 			}
 			else
 			{
-				for(tfunc* p=ptci->vfunc.begin();p!=ptci->vfunc.end();
-					p=ptci->vfunc.next(p))
+				tfunc* p;
+				for_set(p,ptci->vfunc)
 				{
 					result+=head;
 					result+=tword(rsoptr(c_addr));
@@ -139,7 +139,7 @@ struct ymac
 					continue;
 				}
 			}
-			ptci=sh.m_main;
+			ptci=sh.pmain;
 			if(ptci->vmac.exist(item))
 			{
 				ifn(i>1&&v.get(i-1).val==rsoptr(c_dot))
@@ -161,7 +161,7 @@ struct ymac
 			{
 				continue;
 			}
-			ptci=yfind::class_search(sh,v[i-1].val);
+			ptci=yfind::find_class(sh,v[i-1].val);
 			if(null==ptci)
 			{
 				continue;
@@ -209,10 +209,10 @@ struct ymac
 				return false;
 			}
 			rbuf<rbuf<tword> > temp;
-			temp=ybase::comma_split<tword>(sh,v.sub(left+1,right));
+			temp=ybase::split_comma<tword>(sh,v.sub(left+1,right));
 			for(int j=0;j<temp.count();j++)
 			{
-				param.push(ybase::vword_to_vstr(temp[j]));
+				param.push(ybase::trans_vword_to_vstr(temp[j]));
 			}
 			if(!replace_w(v[i],param,mitem))
 			{

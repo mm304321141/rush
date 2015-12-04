@@ -25,11 +25,11 @@ struct tconf
 
 struct toptr
 {
-	rbuf<rstr> m_optr;//编译器使用
-	rbuf<rstr> m_optr_s;//排好序的运算符，因为词法分析是贪心的
-	rdic<int> m_dic;//字典中存放的是优先级，值小的优先
-	rdic<int> m_num;
-	int m_optr_max;
+	rbuf<rstr> optr;//编译器使用
+	rbuf<rstr> optr_s;//排好序的运算符，因为词法分析是贪心的
+	rdic<int> dic_precede;//字典中存放的是优先级，值小的优先
+	rdic<int> dic_num;
+	int optr_max;
 
 	enum
 	{
@@ -92,7 +92,7 @@ struct toptr
 
 	toptr()
 	{
-		m_optr_max=0;
+		optr_max=0;
 #ifndef _RS
 		char* optr_arr[]={
 #else
@@ -160,16 +160,16 @@ struct toptr
 #ifndef _RS
 		for(int i=0;i<r_size(optr_arr)/r_size(char*);i+=3)
 		{
-			m_optr+=optr_arr[i];
-			m_dic[optr_arr[i]]=rstr(optr_arr[i+1]).toint();
-			m_num[optr_arr[i]]=rstr(optr_arr[i+2]).toint();
+			optr+=optr_arr[i];
+			dic_precede[optr_arr[i]]=rstr(optr_arr[i+1]).toint();
+			dic_num[optr_arr[i]]=rstr(optr_arr[i+2]).toint();
 		}
 #else
 		for(int i=0;i<optr_arr.count();i+=3)
 		{
-			m_optr+=optr_arr[i];
-			m_dic[optr_arr[i]]=rstr(optr_arr[i+1]).toint();
-			m_num[optr_arr[i]]=rstr(optr_arr[i+2]).toint();
+			optr+=optr_arr[i];
+			dic_precede[optr_arr[i]]=rstr(optr_arr[i+1]).toint();
+			dic_num[optr_arr[i]]=rstr(optr_arr[i+2]).toint();
 		}
 #endif
 		sort_optr();
@@ -177,26 +177,26 @@ struct toptr
 
 	rstr& operator[](int n) const
 	{
-		return m_optr[n];
+		return optr[n];
 	}
 
 	void sort_optr()
 	{
-		m_optr_s=m_optr;
-		r_qsort<rstr>(m_optr_s);
-		m_optr_max=0;
-		for(int i=0;i<m_optr_s.count();i++)
+		optr_s=optr;
+		r_qsort<rstr>(optr_s);
+		optr_max=0;
+		for(int i=0;i<optr_s.count();i++)
 		{
-			if(m_optr_s[i].count()>m_optr_max)
+			if(optr_s[i].count()>optr_max)
 			{
-				m_optr_max=m_optr_s[i].count();
+				optr_max=optr_s[i].count();
 			}
 		}
 	}
 
 	int get_grade(const rstr& s) const
 	{
-		int* p=m_dic.find(s);
+		int* p=dic_precede.find(s);
 		if(p==null)
 		{
 			return 0;
@@ -205,21 +205,21 @@ struct toptr
 	}
 	
 	//比较两个运算符的优先级，true表示第一个优先于第二个，相同优先级总是从左到右计算
-	rbool precede(const rstr& first,const rstr& second) const
+	rbool is_precede(const rstr& first,const rstr& second) const
 	{
 		return get_grade(first)<=get_grade(second);
 	}
 
 	rbool is_optr(const rstr& s) const
 	{
-		return r_find_b<rstr>(m_optr_s,s)<m_optr_s.count();
+		return r_find_b<rstr>(optr_s,s)<optr_s.count();
 	}
 };
 
 struct tkey
 {
-	rbuf<rstr> m_key;
-	rdic<int> m_dic;
+	rbuf<rstr> vkey;
+	rdic<int> dic_index;
 
 	enum
 	{
@@ -237,13 +237,15 @@ struct tkey
 		c_jebxz,//如果ebx等于0则跳转
 		c_jebxnz,
 
+		c_bnot,
+
 		c_halt,
 		c_nop,
 
 		c_lea,
 		c_mov,
-		c_movb,
-		c_movl,
+		c_mov8,
+		c_mov64,
 
 		c_add,
 		c_sub,
@@ -260,7 +262,6 @@ struct tkey
 
 		c_band,
 		c_bor,
-		c_bnot,
 		c_bxor,
 		c_bshl,
 		c_bshr,
@@ -290,7 +291,16 @@ struct tkey
 		c_edx,
 		c_esi,
 		c_edi,
-		c_eflags,
+
+		c_rip,
+		c_rsp,
+		c_rbp,
+		c_rax,
+		c_rbx,
+		c_rcx,
+		c_rdx,
+		c_rsi,
+		c_rdi,
 
 		c_void,
 		c_char,
@@ -383,13 +393,15 @@ struct tkey
 			"jebxz",
 			"jebxnz",
 
+			"bnot",
+
 			"halt",
 			"nop",
 
 			"lea",
 			"mov",
-			"movb",
-			"movl",
+			"mov8",
+			"mov64",
 
 			"add",
 			"sub",
@@ -406,7 +418,6 @@ struct tkey
 
 			"band",
 			"bor",
-			"bnot",
 			"bxor",
 			"bshl",
 			"bshr",
@@ -436,7 +447,16 @@ struct tkey
 			"edx",
 			"esi",
 			"edi",
-			"eflags",
+			
+			"rip",
+			"rsp",
+			"rbp",
+			"rax",
+			"rbx",
+			"rcx",
+			"rdx",
+			"rsi",
+			"rdi",
 
 			"void",
 			"char",
@@ -514,12 +534,12 @@ struct tkey
 #ifndef _RS
 		for(int i=0;i<r_size(key_arr)/r_size(char*);i++)
 		{
-			m_key+=key_arr[i];
+			vkey+=key_arr[i];
 		}
 #else
 		for(int i=0;i<key_arr.count();i++)
 		{
-			m_key+=key_arr[i];
+			vkey+=key_arr[i];
 		}
 #endif
 		sort_asm();
@@ -527,36 +547,36 @@ struct tkey
 
 	rstr& operator[](int n) const
 	{
-		return m_key[n];
+		return vkey[n];
 	}
 
 	int count() const
 	{
-		return m_key.count();
+		return vkey.count();
 	}
 
 	void sort_asm()
 	{
-		m_dic.clear();
-		for(int i=0;i<m_key.count();i++)
+		dic_index.clear();
+		for(int i=0;i<vkey.count();i++)
 		{
-			m_dic[m_key[i]]=i;
+			dic_index[vkey[i]]=i;
 		}
 	}
 
 	int get_key_index(const rstr& s) const
 	{
-		int* p=m_dic.find(s);
+		int* p=dic_index.find(s);
 		if(p==null)
 		{
-			return m_key.count();
+			return vkey.count();
 		}
 		return *p;
 	}
 
 	rbool is_asm_ins(const rstr& s) const
 	{
-		int* p=m_dic.find(s);
+		int* p=dic_index.find(s);
 		if(p==null)
 		{
 			return false;
@@ -569,7 +589,7 @@ struct tkey
 	{
 		for(int i=c_eip;i<=c_edi;++i)
 		{
-			if(s==m_key[i])
+			if(s==vkey[i])
 			{
 				return true;
 			}

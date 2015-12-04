@@ -164,7 +164,7 @@ rbuf<V> r_split(const V& v,const V& m,int start=0)
 		}
 		if(!temp.empty())
 		{
-			result.push_move(temp);
+			result.push(r_move(temp));
 		}
 		start=pos+m.count();
 	}
@@ -175,7 +175,7 @@ rbuf<V> r_split(const V& v,const V& m,int start=0)
 	}
 	if(!temp.empty())
 	{
-		result.push_move(temp);
+		result.push(r_move(temp));
 	}
 	return r_move(result);
 }
@@ -205,7 +205,7 @@ rbuf<V> r_split_e(const V& v,const V& m,int start=0)
 		{
 			temp+=v[i];
 		}
-		result.push_move(temp);
+		result.push(r_move(temp));
 		start=pos+m.count();
 	}
 	temp.clear();
@@ -215,7 +215,7 @@ rbuf<V> r_split_e(const V& v,const V& m,int start=0)
 	}
 	ifn(result.empty()&&temp.empty())//todo:
 	{
-		result.push_move(temp);
+		result.push(r_move(temp));
 	}
 	return r_move(result);
 }

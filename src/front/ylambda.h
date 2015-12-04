@@ -6,7 +6,7 @@
 struct ylambda
 {
 	//闭包处理，todo:闭包暂时不能使用类型推断,不是线程安全
-	static void lambda_pack(tsh& sh,const rbuf<tword>& vhead,
+	static void pack(tsh& sh,const rbuf<tword>& vhead,
 		const rbuf<tword>& vbody,const tfunc& tfi,tfunc& lambda)
 	{
 		tclass item;
@@ -21,7 +21,7 @@ struct ylambda
 				continue;
 			}
 			//todo 未判断重复
-			tdata* ptdi=yfind::local_search(tfi,vbody[i].val);
+			tdata* ptdi=yfind::find_local(tfi,vbody[i].val);
 			tdata tdi;
 			if(null==ptdi)
 			{
@@ -43,7 +43,6 @@ struct ylambda
 				ptdi=&tdi;
 			}
 			ptdi->name=vbody[i].val;
-			ptdi->count=1;
 			ptdi->size=yfind::get_type_size(sh,ptdi->type);
 			if(ptdi->size==0)
 			{
@@ -63,10 +62,10 @@ struct ylambda
 			item.size+=item.vdata[i].size;
 		}
 		lambda.lambda_data.set_size(item.size);
-		sh.m_class.insert_c(item);
+		sh.s_class.insert_c(item);
 	}
 
-	static rbool lambda_replace(tsh& sh,tfunc& tfi)
+	static rbool replace(tsh& sh,tfunc& tfi)
 	{
 		tclass& tci=*tfi.ptci;
 		rbuf<tword>& v=tfi.vword;
@@ -96,14 +95,14 @@ struct ylambda
 				continue;
 			}
 			v[i].val=rstr("_LAMBDA")+tci.vfunc.count();
-			ifn(ymemb::func_add(sh,tci,v.sub(i,right+1),false))
+			ifn(ymemb::add_func(sh,tci,v.sub(i,right+1),false))
 			{
 				return false;
 			}
-			tfunc* ptfi=yfind::func_search(tci,v[i].val);
+			tfunc* ptfi=yfind::find_func(tci,v[i].val);
 			if(ptfi!=null)
 			{
-				lambda_pack(sh,v.sub(0,i),
+				pack(sh,v.sub(0,i),
 					v.sub(left+1,right),tfi,*ptfi);
 			}
 			v[i].multi.push("(");
@@ -119,7 +118,7 @@ struct ylambda
 		return true;
 	}
 
-	static rstr lambda_get(const rbuf<tword>& v)
+	static rstr get(const rbuf<tword>& v)
 	{
 		for(int i=0;i<v.count();i++)
 		{
@@ -131,7 +130,7 @@ struct ylambda
 		return rstr();
 	}
 
-	static void lambda_push_type(const rstr& name,tfunc& tfi)
+	static void push_type(const rstr& name,tfunc& tfi)
 	{
 		tdata item;
 		item.name=name+"_C_P";
@@ -140,36 +139,36 @@ struct ylambda
 		tfi.local.push(item);
 	}
 
-	static void lambda_proc(const tsh& sh,tfunc& tfi)
+	static void proc(const tsh& sh,tfunc& tfi)
 	{
 		tclass& tci=*tfi.ptci;
 		rbuf<tsent>& v=tfi.vsent;
 		for(int i=0;i<v.count();i++)
 		{
-			rstr name=lambda_get(v[i].vword);
+			rstr name=get(v[i].vword);
 			if(name.empty())
 			{
 				continue;
 			}
-			tfunc* ptfi=yfind::func_search(tci,name);
+			tfunc* ptfi=yfind::find_func(tci,name);
 			if(ptfi==null||ptfi->lambda_data.empty())
 			{
 				continue;
 			}
-			tclass* ptci=yfind::class_search(sh,name+"_C");
+			tclass* ptci=yfind::find_class(sh,name+"_C");
 			if(ptci==null||ptci->vdata.empty())
 			{
 				continue;
 			}
 			rstr data_name=name+"_C_P";
-			lambda_push_type(name,tfi);
+			push_type(name,tfi);
 			tword word;
 			word.pos=v[i].vword.get_bottom().pos;
 			rbuf<tword> vtemp;
 			ybase::push_twi(vtemp,word,"mov");
 			ybase::push_twi(vtemp,word,data_name);
 			ybase::push_twi(vtemp,word,",");
-			if(sh.m_mode==tsh::c_vm||sh.m_mode==tsh::c_jit)
+			if(sh.mode==tsh::c_vm||sh.mode==tsh::c_jit)
 			{
 				ybase::push_twi(vtemp,word,
 					rstr((uint)(ptfi->lambda_data.begin())));
@@ -194,7 +193,7 @@ struct ylambda
 		ybase::part_vsent(v);
 	}
 
-	static void lambda_add_init_asm(const tsh& sh,tfunc& tfi)
+	static void add_init_asm(const tsh& sh,tfunc& tfi)
 	{
 		if(tfi.lambda_data.empty())
 		{
@@ -205,7 +204,7 @@ struct ylambda
 		sent.vword.push(tword(rstr("mov")));//tword没有设置pos
 		sent.vword.push(tword(tfi.name+"_C_P"));
 		sent.vword.push(tword(rstr(",")));
-		if(sh.m_mode==tsh::c_vm||sh.m_mode==tsh::c_jit)
+		if(sh.mode==tsh::c_vm||sh.mode==tsh::c_jit)
 		{
 			sent.vword.push(tword(rstr((uint)(tfi.lambda_data.begin()))));
 		}
@@ -216,22 +215,22 @@ struct ylambda
 		tfi.vsent.push_front(r_move(sent));
 	}
 
-	static void lambda_var_replace(const tsh& sh,tfunc& tfi)
+	static void replace_var(const tsh& sh,tfunc& tfi)
 	{
 		if(tfi.lambda_data.empty())
 		{
 			return;
 		}
-		tclass* ptci=yfind::class_search(sh,tfi.name+"_C");
+		tclass* ptci=yfind::find_class(sh,tfi.name+"_C");
 		if(ptci==null)
 		{
 			return;
 		}
-		lambda_push_type(tfi.name,tfi);
+		push_type(tfi.name,tfi);
 		rstr data_name=tfi.name+"_C_P";
 		for(int i=0;i<tfi.vword.count();i++)
 		{
-			if(yfind::data_member_search(*ptci,tfi.vword[i].val)!=null)
+			if(yfind::find_data_member(*ptci,tfi.vword[i].val)!=null)
 			{
 				tfi.vword[i].multi.push(data_name);
 				tfi.vword[i].multi.push(".");
@@ -242,7 +241,7 @@ struct ylambda
 		ybase::arrange(tfi.vword);
 	}
 
-	static rbool function_replace(const tsh& sh,rbuf<tword>& v)
+	static rbool replace_func(const tsh& sh,rbuf<tword>& v)
 	{
 		for(int i=0;i<v.count();i++)
 		{

@@ -4,50 +4,50 @@
 
 struct rmutex
 {
-	R_CRITICAL_SECTION m_mutex;
+	R_CRITICAL_SECTION mutex;
 
 	rmutex()
 	{
-		xf::InitializeCriticalSection(&m_mutex);
+		xf::InitializeCriticalSection(&mutex);
 	}
 
 	~rmutex()
 	{
-		xf::DeleteCriticalSection(&m_mutex);
+		xf::DeleteCriticalSection(&mutex);
 	}
 
 	void enter()
 	{
-		xf::EnterCriticalSection(&m_mutex);
+		xf::EnterCriticalSection(&mutex);
 	}
 
 	void leave()
 	{
-		xf::LeaveCriticalSection(&m_mutex);
+		xf::LeaveCriticalSection(&mutex);
 	}
 };
 
 //用于整个函数的局部临时mutex
 struct rmutex_t
 {
-	rmutex* m_p;
+	rmutex* point;
 
 	rmutex_t()
 	{
-		m_p=null;
+		point=null;
 	}
 
 	rmutex_t(rmutex& m)
 	{
-		m_p=&m;
-		m_p->enter();
+		point=&m;
+		point->enter();
 	}
 
 	~rmutex_t()
 	{
-		if(m_p!=null)
+		if(point!=null)
 		{
-			m_p->leave();
+			point->leave();
 		}
 	}
 };

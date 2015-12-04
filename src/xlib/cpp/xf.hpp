@@ -60,7 +60,7 @@ struct xf
 		::sprintf(src,f,n);
 	}
 
-	static void sscanf(const char* src,const char* f,uint* n)
+	static void sscanf(const char* src,const char* f,void* n)
 	{
 		::sscanf(src,f,n);
 	}
@@ -410,12 +410,12 @@ struct xf
 
 	static int fread(void* buf,int size,int count,void* fp)
 	{
-		return ::fread(buf,size,count,(FILE*)fp);
+		return (int)::fread(buf,size,count,(FILE*)fp);
 	}
 
 	static int fwrite(const void* buf,int size,int count,void* fp)
 	{
-		return ::fwrite(buf,size,count,(FILE*)fp);
+		return (int)::fwrite(buf,size,count,(FILE*)fp);
 	}
 
 	static int _wremove(wchar* name)
@@ -735,7 +735,7 @@ struct xf
 			if((DWORD)pRet<dwExportRVA+(DWORD)hModule||
 				(DWORD)pRet>dwExportRVA+(DWORD)hModule+dwExportSize)
 			{
-				sh.m_dll_func[strFunction]=(void*)pRet;
+				sh.dll_func[strFunction]=(void*)pRet;
 			}
 		}
 	}

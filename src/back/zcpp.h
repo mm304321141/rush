@@ -5,9 +5,9 @@
 
 struct zcpp
 {
-	static rbool process(tsh& sh)
+	static rbool proc(tsh& sh)
 	{
-		tfunc* ptfi=yfind::func_search(*sh.m_main,"main");
+		tfunc* ptfi=yfind::find_func(*sh.pmain,"main");
 		if(ptfi==null)
 		{
 			rf::printl("main not find");
@@ -89,13 +89,13 @@ struct zcpp
 		{
 			result+="\nvoid "+symbol+"(";
 			result+="){\n";
-			result+=ybase::vword_to_s(tfi.vword);
+			result+=ybase::trans_vword_to_s(tfi.vword);
 			result+="\n}\n";
 			return true;
 		}
 		if(tfi.vasm.empty())
 		{
-			if(!zbin::cp_vword_to_vasm(sh,tfi,tenv()))
+			if(!zbin::compile_vword_to_vasm(sh,tfi,tenv()))
 			{
 				return false;
 			}
@@ -120,7 +120,7 @@ struct zcpp
 		result+="}\n";
 		for(int i=0;i<tfi.vasm.count();i++)
 		{
-			tfunc* ptfi=znasm::call_find(sh,tfi.vasm[i]);
+			tfunc* ptfi=znasm::find_call(sh,tfi.vasm[i]);
 			if(ptfi==null)
 			{
 				continue;
@@ -145,7 +145,7 @@ struct zcpp
 		}
 		if(v.count()==3)
 		{
-			if(sh.m_key.is_asm_reg(v[1]))
+			if(sh.key.is_asm_reg(v[1]))
 			{
 				return "mem32("+v[1]+")";
 			}
@@ -153,7 +153,7 @@ struct zcpp
 		}
 		if(v.count()==5)
 		{
-			if(sh.m_key.is_asm_reg(v[1])&&v[3].is_number())
+			if(sh.key.is_asm_reg(v[1])&&v[3].is_number())
 			{
 				return "mem32("+v[1]+v[2]+v[3]+")";
 			}
@@ -170,7 +170,7 @@ struct zcpp
 		}
 		if(v.count()==3)
 		{
-			if(sh.m_key.is_asm_reg(v[1]))
+			if(sh.key.is_asm_reg(v[1]))
 			{
 				return "mem32u("+v[1]+")";
 			}
@@ -178,7 +178,7 @@ struct zcpp
 		}
 		if(v.count()==5)
 		{
-			if(sh.m_key.is_asm_reg(v[1])&&v[3].is_number())
+			if(sh.key.is_asm_reg(v[1])&&v[3].is_number())
 			{
 				return "mem32u("+v[1]+v[2]+v[3]+")";
 			}
@@ -208,7 +208,7 @@ struct zcpp
 		{
 			return false;
 		}
-		int type=sh.m_key.get_key_index(vstr[0]);
+		int type=sh.key.get_key_index(vstr[0]);
 		tfunc* ptfi;
 		switch(type)
 		{
@@ -216,7 +216,7 @@ struct zcpp
 			result+="	invoke("+ybase::del_quote(vstr.get(1))+")\n";
 			return true;
 		case tkey::c_call:
-			ptfi=znasm::call_find(sh,item);
+			ptfi=znasm::find_call(sh,item);
 			if(ptfi==null)
 			{
 				result+=("	call dword "+
@@ -233,7 +233,7 @@ struct zcpp
 			result+="	esp+="+rstr(vstr.get(1).toint()+4)+";\n";
 			return true;
 		case tkey::c_push:
-			ptfi=znasm::call_find(sh,item);
+			ptfi=znasm::find_call(sh,item);
 			if(ptfi==null)
 			{
 				result+="	esp-=4;\n";
@@ -260,18 +260,21 @@ struct zcpp
 		case tkey::c_nop:
 			return true;
 		case tkey::c_lea:
-			result+="	"+opnd(sh,znasm::get_opnd1_v(vstr))+"="+opnd(sh,znasm::get_opnd2_v(vstr).sub(1,4))+";\n";
+			result+=("	"+opnd(sh,znasm::get_opnd1_v(vstr))+"="+
+				opnd(sh,znasm::get_opnd2_v(vstr).sub(1,4))+";\n");
 			return true;
 		case tkey::c_mov:
 			if(znasm::count_mbk_l(vstr)==2)
 			{
-				result+="	"+opnd(sh,znasm::get_opnd1_v(vstr))+"="+opnd(sh,znasm::get_opnd2_v(vstr))+";\n";
+				result+=("	"+opnd(sh,znasm::get_opnd1_v(vstr))+"="+
+					opnd(sh,znasm::get_opnd2_v(vstr))+";\n");
 				return true;
 			}
-			ptfi=znasm::call_find(sh,item);
+			ptfi=znasm::find_call(sh,item);
 			if(ptfi==null)
 			{
-				result+="	"+opnd(sh,znasm::get_opnd1_v(vstr))+"="+opnd(sh,znasm::get_opnd2_v(vstr))+";\n";
+				result+=("	"+opnd(sh,znasm::get_opnd1_v(vstr))+"="+
+					opnd(sh,znasm::get_opnd2_v(vstr))+";\n");
 			}
 			else
 			{
@@ -279,55 +282,69 @@ struct zcpp
 					znasm::get_nasm_symbol(*ptfi)+"\n");
 			}
 			return true;
-		case tkey::c_movb:
+		case tkey::c_mov8:
 			result+="	"+opnd_8(znasm::get_opnd1_v(vstr))+"="+opnd_8(znasm::get_opnd2_v(vstr))+";\n";
 			return true;
-		case tkey::c_movl:
+		case tkey::c_mov64:
 			return false;
 		case tkey::c_add:
-			result+="	"+opnd(sh,znasm::get_opnd1_v(vstr))+"+="+opnd(sh,znasm::get_opnd2_v(vstr))+";\n";
+			result+=("	"+opnd(sh,znasm::get_opnd1_v(vstr))+"+="+
+				opnd(sh,znasm::get_opnd2_v(vstr))+";\n");
 			return true;
 		case tkey::c_sub:
-			result+="	"+opnd(sh,znasm::get_opnd1_v(vstr))+"-="+opnd(sh,znasm::get_opnd2_v(vstr))+";\n";
+			result+=("	"+opnd(sh,znasm::get_opnd1_v(vstr))+"-="+
+				opnd(sh,znasm::get_opnd2_v(vstr))+";\n");
 			return true;
 		case tkey::c_imul:
-			result+="	"+opnd(sh,znasm::get_opnd1_v(vstr))+"*="+opnd(sh,znasm::get_opnd2_v(vstr))+";\n";
+			result+=("	"+opnd(sh,znasm::get_opnd1_v(vstr))+"*="+
+				opnd(sh,znasm::get_opnd2_v(vstr))+";\n");
 			return true;
 		case tkey::c_idiv:
-			result+="	"+opnd(sh,znasm::get_opnd1_v(vstr))+"/="+opnd(sh,znasm::get_opnd2_v(vstr))+";\n";
+			result+=("	"+opnd(sh,znasm::get_opnd1_v(vstr))+"/="+
+				opnd(sh,znasm::get_opnd2_v(vstr))+";\n");
 			return true;
 		case tkey::c_imod:
-			result+="	"+opnd(sh,znasm::get_opnd1_v(vstr))+"%="+opnd(sh,znasm::get_opnd2_v(vstr))+";\n";
+			result+=("	"+opnd(sh,znasm::get_opnd1_v(vstr))+"%="+
+				opnd(sh,znasm::get_opnd2_v(vstr))+";\n");
 			return true;
 		case tkey::c_cesb:
-			result+="	ebx="+opnd(sh,znasm::get_opnd1_v(vstr))+"=="+opnd(sh,znasm::get_opnd2_v(vstr))+";\n";
+			result+=("	ebx="+opnd(sh,znasm::get_opnd1_v(vstr))+"=="+
+				opnd(sh,znasm::get_opnd2_v(vstr))+";\n");
 			return true;
 		case tkey::c_cnesb:
-			result+="	ebx="+opnd(sh,znasm::get_opnd1_v(vstr))+"!="+opnd(sh,znasm::get_opnd2_v(vstr))+";\n";
+			result+=("	ebx="+opnd(sh,znasm::get_opnd1_v(vstr))+"!="+
+				opnd(sh,znasm::get_opnd2_v(vstr))+";\n");
 			return true;
 		case tkey::c_cgsb:
-			result+="	ebx="+opnd(sh,znasm::get_opnd1_v(vstr))+">"+opnd(sh,znasm::get_opnd2_v(vstr))+";\n";
+			result+=("	ebx="+opnd(sh,znasm::get_opnd1_v(vstr))+">"+
+				opnd(sh,znasm::get_opnd2_v(vstr))+";\n");
 			return true;
 		case tkey::c_cgesb:
-			result+="	ebx="+opnd(sh,znasm::get_opnd1_v(vstr))+">="+opnd(sh,znasm::get_opnd2_v(vstr))+";\n";
+			result+=("	ebx="+opnd(sh,znasm::get_opnd1_v(vstr))+">="+
+				opnd(sh,znasm::get_opnd2_v(vstr))+";\n");
 			return true;
 		case tkey::c_clsb:
-			result+="	ebx="+opnd(sh,znasm::get_opnd1_v(vstr))+"<"+opnd(sh,znasm::get_opnd2_v(vstr))+";\n";
+			result+=("	ebx="+opnd(sh,znasm::get_opnd1_v(vstr))+"<"+
+				opnd(sh,znasm::get_opnd2_v(vstr))+";\n");
 			return true;
 		case tkey::c_clesb:
-			result+="	ebx="+opnd(sh,znasm::get_opnd1_v(vstr))+"<="+opnd(sh,znasm::get_opnd2_v(vstr))+";\n";
+			result+=("	ebx="+opnd(sh,znasm::get_opnd1_v(vstr))+"<="+
+				opnd(sh,znasm::get_opnd2_v(vstr))+";\n");
 			return true;
 		case tkey::c_band:
-			result+="	"+opnd(sh,znasm::get_opnd1_v(vstr))+"&="+opnd(sh,znasm::get_opnd2_v(vstr))+";\n";
+			result+=("	"+opnd(sh,znasm::get_opnd1_v(vstr))+"&="+
+				opnd(sh,znasm::get_opnd2_v(vstr))+";\n");
 			return true;
 		case tkey::c_bor:
-			result+="	"+opnd(sh,znasm::get_opnd1_v(vstr))+"|="+opnd(sh,znasm::get_opnd2_v(vstr))+";\n";
+			result+=("	"+opnd(sh,znasm::get_opnd1_v(vstr))+"|="+
+				opnd(sh,znasm::get_opnd2_v(vstr))+";\n");
 			return true;
 		case tkey::c_bnot:
 			result+="	not dword "+znasm::link_vstr(vstr.sub(1))+"\n";
 			return true;
 		case tkey::c_bxor:
-			result+="	"+opnd(sh,znasm::get_opnd1_v(vstr))+"^="+opnd(sh,znasm::get_opnd2_v(vstr))+";\n";
+			result+=("	"+opnd(sh,znasm::get_opnd1_v(vstr))+"^="+
+				opnd(sh,znasm::get_opnd2_v(vstr))+";\n");
 			return true;
 		case tkey::c_bshl:
 			return false;
@@ -336,26 +353,32 @@ struct zcpp
 		case tkey::c_bsar:
 			return false;
 		case tkey::c_udiv:
-			result+="	"+opnd_u(sh,znasm::get_opnd1_v(vstr))+"/="+opnd_u(sh,znasm::get_opnd2_v(vstr))+";\n";
+			result+=("	"+opnd_u(sh,znasm::get_opnd1_v(vstr))+"/="+
+				opnd_u(sh,znasm::get_opnd2_v(vstr))+";\n");
 			return true;
 		case tkey::c_umod:
-			result+="	"+opnd_u(sh,znasm::get_opnd1_v(vstr))+"%="+opnd_u(sh,znasm::get_opnd2_v(vstr))+";\n";
+			result+=("	"+opnd_u(sh,znasm::get_opnd1_v(vstr))+"%="+
+				opnd_u(sh,znasm::get_opnd2_v(vstr))+";\n");
 			return true;
 		case tkey::c_ucgsb:
-			result+="	ebx="+opnd_u(sh,znasm::get_opnd1_v(vstr))+">"+opnd_u(sh,znasm::get_opnd2_v(vstr))+";\n";
+			result+=("	ebx="+opnd_u(sh,znasm::get_opnd1_v(vstr))+">"+
+				opnd_u(sh,znasm::get_opnd2_v(vstr))+";\n");
 			return true;
 		case tkey::c_ucgesb:
-			result+="	ebx="+opnd_u(sh,znasm::get_opnd1_v(vstr))+">="+opnd_u(sh,znasm::get_opnd2_v(vstr))+";\n";
+			result+=("	ebx="+opnd_u(sh,znasm::get_opnd1_v(vstr))+">="+
+				opnd_u(sh,znasm::get_opnd2_v(vstr))+";\n");
 			return true;
 		case tkey::c_uclsb:
-			result+="	ebx="+opnd_u(sh,znasm::get_opnd1_v(vstr))+"<"+opnd_u(sh,znasm::get_opnd2_v(vstr))+";\n";
+			result+=("	ebx="+opnd_u(sh,znasm::get_opnd1_v(vstr))+"<"+
+				opnd_u(sh,znasm::get_opnd2_v(vstr))+";\n");
 			return true;
 		case tkey::c_uclesb:
-			result+="	ebx="+opnd_u(sh,znasm::get_opnd1_v(vstr))+"<="+opnd_u(sh,znasm::get_opnd2_v(vstr))+";\n";
+			result+=("	ebx="+opnd_u(sh,znasm::get_opnd1_v(vstr))+"<="+
+				opnd_u(sh,znasm::get_opnd2_v(vstr))+";\n");
 			return true;
 		case tkey::c_rn:
 			if(vstr.count()==3&&
-				!sh.m_key.is_asm_reg(vstr[2])&&
+				!sh.key.is_asm_reg(vstr[2])&&
 				znasm::is_jmp_ins_nasm(vstr[1]))
 			{
 				result+=("	"+vstr[1]+" "+znasm::get_nasm_symbol(tfi)+"_"+

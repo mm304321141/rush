@@ -6,7 +6,7 @@
 //函数模板处理
 struct yfunctl
 {
-	static rbool ftl_replace(tsh& sh,tclass& tci,rbuf<tword>& v,tclass* ptci)
+	static rbool replace_ftl(tsh& sh,tclass& tci,rbuf<tword>& v,tclass* ptci)
 	{
 		for(int i=0;i<v.count();i++)
 		{
@@ -21,7 +21,7 @@ struct yfunctl
 			{
 				if(v.get(left-2).val==rsoptr(c_dot))
 				{
-					cur_ptci=yfind::class_search(sh,v.get(left-3).val);
+					cur_ptci=yfind::find_class(sh,v.get(left-3).val);
 					if(cur_ptci==null)
 					{
 						continue;
@@ -32,11 +32,11 @@ struct yfunctl
 					cur_ptci=&tci;
 				}
 			}
-			tfunc* ptfi=yfind::ftl_search(*cur_ptci,name);
+			tfunc* ptfi=yfind::find_ftl(*cur_ptci,name);
 			if(ptfi==null)
 			{
-				cur_ptci=sh.m_main;
-				ptfi=yfind::ftl_search(*cur_ptci,name);
+				cur_ptci=sh.pmain;
+				ptfi=yfind::find_ftl(*cur_ptci,name);
 			}
 			if(null==ptfi)
 			{
@@ -48,7 +48,7 @@ struct yfunctl
 				rserror(v[left-1],"func template miss >");
 				return false;
 			}
-			rbuf<rbuf<tword> > vparam=ybase::comma_split<tword>(
+			rbuf<rbuf<tword> > vparam=ybase::split_comma<tword>(
 				sh,v.sub(left+1,right));
 			if(vparam.count()!=ptfi->vtl.count())
 			{
@@ -61,14 +61,14 @@ struct yfunctl
 				v[j].val.clear();
 			}
 			//模板函数不可能重载，因此只要判断一下函数名是否相同即可
-			if(yfind::func_search(*cur_ptci,v[left-1].val)!=null)
+			if(yfind::find_func(*cur_ptci,v[left-1].val)!=null)
 			{
 				continue;
 			}
 			tfunc item=*ptfi;
 			item.vtl.free();
-			yclasstl::vtl_replace(item.vword,ptfi->vtl,vparam);
-			if(!f_type_replace(sh,item.vword))
+			yclasstl::replace_vtl(item.vword,ptfi->vtl,vparam);
+			if(!replace_type(sh,item.vword))
 			{
 				return false;
 			}
@@ -76,7 +76,7 @@ struct yfunctl
 			{
 				return false;
 			}
-			if(!ymemb::func_add(sh,*cur_ptci,item.vword,false))
+			if(!ymemb::add_func(sh,*cur_ptci,item.vword,false))
 			{
 				return false;
 			}
@@ -87,19 +87,19 @@ struct yfunctl
 	}
 	
 	//处理函数模板中又出现新类型的情况
-	static rbool f_type_replace(tsh& sh,rbuf<tword>& v)
+	static rbool replace_type(tsh& sh,rbuf<tword>& v)
 	{
-		int cur=sh.m_class.count();
-		if(!yclasstl::type_replace(sh,v))
+		int cur=sh.s_class.count();
+		if(!yclasstl::replace_type(sh,v))
 		{
 			return false;
 		}
-		if(sh.m_class.count()>cur)
+		if(sh.s_class.count()>cur)
 		{
-			for(tclass* p=sh.m_class.begin();
-				p!=sh.m_class.end();p=sh.m_class.next(p))
+			tclass* p;
+			for_set(p,sh.s_class)
 			{
-				if(!f_proc_class(sh,*p))
+				if(!proc_class(sh,*p))
 				{
 					return false;
 				}
@@ -108,17 +108,17 @@ struct yfunctl
 		return true;
 	}
 	
-	static rbool f_proc_class(tsh& sh,tclass& tci)
+	static rbool proc_class(tsh& sh,tclass& tci)
 	{
-		ifn(ymemb::a_class(sh,tci))
+		ifn(ymemb::parse_class(sh,tci))
 		{
 			return false;
 		}
-		ifn(ymemb::recursion_get_size(sh,tci))
+		ifn(ymemb::obtain_size_recursion(sh,tci))
 		{
 			return false;
 		}
-		ymemb::obtain_size_func(sh,tci);
+		ymemb::obtain_size_func_all(sh,tci);
 		return true;
 	}
 

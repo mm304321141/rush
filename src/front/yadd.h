@@ -75,7 +75,7 @@ struct yadd
 
 	static void add_structor_func(const tsh& sh,const tdata& tdi,rbuf<tword>& v)
 	{
-		if(ybase::is_quote(tdi.type)||tdi.count>1)
+		if(ybase::is_quote(tdi.type)||tdi.is_array())
 		{
 			return;
 		}
@@ -99,7 +99,7 @@ struct yadd
 		rbuf<tword>& v,bool is_memb)
 	{
 		//类似int arr[10]的传统C数组定义不调用析构和构造函数
-		if(ybase::is_quote(tdi.type)||tdi.count>1)
+		if(ybase::is_quote(tdi.type)||tdi.is_array())
 		{
 			return;
 		}
@@ -185,12 +185,12 @@ struct yadd
 			{
 				continue;
 			}
-			tclass* ptci=yfind::class_search(sh,tci.vdata[i].type);
+			tclass* ptci=yfind::find_class(sh,tci.vdata[i].type);
 			if(null==ptci)
 			{
 				continue;
 			}
-			if(yfind::destruct_search(*ptci)==null)
+			if(yfind::find_destruct(*ptci)==null)
 			{
 				continue;
 			}
@@ -198,7 +198,7 @@ struct yadd
 		}
 		if(!sent.vword.empty())
 		{
-			tfi.vsent.push_move(sent);
+			tfi.vsent.push(r_move(sent));
 			ybase::part_vsent(tfi.vsent);
 		}
 	}
@@ -214,12 +214,12 @@ struct yadd
 			{
 				continue;
 			}
-			tclass* ptci=yfind::class_search(sh,tci.vdata[i].type);
+			tclass* ptci=yfind::find_class(sh,tci.vdata[i].type);
 			if(null==ptci)
 			{
 				continue;
 			}
-			if(yfind::emptystruct_search(*ptci)==null)
+			if(yfind::find_empty_struct(*ptci)==null)
 			{
 				continue;
 			}

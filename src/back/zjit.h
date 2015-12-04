@@ -10,18 +10,18 @@ struct zjit
 	static rbool run(tsh& sh)
 	{
 #ifndef _RS
-		tfunc* ptfi=yfind::func_search(*sh.m_main,"__declare");
+		tfunc* ptfi=yfind::find_func(*sh.pmain,"__declare");
 		if(ptfi!=null)
 		{
-			func_to_x86(sh,*ptfi,tenv());
+			compile_func_to_x86(sh,*ptfi,tenv());
 		}
-		ptfi=yfind::func_search(*sh.m_main,"main_c");
+		ptfi=yfind::find_func(*sh.pmain,"main_c");
 		if(ptfi==null)
 		{
 			rf::printl("main not find");
 			return false;
 		}
-		ifn(func_to_x86(sh,*ptfi,tenv()))
+		ifn(compile_func_to_x86(sh,*ptfi,tenv()))
 		{
 			return false;
 		}
@@ -31,13 +31,13 @@ struct zjit
 	}
 
 	//将一个函数翻译成X86代码
-	static rbool func_to_x86(tsh& sh,tfunc& tfi,tenv env)
+	static rbool compile_func_to_x86(tsh& sh,tfunc& tfi,tenv env)
 	{
 		if(!tfi.vasm.empty())
 		{
 			return true;
 		}
-		if(!zbin::cp_vword_to_vasm(sh,tfi,env))
+		if(!zbin::compile_vword_to_vasm(sh,tfi,env))
 		{
 			return false;
 		}
@@ -50,7 +50,7 @@ struct zjit
 			{
 				return false;
 			}
-			sh.m_addr.insert(taddr(
+			sh.addr.insert(taddr(
 				(uint)(tfi.code),(uint)(tfi.code+size),&tfi));
 		}
 		int cur=0;
@@ -61,12 +61,12 @@ struct zjit
 				continue;
 			}
 			tfi.vasm[i].ptfi=&tfi;
-			ifn(a_asm(sh,tfi.vasm[i]))
+			ifn(parse_asm(sh,tfi.vasm[i]))
 			{
 				return false;
 			}
 			tfi.vasm[i].start=tfi.code+cur;
-			rstr s=asm_to_x86(sh,tfi.vasm[i],tfi.code+cur);
+			rstr s=trans_asm_to_x86(sh,tfi.vasm[i],tfi.code+cur);
 			if(s.empty())
 			{
 				rserror(tfi.vasm[i],"can't build jit ins");
@@ -93,12 +93,11 @@ struct zjit
 	static rbool fix_addr(tsh& sh,tasm& oasm,rbuf<tasm>& vasm)
 	{
 		ifn(oasm.vstr.count()==2&&
-			ybase::is_jmp_ins(oasm.ins.type)&&
-			!sh.m_key.is_asm_reg(oasm.vstr[1]))
+			ybase::is_jmp_ins(oasm.ins.get_index())&&
+			!sh.key.is_asm_reg(oasm.vstr[1]))
 		{
 			return true;
 		}
-		int line=oasm.vstr[1].toint();
 		int i;
 		for(i=0;i<vasm.count();i++)
 		{
@@ -111,10 +110,6 @@ struct zjit
 		if(i>=vasm.count())
 		{
 			rserror(oasm);
-			return false;
-		}
-		ifn(a_asm(sh,oasm))
-		{
 			return false;
 		}
 		int j;
@@ -130,10 +125,9 @@ struct zjit
 			rserror(oasm);
 			return false;
 		}
-		oasm.ins.first.type=topnd::c_imme;
 		oasm.ins.first.val=(uint)(vasm[j].start);
 		uchar* real=oasm.start;
-		rstr s=asm_to_x86(sh,oasm,real);
+		rstr s=trans_asm_to_x86(sh,oasm,real);
 		if(s.empty())
 		{
 			return false;
@@ -142,16 +136,16 @@ struct zjit
 		return true;
 	}
 
-	static rstr asm_to_x86(tsh& sh,tasm& item,uchar* start)
+	static rstr trans_asm_to_x86(tsh& sh,tasm& item,uchar* start)
 	{
 #ifndef _RS
 		tins& ins=item.ins;
 		rbuf<rstr>& vstr=item.vstr;
 		rstr s;
-		switch(ins.type)
+		switch(ins.get_index())
 		{
 		case tkey::c_calle:
-			return p_calle(sh,ins,start);
+			return proc_calle(sh,ins,start);
 		case tkey::c_call:
 			return zjiti::b_call(ins,start);
 		case tkey::c_retn:
@@ -165,6 +159,7 @@ struct zjit
 		case tkey::c_jmp:
 			return zjiti::b_jmp(ins,start);
 		case tkey::c_jebxz:
+			//没有cmp指令，按照nop处理
 			return (rsj4(b_cmp,rskey(c_ebx),rsoptr(c_comma),"0")+
 				zjiti::b_jz(ins,start+6));
 		case tkey::c_jebxnz:
@@ -187,10 +182,10 @@ struct zjit
 			}
 			return (rsj4(b_mov,rskey(c_ecx),rsoptr(c_comma),rsjb)+
 				rsj4(b_mov,rsja,rsoptr(c_comma),rskey(c_ecx)));
-		case tkey::c_movb:
+		case tkey::c_mov8:
 			return (rsj4(b_movb_cl_addr,rskey(c_ecx),rsoptr(c_comma),rsjb)+
 				rsj4(b_movb_addr_cl,rsja,rsoptr(c_comma),rskey(c_ecx)));
-		case tkey::c_movl:
+		case tkey::c_mov64:
 			s+=rsj4(b_mov,rskey(c_ecx),rsoptr(c_comma),rsjb);
 			s+=rsj4(b_mov,rsja,rsoptr(c_comma),rskey(c_ecx));
 			ins.first.val+=4;
@@ -285,6 +280,7 @@ struct zjit
 			return zjiti::b_not(ins);
 		}
 #endif
+		rserror();
 		return rstr();
 	}
 
@@ -308,13 +304,13 @@ struct zjit
 		return r_move(s);
 	}
 
-	static rstr p_calle(tsh& sh,tins& ins,uchar* start)
+	static rstr proc_calle(tsh& sh,tins& ins,uchar* start)
 	{
 		char* name=(char*)(ins.first.val);
 		void* addr=null;
-		if(sh.m_func_list.find(name)!=null)
+		if(sh.func_list.find(name)!=null)
 		{
-			addr=sh.m_func_list[name];
+			addr=sh.func_list[name];
 		}
 		if(addr==null)
 		{
@@ -325,48 +321,52 @@ struct zjit
 		return zjiti::b_call(ins,start);
 	}
 
-	static rbool a_asm(tsh& sh,tasm& item)
+	static rbool parse_asm(tsh& sh,tasm& item)
 	{
-		int type=sh.m_key.get_key_index(item.vstr.get_bottom());
+		int type=sh.key.get_key_index(item.vstr.get_bottom());
 		if(ybase::is_jmp_ins(type)&&item.vstr.count()==2&&
-			!sh.m_key.is_asm_reg(item.vstr[1]))
+			!sh.key.is_asm_reg(item.vstr[1]))
 		{
-			item.ins.type=type;
-			item.ins.first.type=topnd::c_imme;
-			item.ins.second.type=topnd::c_imme;
+			item.ins.type=type*6;
 			return true;
 		}
 		int i=zbin::find_comma(sh,item.vstr);
-		if(!a_opnd(sh,item,i-1,item.vstr.sub(1,i),item.ins.first))
+		int first;
+		if(!parse_opnd(sh,item,i-1,item.vstr.sub(1,i),item.ins.first,first))
 		{
 			return false;
 		}
-		if(!a_opnd(sh,item,i+1,item.vstr.sub(i+1),item.ins.second))
+		int second;
+		if(!parse_opnd(sh,item,i+1,item.vstr.sub(i+1),item.ins.second,second))
 		{
 			return false;
 		}
-		item.ins.type=sh.m_key.get_key_index(item.vstr.get_bottom());
+		item.ins.type=type*6;
+		ifn(zbin::obtain_qrun_type(item.ins,first,second))
+		{
+			return false;
+		}
 		return true;
 	}
 
-	static rbool a_opnd(tsh& sh,tasm& item,int index,const rbuf<rstr>& v,topnd& o)
+	static rbool parse_opnd(tsh& sh,tasm& item,int index,const rbuf<rstr>& v,topnd& o,int& otype)
 	{
 		if(v.count()==7&&v[1]==rsoptr(c_addr))
 		{
-			tfunc* ptfi=znasm::call_find(sh,item);
+			tfunc* ptfi=znasm::find_call(sh,item);
 			if(ptfi==null)
 			{
 				return false;
 			}
-			ifn(func_to_x86(sh,*ptfi,tenv()))
+			ifn(compile_func_to_x86(sh,*ptfi,tenv()))
 			{
 				return false;
 			}
-			o.type=topnd::c_imme;
+			otype=topnd::c_imme;
 			o.val=(uint)(ptfi->code);
 			return true;
 		}
-		return zbin::a_opnd(sh,item,index,v,o);
+		return zbin::parse_opnd(sh,item,index,v,o,otype);
 	}
 
 	static tins build_ins(tsh& sh,rstr s1,rstr s2,rstr s3,rstr s4)
@@ -376,7 +376,7 @@ struct zjit
 		item.vstr+=s2;
 		item.vstr+=s3;
 		item.vstr+=s4;
-		a_asm(sh,item);
+		parse_asm(sh,item);
 		return item.ins;
 	}
 
@@ -387,7 +387,7 @@ struct zjit
 		item.vstr+=s2;
 		item.vstr+=s3;
 		item.vstr+=s4;
-		a_asm(sh,item);
+		parse_asm(sh,item);
 		return item.ins;
 	}
 
@@ -398,7 +398,7 @@ struct zjit
 		item.vstr+=s2;
 		item.vstr+=s3;
 		item.vstr+=s4;
-		a_asm(sh,item);
+		parse_asm(sh,item);
 		return item.ins;
 	}
 };

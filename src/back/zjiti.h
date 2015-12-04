@@ -7,15 +7,15 @@ struct zjiti
 {
 	static rstr b_call(const tins& ins,uchar* start)
 	{
-		if(ins.first.type==topnd::c_imme)
+		if(ins.get_first_type()==topnd::c_imme)
 		{
 			return zjitb::build_relative(ins,start,0xe8);
 		}
-		elif(ins.first.type==topnd::c_reg)
+		elif(ins.get_first_type()==topnd::c_reg)
 		{
 			return zjitb::build_r(ins,0xff,0xd0);
 		}
-		elif(ins.first.type==topnd::c_addr)
+		elif(ins.get_first_type()==topnd::c_addr)
 		{
 			return zjitb::build_a(ins,0xff,0x90);
 		}
@@ -42,15 +42,15 @@ struct zjiti
 
 	static rstr b_push(const tins& ins)
 	{
-		if(ins.first.type==topnd::c_imme)
+		if(ins.get_first_type()==topnd::c_imme)
 		{
 			return zjitb::build_i(ins,0x68);
 		}
-		elif(ins.first.type==topnd::c_reg)
+		elif(ins.get_first_type()==topnd::c_reg)
 		{
 			return zjitb::build_r(ins,0x50);
 		}
-		elif(ins.first.type==topnd::c_addr)
+		elif(ins.get_first_type()==topnd::c_addr)
 		{
 			return zjitb::build_a(ins,0xff,0xb0);
 		}
@@ -59,7 +59,7 @@ struct zjiti
 
 	static rstr b_pop(const tins& ins)
 	{
-		if(ins.first.type==topnd::c_reg)
+		if(ins.get_first_type()==topnd::c_reg)
 		{
 			return zjitb::build_r(ins,0x58);
 		}
@@ -68,15 +68,15 @@ struct zjiti
 
 	static rstr b_jmp(const tins& ins,uchar* start)
 	{
-		if(ins.first.type==topnd::c_imme)
+		if(ins.get_first_type()==topnd::c_imme)
 		{
 			return zjitb::build_relative(ins,start,0xe9);
 		}
-		elif(ins.first.type==topnd::c_reg)
+		elif(ins.get_first_type()==topnd::c_reg)
 		{
 			return zjitb::build_r(ins,0xff,0xe0);
 		}
-		elif(ins.first.type==topnd::c_addr)
+		elif(ins.get_first_type()==topnd::c_addr)
 		{
 			return zjitb::build_a(ins,0xff,0xa0);
 		}
@@ -85,7 +85,7 @@ struct zjiti
 
 	static rstr b_jz(const tins& ins,uchar* start)
 	{
-		if(ins.first.type==topnd::c_imme)
+		if(ins.get_first_type()==topnd::c_imme)
 		{
 			return zjitb::build_relative(ins,start,0x0f,0x84);
 		}
@@ -94,7 +94,7 @@ struct zjiti
 
 	static rstr b_jnz(const tins& ins,uchar* start)
 	{
-		if(ins.first.type==topnd::c_imme)
+		if(ins.get_first_type()==topnd::c_imme)
 		{
 			return zjitb::build_relative(ins,start,0x0f,0x85);
 		}
@@ -108,37 +108,38 @@ struct zjiti
 
 	static rstr b_lea(const tins& ins)
 	{
-		if(ins.first.type==topnd::c_reg&&ins.second.type==topnd::c_addr)
+		if(ins.get_first_type()==topnd::c_reg&&ins.get_second_type()==topnd::c_addr)
 		{
 			return zjitb::build_ra(ins,0x8d,0x80);
 		}
+		rserror();
 		return rstr();
 	}
 
 	static rstr b_mov(const tins& ins)
 	{
-		if(ins.first.type==topnd::c_reg)
+		if(ins.get_first_type()==topnd::c_reg)
 		{
-			if(ins.second.type==topnd::c_imme)
+			if(ins.get_second_type()==topnd::c_imme)
 			{
 				return zjitb::build_ri(ins,0xb8);
 			}
-			elif(ins.second.type==topnd::c_reg)
+			elif(ins.get_second_type()==topnd::c_reg)
 			{
 				return zjitb::build_rr(ins,0x8b,0xc0);
 			}
-			elif(ins.second.type==topnd::c_addr)
+			elif(ins.get_second_type()==topnd::c_addr)
 			{
 				return zjitb::build_ra(ins,0x8b,0x80);
 			}
 		}
-		elif(ins.first.type==topnd::c_addr)
+		elif(ins.get_first_type()==topnd::c_addr)
 		{
-			if(ins.second.type==topnd::c_imme)
+			if(ins.get_second_type()==topnd::c_imme)
 			{
 				return zjitb::build_ai(ins,0xc7,0x80);
 			}
-			elif(ins.second.type==topnd::c_reg)
+			elif(ins.get_second_type()==topnd::c_reg)
 			{
 				return zjitb::build_ar(ins,0x89,0x80);
 			}
@@ -182,28 +183,28 @@ struct zjiti
 
 	static rstr b_add(const tins& ins)
 	{
-		if(ins.first.type==topnd::c_reg)
+		if(ins.get_first_type()==topnd::c_reg)
 		{
-			if(ins.second.type==topnd::c_imme)
+			if(ins.get_second_type()==topnd::c_imme)
 			{
 				return zjitb::build_ri(ins,0x81,0xc0);
 			}
-			if(ins.second.type==topnd::c_reg)
+			if(ins.get_second_type()==topnd::c_reg)
 			{
 				return zjitb::build_rr(ins,0x03,0xc0);
 			}
-			if(ins.second.type==topnd::c_addr)
+			if(ins.get_second_type()==topnd::c_addr)
 			{
 				return zjitb::build_ra(ins,0x03,0x80);
 			}
 		}
-		if(ins.first.type==topnd::c_addr)
+		if(ins.get_first_type()==topnd::c_addr)
 		{
-			if(ins.second.type==topnd::c_imme)
+			if(ins.get_second_type()==topnd::c_imme)
 			{
 				return zjitb::build_ai(ins,0x81,0x80);
 			}
-			if(ins.second.type==topnd::c_reg)
+			if(ins.get_second_type()==topnd::c_reg)
 			{
 				return zjitb::build_ar(ins,0x01,0x80);
 			}
@@ -213,28 +214,28 @@ struct zjiti
 
 	static rstr b_sub(const tins& ins)
 	{
-		if(ins.first.type==topnd::c_reg)
+		if(ins.get_first_type()==topnd::c_reg)
 		{
-			if(ins.second.type==topnd::c_imme)
+			if(ins.get_second_type()==topnd::c_imme)
 			{
 				return zjitb::build_ri(ins,0x81,0xe8);
 			}
-			if(ins.second.type==topnd::c_reg)
+			if(ins.get_second_type()==topnd::c_reg)
 			{
 				return zjitb::build_rr(ins,0x2b,0xc0);
 			}
-			if(ins.second.type==topnd::c_addr)
+			if(ins.get_second_type()==topnd::c_addr)
 			{
 				return zjitb::build_ra(ins,0x2b,0x80);
 			}
 		}
-		if(ins.first.type==topnd::c_addr)
+		if(ins.get_first_type()==topnd::c_addr)
 		{
-			if(ins.second.type==topnd::c_imme)
+			if(ins.get_second_type()==topnd::c_imme)
 			{
 				return zjitb::build_ai(ins,0x81,0xa8);
 			}
-			if(ins.second.type==topnd::c_reg)
+			if(ins.get_second_type()==topnd::c_reg)
 			{
 				return zjitb::build_ar(ins,0x29,0x80);
 			}
@@ -244,7 +245,7 @@ struct zjiti
 
 	static rstr b_imul(const tins& ins)
 	{
-		if(ins.first.type==topnd::c_reg&&ins.second.type==topnd::c_addr)
+		if(ins.get_first_type()==topnd::c_reg&&ins.get_second_type()==topnd::c_addr)
 		{
 			return zjitb::build_ra(ins,0x0f,0xaf,0x80);
 		}
@@ -253,7 +254,7 @@ struct zjiti
 
 	static rstr b_idiv(const tins& ins)
 	{
-		if(ins.first.type==topnd::c_reg)
+		if(ins.get_first_type()==topnd::c_reg)
 		{
 			return zjitb::build_r(ins,0xf7,0xf8);
 		}
@@ -262,7 +263,7 @@ struct zjiti
 
 	static rstr b_udiv(const tins& ins)
 	{
-		if(ins.first.type==topnd::c_reg)
+		if(ins.get_first_type()==topnd::c_reg)
 		{
 			return zjitb::build_r(ins,0xf7,0xf0);
 		}
@@ -326,28 +327,28 @@ struct zjiti
 
 	static rstr b_cmp(const tins& ins)
 	{
-		if(ins.first.type==topnd::c_reg)
+		if(ins.get_first_type()==topnd::c_reg)
 		{
-			if(ins.second.type==topnd::c_imme)
+			if(ins.get_second_type()==topnd::c_imme)
 			{
 				return zjitb::build_ri(ins,0x81,0xf8);
 			}
-			if(ins.second.type==topnd::c_reg)
+			if(ins.get_second_type()==topnd::c_reg)
 			{
 				return zjitb::build_rr(ins,0x3b,0xc0);
 			}
-			if(ins.second.type==topnd::c_addr)
+			if(ins.get_second_type()==topnd::c_addr)
 			{
 				return zjitb::build_ra(ins,0x3b,0x80);
 			}
 		}
-		if(ins.first.type==topnd::c_addr)
+		if(ins.get_first_type()==topnd::c_addr)
 		{
-			if(ins.second.type==topnd::c_imme)
+			if(ins.get_second_type()==topnd::c_imme)
 			{
 				return zjitb::build_ai(ins,0x81,0xb8);
 			}
-			if(ins.second.type==topnd::c_reg)
+			if(ins.get_second_type()==topnd::c_reg)
 			{
 				return zjitb::build_ar(ins,0x39,0x80);
 			}
@@ -357,28 +358,28 @@ struct zjiti
 
 	static rstr b_and(const tins& ins)
 	{
-		if(ins.first.type==topnd::c_reg)
+		if(ins.get_first_type()==topnd::c_reg)
 		{
-			if(ins.second.type==topnd::c_imme)
+			if(ins.get_second_type()==topnd::c_imme)
 			{
 				return zjitb::build_ri(ins,0x81,0xe0);
 			}
-			if(ins.second.type==topnd::c_reg)
+			if(ins.get_second_type()==topnd::c_reg)
 			{
 				return zjitb::build_rr(ins,0x23,0xc0);
 			}
-			if(ins.second.type==topnd::c_addr)
+			if(ins.get_second_type()==topnd::c_addr)
 			{
 				return zjitb::build_ra(ins,0x23,0x80);
 			}
 		}
-		if(ins.first.type==topnd::c_addr)
+		if(ins.get_first_type()==topnd::c_addr)
 		{
-			if(ins.second.type==topnd::c_imme)
+			if(ins.get_second_type()==topnd::c_imme)
 			{
 				return zjitb::build_ai(ins,0x81,0xa0);
 			}
-			if(ins.second.type==topnd::c_reg)
+			if(ins.get_second_type()==topnd::c_reg)
 			{
 				return zjitb::build_ar(ins,0x21,0x80);
 			}
@@ -388,28 +389,28 @@ struct zjiti
 
 	static rstr b_or(const tins& ins)
 	{
-		if(ins.first.type==topnd::c_reg)
+		if(ins.get_first_type()==topnd::c_reg)
 		{
-			if(ins.second.type==topnd::c_imme)
+			if(ins.get_second_type()==topnd::c_imme)
 			{
 				return zjitb::build_ri(ins,0x81,0xc8);
 			}
-			if(ins.second.type==topnd::c_reg)
+			if(ins.get_second_type()==topnd::c_reg)
 			{
 				return zjitb::build_rr(ins,0x0b,0xc0);
 			}
-			if(ins.second.type==topnd::c_addr)
+			if(ins.get_second_type()==topnd::c_addr)
 			{
 				return zjitb::build_ra(ins,0x0b,0x80);
 			}
 		}
-		if(ins.first.type==topnd::c_addr)
+		if(ins.get_first_type()==topnd::c_addr)
 		{
-			if(ins.second.type==topnd::c_imme)
+			if(ins.get_second_type()==topnd::c_imme)
 			{
 				return zjitb::build_ai(ins,0x81,0x88);
 			}
-			if(ins.second.type==topnd::c_reg)
+			if(ins.get_second_type()==topnd::c_reg)
 			{
 				return zjitb::build_ar(ins,0x09,0x80);
 			}
@@ -419,28 +420,28 @@ struct zjiti
 
 	static rstr b_xor(const tins& ins)
 	{
-		if(ins.first.type==topnd::c_reg)
+		if(ins.get_first_type()==topnd::c_reg)
 		{
-			if(ins.second.type==topnd::c_imme)
+			if(ins.get_second_type()==topnd::c_imme)
 			{
 				return zjitb::build_ri(ins,0x81,0xf0);
 			}
-			if(ins.second.type==topnd::c_reg)
+			if(ins.get_second_type()==topnd::c_reg)
 			{
 				return zjitb::build_rr(ins,0x33,0xc0);
 			}
-			if(ins.second.type==topnd::c_addr)
+			if(ins.get_second_type()==topnd::c_addr)
 			{
 				return zjitb::build_ra(ins,0x33,0x80);
 			}
 		}
-		if(ins.first.type==topnd::c_addr)
+		if(ins.get_first_type()==topnd::c_addr)
 		{
-			if(ins.second.type==topnd::c_imme)
+			if(ins.get_second_type()==topnd::c_imme)
 			{
 				return zjitb::build_ai(ins,0x81,0xb0);
 			}
-			if(ins.second.type==topnd::c_reg)
+			if(ins.get_second_type()==topnd::c_reg)
 			{
 				return zjitb::build_ar(ins,0x31,0x80);
 			}
@@ -450,11 +451,11 @@ struct zjiti
 
 	static rstr b_not(const tins& ins)
 	{
-		if(ins.first.type==topnd::c_reg)
+		if(ins.get_first_type()==topnd::c_reg)
 		{
 			return zjitb::build_r(ins,0xf7,0xd0);
 		}
-		elif(ins.first.type==topnd::c_addr)
+		elif(ins.get_first_type()==topnd::c_addr)
 		{
 			return zjitb::build_a(ins,0xf7,0x90);
 		}

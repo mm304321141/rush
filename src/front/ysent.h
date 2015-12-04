@@ -11,27 +11,27 @@
 //从这里开始行号已经放在sent中
 struct ysent
 {
-	static rbool process(tsh& sh,tfunc& tfi,tenv env)
+	static rbool proc(tsh& sh,tfunc& tfi,tenv env)
 	{
 		if(env.ptfi!=null)
 		{
 			add_class(sh,tfi,env);
 		}
-		ifn(ylambda::function_replace(sh,tfi.vword))
+		ifn(ylambda::replace_func(sh,tfi.vword))
 		{
 			return false;
 		}
-		ylambda::lambda_var_replace(sh,tfi);
-		ifn(ylambda::lambda_replace(sh,tfi))
+		ylambda::replace_var(sh,tfi);
+		ifn(ylambda::replace(sh,tfi))
 		{
 			return false;
 		}
 		//强制转换替换
-		ifn(yrep::trans_replace(sh,tfi.vword))
+		ifn(yrep::replace_trans(sh,tfi.vword))
 		{
 			return false;
 		}
-		ifn(macro_replace(sh,tfi))
+		ifn(replace_macro(sh,tfi))
 		{
 			return false;
 		}
@@ -39,7 +39,7 @@ struct ysent
 		{
 			return false;
 		}
-		if(!yfunctl::ftl_replace(sh,*tfi.ptci,tfi.vword,null))
+		if(!yfunctl::replace_ftl(sh,*tfi.ptci,tfi.vword,null))
 		{
 			return false;
 		}
@@ -47,24 +47,24 @@ struct ysent
 		{
 			return false;
 		}
-		ifn(ymac::func_mac_replace(sh,tfi.vsent))
+		ifn(ymac::replace_func_mac(sh,tfi.vsent))
 		{
 			return false;
 		}
-		ylambda::lambda_proc(sh,tfi);
+		ylambda::proc(sh,tfi);
 		//增加全局变量引用
 		add_main_quote(sh,tfi);
 		yrep::replace_neg(sh,tfi.vsent);
 		//常量dot替换成临时变量
 		//如 0.toint -> int(0).toint
 		// "abc"+a  ->  rstr("abc")+a
-		yrep::const_replace(sh,tfi.vsent);
+		yrep::replace_const(sh,tfi.vsent);
 		//找到直接定义的局部变量，不需要判断返回值
-		yrep::local_var_replace(sh,tfi);
+		yrep::replace_local_var(sh,tfi);
 		//函数指针常量替换
-		yrep::fpoint_replace(sh,tfi);
+		yrep::replace_fpoint(sh,tfi);
 		//sizeof s_off替换成0，稍后处理
-		if(!yrep::size_off_to_zero(sh,tfi))
+		if(!yrep::trans_size_off_to_zero(sh,tfi))
 		{
 			return false;
 		}
@@ -73,18 +73,18 @@ struct ysent
 		{
 			return false;
 		}
-		if(!yrep::typeof_replace(sh,tfi,env))
+		if(!yrep::replace_typeof(sh,tfi,env))
 		{
 			return false;
 		}
 		//变量构造函数替换如a(1) -> int.int(a,1)
 		//这个变量必须是已定义的，不能是类型推断
-		if(!yrep::var_struct_replace(sh,tfi))
+		if(!yrep::replace_var_struct(sh,tfi))
 		{
 			return false;
 		}
 		//表达式标准化
-		if(!yexp::p_exp_all(sh,tfi,env))
+		if(!yexp::proc_exp_all(sh,tfi,env))
 		{
 			return false;
 		}
@@ -101,7 +101,7 @@ struct ysent
 		{
 			return false;
 		}
-		ifn(tfi.sdynamic.empty())
+		ifn(tfi.s_dynamic.empty())
 		{
 			tdata tdi;
 			tdi.type=rskey(c_int);
@@ -126,7 +126,6 @@ struct ysent
 			sent.vword.push(tword(rstr(env.v_ebp)));
 			tfi.vsent.push_front(r_move(sent));
 		}
-		
 		//增加局部变量和成员变量的构造和析构
 		yadd::add_local_and_memb(sh,tfi);
 		//获取局部变量偏移
@@ -134,18 +133,18 @@ struct ysent
 		obtain_param_off(tfi);
 		//增加全局变量初始化汇编
 		add_main_init_asm(sh,tfi);
-		ylambda::lambda_add_init_asm(sh,tfi);
+		ylambda::add_init_asm(sh,tfi);
 		//sizeof s_off替换成实际值
-		if(!yrep::size_off_to_zero(sh,tfi))
+		if(!yrep::trans_size_off_to_zero(sh,tfi))
 		{
 			return false;
 		}
-		if(!yrep::size_off_replace(sh,tfi))
+		if(!yrep::replace_size_off(sh,tfi))
 		{
 			return false;
 		}
 		//汇编语句常量求值
-		if(!asm_const_eval(sh,tfi))
+		if(!eval_asm_const(sh,tfi))
 		{
 			return false;
 		}
@@ -156,19 +155,19 @@ struct ysent
 		//成员变量里有sizeof s_off的情况需要再次替换
 		//注意成员变量初始化的时候不能使用临时变量
 		//再处理一次，获取所有表达式的类型
-		return yexp::p_exp_all(sh,tfi,tenv());
+		return yexp::proc_exp_all(sh,tfi,tenv());
 	}
 
-	static rbool macro_replace(tsh& sh,tfunc& tfi)
+	static rbool replace_macro(tsh& sh,tfunc& tfi)
 	{
-		extern rbool r_func_to_x86(tsh& sh,tfunc& tfi,tenv env);
+		extern rbool r_compile_func_to_x86(tsh& sh,tfunc& tfi,tenv env);
 		rbuf<tword>& v=tfi.vword;
 		for(int i=0;i<v.count();i++)
 		{
-			if(sh.m_macro.exist(v[i].val))
+			if(sh.dic_macro.exist(v[i].val))
 			{
-				tfunc* ptfi=sh.m_macro[v[i].val];
-				ifn(r_func_to_x86(sh,*ptfi,tenv()))
+				tfunc* ptfi=sh.dic_macro[v[i].val];
+				ifn(r_compile_func_to_x86(sh,*ptfi,tenv()))
 				{
 					return false;
 				}
@@ -196,21 +195,20 @@ struct ysent
 			{
 				item.vdata.push(env.ptfi->param[i]);
 			}
-			sh.m_class.insert(item);
+			sh.s_class.insert(item);
 		}
 
 		tdata tdi;
 		tdi.type=name+"&";
 		tdi.name=rskey(c_penv);
 		tdi.size=4;
-		tdi.count=1;
 		tfi.local.push(tdi);
 	}
 
 	//增加全局变量引用的初始化汇编语句
 	static void add_main_init_asm(tsh& sh,tfunc& tfi)
 	{
-		if(sh.m_mode==tsh::c_gpp)
+		if(sh.mode==tsh::c_gpp)
 		{
 			return;
 		}
@@ -235,9 +233,9 @@ struct ysent
 		sent.vword.push(tword(rstr("mov")));//tword没有设置pos
 		sent.vword.push(tword(rskey(c_pmain)));
 		sent.vword.push(tword(rstr(",")));//todo:
-		if(sh.m_mode==tsh::c_vm||sh.m_mode==tsh::c_jit)
+		if(sh.mode==tsh::c_vm||sh.mode==tsh::c_jit)
 		{
-			sent.vword.push(tword(rstr((uint)(sh.m_main_data.begin()))));
+			sent.vword.push(tword(rstr((uint)(sh.main_data.begin()))));
 		}
 		else
 		{
@@ -255,8 +253,8 @@ struct ysent
 			int i;
 			for(i=0;i<tfi.vword.count();i++)
 			{
-				if(yfind::data_member_search(
-					*sh.m_main,tfi.vword[i].val)!=null)
+				if(yfind::find_data_member(
+					*sh.pmain,tfi.vword[i].val)!=null)
 				{
 					break;
 				}
@@ -270,17 +268,16 @@ struct ysent
 		tdi.type="main&";
 		tdi.name=rskey(c_pmain);
 		tdi.size=4;
-		tdi.count=1;
 		tfi.local.push(tdi);
 	}
 
-	static rbool asm_const_eval(tsh& sh,tfunc& tfi)
+	static rbool eval_asm_const(tsh& sh,tfunc& tfi)
 	{
 		for(int i=0;i<tfi.vsent.count();++i)
 		{
-			if(sh.m_key.is_asm_ins(tfi.vsent[i].vword.get_bottom().val))
+			if(sh.key.is_asm_ins(tfi.vsent[i].vword.get_bottom().val))
 			{
-				ifn(yconsteval::op_const_exp(sh,tfi.vsent[i].vword,true))
+				ifn(yconsteval::optimize_const_exp(sh,tfi.vsent[i].vword,true))
 				{
 					return false;
 				}
@@ -294,7 +291,11 @@ struct ysent
 		int off=c_point_size;
 		for(int i=0;i<local.count();++i)
 		{
-			local[i].size=yfind::get_type_size(sh,local[i].type)*local[i].count;
+			local[i].size=yfind::get_type_size(sh,local[i].type);
+			if(local[i].is_array())
+			{
+				local[i].size*=local[i].count;
+			}
 			local[i].off=off;
 			off+=yfind::get_ceil_space(local[i]);
 		}
@@ -335,28 +336,28 @@ struct ysent
 		{
 			//处理类型推断
 			rstr name=sent.vword[0].val;
-			if(null!=yfind::local_search(tfi,name))
+			if(null!=yfind::find_local(tfi,name))
 			{
 				return true;
 			}
-			if(env.ptfi!=null&&null!=yfind::local_search(*env.ptfi,name))
+			if(env.ptfi!=null&&null!=yfind::find_local(*env.ptfi,name))
 			{
 				return true;
 			}
-			if(null!=yfind::data_member_search(tci,name))
+			if(null!=yfind::find_data_member(tci,name))
 			{
 				return true;
 			}
-			if(null!=yfind::data_member_search(*sh.m_main,name))
+			if(null!=yfind::find_data_member(*sh.pmain,name))
 			{
 				return true;
 			}
 			tsent temp=sent.sub(2,sent.vword.count());
-			if(!yrep::typeof_replace(sh,tfi,temp,env))
+			if(!yrep::replace_typeof_one(sh,tfi,temp,env))
 			{
 				return false;
 			}
-			if(!yexp::p_exp(sh,temp,tfi,0,env))
+			if(!yexp::proc_exp(sh,temp,tfi,0,env))
 			{
 				return false;
 			}
@@ -382,7 +383,7 @@ struct ysent
 			{
 				continue;
 			}
-			tclass* ptci=yfind::class_search(sh,v.get(i+2).val);
+			tclass* ptci=yfind::find_class(sh,v.get(i+2).val);
 			if(null==ptci)
 			{
 				continue;
@@ -439,7 +440,7 @@ struct ysent
 	{
 		for(int i=0;i<tfi.vsent.count();++i)
 		{
-			if(sh.m_key.is_asm_ins(tfi.vsent[i].vword.get_bottom().val))
+			if(sh.key.is_asm_ins(tfi.vsent[i].vword.get_bottom().val))
 			{
 				continue;
 			}

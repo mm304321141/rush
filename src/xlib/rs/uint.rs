@@ -39,7 +39,7 @@
 	{
 		mov edi,this
 		mov [edi],0
-		movb [edi],a
+		mov8 [edi],a
 	}
 
 	TYPE to<TYPE>()

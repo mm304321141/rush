@@ -5,17 +5,18 @@
 //有格式代码转无格式
 struct yformat
 {
-	static rbool process(tsh& sh)
+	static rbool proc(tsh& sh)
 	{
-		for(tfile* p=sh.m_file.begin();p!=sh.m_file.end();p=sh.m_file.next(p))
+		tfile* p;
+		for_set(p,sh.s_file)
 		{
 			//先进行控制结构替换，因为case后面可能有冒号防止被识别为函数
-			ifn(control_replace(sh,p->vword))
+			ifn(replace_control(sh,p->vword))
 			{
 				return false;
 			}
-			class_def_replace(sh,p->vword);
-			func_def_replace(sh,p->vword);
+			replace_class_def(sh,p->vword);
+			replace_func_def(sh,p->vword);
 		}
 		return true;
 	}
@@ -61,12 +62,13 @@ struct yformat
 		return v.count()-1;
 	}
 
-	static rbool control_replace(tsh& sh,rbuf<tword>& v)
+	static rbool replace_control(tsh& sh,rbuf<tword>& v)
 	{
 		for(int i=0;i<v.count();i++)
 		{
 			ifn(v[i].val==rskey(c_for)||v[i].val==rskey(c_if)||v[i].val==rskey(c_else)||
-				v[i].val==rskey(c_ifn)||v[i].val==rskey(c_switch)||v[i].val==rskey(c_case))
+				v[i].val==rskey(c_ifn)||v[i].val==rskey(c_switch)||v[i].val==rskey(c_case)||
+				v[i].val=="for_set")
 			{
 				continue;
 			}
@@ -90,12 +92,12 @@ struct yformat
 		}
 		if(ybase::arrange(v))
 		{
-			return control_replace(sh,v);
+			return replace_control(sh,v);
 		}
 		return true;
 	}
 
-	static void func_def_replace(tsh& sh,rbuf<tword>& v)
+	static void replace_func_def(tsh& sh,rbuf<tword>& v)
 	{
 		for(int i=0;i<v.count();i++)
 		{
@@ -117,11 +119,11 @@ struct yformat
 		}
 		if(ybase::arrange(v))
 		{
-			func_def_replace(sh,v);
+			replace_func_def(sh,v);
 		}
 	}
 
-	static void class_def_replace(tsh& sh,rbuf<tword>& v)
+	static void replace_class_def(tsh& sh,rbuf<tword>& v)
 	{
 		for(int i=0;i<v.count();i++)
 		{
@@ -153,7 +155,7 @@ struct yformat
 		}
 		if(ybase::arrange(v))
 		{
-			class_def_replace(sh,v);
+			replace_class_def(sh,v);
 		}
 	}
 

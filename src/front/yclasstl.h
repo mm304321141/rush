@@ -6,24 +6,23 @@
 //进行类模板替换，增加了一些新类
 struct yclasstl
 {
-	static rbool process(tsh& sh)
+	static rbool proc(tsh& sh)
 	{
 		rbuf<tclass*> vtmp;
-		for(tclass* p=sh.m_class.begin();
-			p!=sh.m_class.end();p=sh.m_class.next(p))
+		tclass* p;
+		for_set(p,sh.s_class)
 		{
 			vtmp.push(p);
 		}
 		for(int i=0;i<vtmp.count();i++)
 		{
-			ifn(type_replace(sh,vtmp[i]->vword,0))
+			ifn(replace_type(sh,vtmp[i]->vword,0))
 			{
 				return false;
 			}
 		}
 		vtmp.clear();
-		for(tclass* p=sh.m_class.begin();
-			p!=sh.m_class.end();p=sh.m_class.next(p))
+		for_set(p,sh.s_class)
 		{
 			vtmp.push(p);
 		}
@@ -48,14 +47,14 @@ struct yclasstl
 		temp+=rsoptr(c_tbk_l);
 		temp+=tci.name;
 		temp+=rsoptr(c_tbk_r);
-		if(!type_replace(sh,temp))
+		if(!replace_type(sh,temp))
 		{
 			return false;
 		}
 		return true;
 	}
 
-	static rbool type_replace(tsh& sh,rbuf<tword>& v,int level=0)
+	static rbool replace_type(tsh& sh,rbuf<tword>& v,int level=0)
 	{
 		if(level>c_rs_deep)
 		{
@@ -63,14 +62,14 @@ struct yclasstl
 			return false;
 		}
 		level++;
-		rbool need=point_replace(sh,v);
+		rbool need=replace_point(sh,v);
 		for(int i=1;i<v.count();i++)
 		{
 			if(v[i]!=rsoptr(c_tbk_l))
 			{
 				continue;
 			}
-			tclass* pctl=yfind::classtl_search(sh,v[i-1].val);
+			tclass* pctl=yfind::find_classtl(sh,v[i-1].val);
 			if(pctl==null)
 			{
 				continue;
@@ -82,7 +81,7 @@ struct yclasstl
 				rserror(v[i-1],"miss >");
 				return false;
 			}
-			rbuf<rbuf<tword> > vparam=ybase::comma_split<tword>(
+			rbuf<rbuf<tword> > vparam=ybase::split_comma<tword>(
 				sh,v.sub(left+1,right));
 			if(vparam.count()!=pctl->vtl.count())
 			{
@@ -106,30 +105,30 @@ struct yclasstl
 			tclass item=*pctl;
 			item.name=v[left-1].val;
 			item.vtl.clear();
-			vtl_replace(item.vword,pctl->vtl,vparam);
-			sh.m_class.insert(item);
-			tclass* ptci=yfind::class_search(sh,item.name);
+			replace_vtl(item.vword,pctl->vtl,vparam);
+			sh.s_class.insert(item);
+			tclass* ptci=yfind::find_class(sh,item.name);
 			if(ptci==null)
 			{
 				rserror(v.get(i),"can't find class "+item.name);
 				return false;
 			}
-			ifn(type_replace(sh,ptci->vword,level))
+			ifn(replace_type(sh,ptci->vword,level))
 			{
 				return false;
 			}
 		}
 		ybase::arrange(v);
-		need=point_replace(sh,v);
+		need=replace_point(sh,v);
 		if(need)
 		{
-			if(!type_replace(sh,v,level))
+			if(!replace_type(sh,v,level))
 			{
 				return false;
 			}
 		}
 		combine_quote(sh,v);
-		ifn(yconsteval::op_const_exp(sh,v,false))
+		ifn(yconsteval::optimize_const_exp(sh,v,false))
 		{
 			return false;
 		}
@@ -171,17 +170,17 @@ struct yclasstl
 		//v.count()==1&&v[0].val.is_number();//todo:
 	}
 
-	static void vtl_replace(rbuf<tword>& result,rbuf<ttl>& vtl,
+	static void replace_vtl(rbuf<tword>& result,rbuf<ttl>& vtl,
 		rbuf<rbuf<tword> >& vparam)
 	{
 		for(int j=0;j<vparam.count();j++)
 		{
-			str_replace(result,vtl[j].name,ybase::vword_to_vstr(vparam[j]));
+			replace_str(result,vtl[j].name,ybase::trans_vword_to_vstr(vparam[j]));
 		}
 		ybase::arrange(result);
 	}
 
-	static void str_replace(rbuf<tword>& v,const rstr& src,const rbuf<rstr>& vstr)
+	static void replace_str(rbuf<tword>& v,const rstr& src,const rbuf<rstr>& vstr)
 	{
 		for(int i=0;i<v.count();i++)
 		{
@@ -194,7 +193,7 @@ struct yclasstl
 	}
 
 	//返回是否需要重排
-	static rbool point_replace(const tsh& sh,rbuf<tword>& v)
+	static rbool replace_point(const tsh& sh,rbuf<tword>& v)
 	{
 		for(int i=0;i<v.count();i++)
 		{
@@ -219,7 +218,7 @@ struct yclasstl
 				ybase::push_twi(vword,word,v[i].val);
 				ybase::push_twi(vword,word,rsoptr(c_tbk_r));
 				ybase::push_twi(vword,word,rsoptr(c_tbk_r));
-				v[i].multi=ybase::vword_to_vstr(vword);
+				v[i].multi=ybase::trans_vword_to_vstr(vword);
 				v[i].val.clear();
 				v[i+1].val.clear();
 				v[i+2].val.clear();
@@ -238,7 +237,7 @@ struct yclasstl
 				ybase::push_twi(vword,word,v[i].val);
 				ybase::push_twi(vword,word,rsoptr(c_tbk_r));
 
-				v[i].multi=ybase::vword_to_vstr(vword);
+				v[i].multi=ybase::trans_vword_to_vstr(vword);
 				v[i].val.clear();
 				v[i+1].val.clear();
 			}

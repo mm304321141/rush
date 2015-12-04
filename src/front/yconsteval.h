@@ -5,7 +5,7 @@
 //常量表达式优化
 struct yconsteval
 {
-	static rbool op_const_exp(const tsh& sh,rbuf<tword>& v,rbool clear_sbk)
+	static rbool optimize_const_exp(const tsh& sh,rbuf<tword>& v,rbool clear_sbk)
 	{
 		if(!tconf::c_op_const_eval)
 		{
@@ -33,7 +33,7 @@ struct yconsteval
 			}
 			int dst;
 			ifn(eval(sh,
-				ybase::vword_to_vstr(v.sub(pos,right)),dst))
+				ybase::trans_vword_to_vstr(v.sub(pos,right)),dst))
 			{
 				rserror(v[i],"const_eval");
 				return false;
@@ -90,7 +90,7 @@ struct yconsteval
 				sopnd.push(outopnd);
 				i=right;
 			}
-			elif(sh.m_optr.is_optr(src[i]))
+			elif(sh.optr.is_optr(src[i]))
 			{
 				if(soptr.empty())
 				{
@@ -98,7 +98,7 @@ struct yconsteval
 					return false;
 				}
 				rstr cur=src[i];
-				if(!sh.m_optr.precede(soptr.top(),cur))
+				if(!sh.optr.is_precede(soptr.top(),cur))
 				{
 					soptr.push(cur);
 					continue;

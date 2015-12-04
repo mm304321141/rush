@@ -4,7 +4,7 @@
 
 struct rstr
 {
-	rbuf<uchar> m_buf;
+	rbuf<uchar> buf;
 
 	~rstr()
 	{
@@ -28,14 +28,14 @@ struct rstr
 
 	rstr(void* p,int len)
 	{
-		m_buf.alloc(len);
+		buf.alloc(len);
 		xf::memcpy(begin(),p,len);
 	}
 
 	rstr(const void* p,const void* q)
 	{
 		int len=(int)((uchar*)q-(uchar*)p);
-		m_buf.alloc(len);
+		buf.alloc(len);
 		xf::memcpy(begin(),p,len);
 	}
 
@@ -69,15 +69,17 @@ struct rstr
 
 	rstr(const rstr& s)
 	{
-		m_buf.alloc_not_change(s.m_buf.m_max);
-		m_buf.m_count=s.count();
+		buf.alloc_not_change(s.buf.max_count);
+		buf.cur_count=s.count();
 		xf::memcpy(begin(),s.begin(),s.count());
 	}
 
+#ifdef SUPPORT_MOVE
 	rstr(rstr&& s)
 	{
-		m_buf.move(s.m_buf);
+		buf.move(s.buf);
 	}
+#endif
 
 	//todo: 改为const
 	int toint()
@@ -136,69 +138,73 @@ struct rstr
 	//赋值函数千万不要让编译器自动生成
 	void operator=(const rstr& s)
 	{
-		m_buf.realloc_n_not_change(s.m_buf.m_max);
-		m_buf.m_count=s.count();
+		buf.realloc_n_not_change(s.buf.max_count);
+		buf.cur_count=s.count();
 		xf::memcpy(begin(),s.begin(),s.count());
-		//m_buf=a.m_buf;
+		//buf=a.buf;
 	}
 
+#ifdef SUPPORT_MOVE
 	void operator=(rstr&& s)
 	{
-		m_buf.free();
-		m_buf.move(s.m_buf);
+		buf.free();
+		buf.move(s.buf);
 	}
+#endif
 
 	uchar& operator[](int num) const 
 	{
-		return m_buf[num];
+		return buf[num];
 	}
 
 	friend rbool operator==(const rstr& a,const rstr& b)
 	{
-		return a.m_buf==b.m_buf;
+		return a.buf==b.buf;
 	}
 
 	friend rbool operator!=(const rstr& a,const rstr& b)
 	{
-		return a.m_buf!=b.m_buf;
+		return a.buf!=b.buf;
 	}
 
 	//有待优化
 	friend rstr operator+(const rstr& a,const rstr& b)
 	{
 		int total=a.count()+b.count();
-		int max=r_max(a.m_buf.m_max,b.m_buf.m_max);
+		int max=r_max(a.buf.max_count,b.buf.max_count);
 		rstr ret;
 		if(total>max)
 		{
-			ret.m_buf.alloc_not_change(rbuf<char>::extend_num(total));
+			ret.buf.alloc_not_change(rbuf<char>::get_extend_num(total));
 		}
 		else
 		{
-			ret.m_buf.alloc_not_change(max);
+			ret.buf.alloc_not_change(max);
 		}
-		ret.m_buf.m_count=total;
-		xf::memcpy(ret.begin(),a.begin(),a.m_buf.m_count);
-		xf::memcpy(ret.begin()+a.m_buf.m_count,b.begin(),b.m_buf.m_count);
+		ret.buf.cur_count=total;
+		xf::memcpy(ret.begin(),a.begin(),a.buf.cur_count);
+		xf::memcpy(ret.begin()+a.buf.cur_count,b.begin(),b.buf.cur_count);
 		return r_move(ret);
 		//rstr ret;
-		//ret.m_buf=a.m_buf+b.m_buf;
+		//ret.buf=a.buf+b.buf;
 		//return ret;
 	}
 
 	void operator+=(const rstr& a)
 	{
-		m_buf+=a.m_buf;
+		buf+=a.buf;
 	}
 
+#ifdef SUPPORT_MOVE
 	void operator+=(rstr&& a)
 	{
-		m_buf+=r_move(a.m_buf);
+		buf+=r_move(a.buf);
 	}
+#endif
 
 	void operator+=(uchar ch)
 	{
-		m_buf+=ch;
+		buf+=ch;
 	}
 
 	friend rbool operator<(const rstr& a,const rstr& b)
@@ -232,7 +238,7 @@ struct rstr
 
 	uchar* set_size(int size)
 	{
-		m_buf.realloc_n(size);
+		buf.realloc_n(size);
 		return begin();
 	}
 
@@ -240,34 +246,34 @@ struct rstr
 	{
 		//todo:如果字符串长度为0没必要分配内存
 		int len=xf::strlen((const char*)p);
-		m_buf.realloc_n_not_change(rbuf<uchar>::extend_num(len));
-		m_buf.m_count=len;
-		xf::memcpy(m_buf.begin(),p,len);
+		buf.realloc_n_not_change(rbuf<uchar>::get_extend_num(len));
+		buf.cur_count=len;
+		xf::memcpy(buf.begin(),p,len);
 	}
 
 	void push(uchar ch)
 	{
-		m_buf.push(ch);
+		buf.push(ch);
 	}
 
 	void push_front(uchar ch)
 	{
-		m_buf.push_front(ch);
+		buf.push_front(ch);
 	}
 
 	uchar pop()
 	{
-		return m_buf.pop();
+		return buf.pop();
 	}
 
 	uchar pop_front()
 	{
-		return m_buf.pop_front();
+		return buf.pop_front();
 	}
 
 	int count() const 
 	{
-		return m_buf.count();
+		return buf.count();
 	}
 
 	int size() const
@@ -277,22 +283,22 @@ struct rstr
 
 	uchar* begin() const 
 	{
-		return m_buf.begin();
+		return buf.begin();
 	}
 
 	uchar* end() const 
 	{
-		return m_buf.end();
+		return buf.end();
 	}
 
 	rbool empty() const 
 	{
-		return m_buf.empty();
+		return buf.empty();
 	}
 
 	void clear()
 	{
-		m_buf.clear();
+		buf.clear();
 	}
 
 	static uchar* next(void* p)
@@ -315,6 +321,11 @@ struct rstr
 		return int((uchar*)p-begin());
 	}
 
+	rstr sub_tail(int num) const
+	{
+		return sub(count()-num);
+	}
+
 	rstr sub_trim(int num) const
 	{
 		return sub(0,count()-num);
@@ -328,20 +339,20 @@ struct rstr
 	rstr sub(int begin,int end) const
 	{
 		rstr ret;
-		ret.m_buf=m_buf.sub(begin,end);
+		ret.buf=buf.sub(begin,end);
 		return r_move(ret);
 	}
 
 	rstr reverse() const
 	{
 		rstr result=(*this);
-		r_reverse<uchar>(result.m_buf);
+		r_reverse<uchar>(result.buf);
 		return result;
 	}
 
 	rbool erase(int begin,int end)
 	{
-		return m_buf.erase(begin,end);
+		return buf.erase(begin,end);
 	}
 
 	rbool erase(int i)
@@ -351,7 +362,7 @@ struct rstr
 
 	rbool insert(int pos,const rstr& a)
 	{
-		return m_buf.insert(pos,a.m_buf);
+		return buf.insert(pos,a.buf);
 	}
 
 	uchar get(int i) const
@@ -362,7 +373,7 @@ struct rstr
 		}
 		else
 		{
-			return m_buf[i];
+			return buf[i];
 		}
 	}
 
@@ -370,7 +381,7 @@ struct rstr
 	{
 		if(count()>0)
 		{
-			return m_buf.m_p[count()-1];
+			return buf.point[count()-1];
 		}
 		return (uchar)0;
 	}
@@ -379,7 +390,7 @@ struct rstr
 	{
 		if(count()>0)
 		{
-			return m_buf.m_p[0];
+			return buf.point[0];
 		}
 		return (uchar)0;
 	}
@@ -402,7 +413,7 @@ struct rstr
 		}
 		for(int i=0;i<count();i++)
 		{
-			if(!is_number(m_buf[i]))
+			if(!is_number(buf[i]))
 			{
 				return false;
 			}
@@ -415,9 +426,14 @@ struct rstr
 		return r_find<rstr>(*this,s,begin);
 	}
 
+	int find(uchar ch,int begin=0) const
+	{
+		return buf.find(ch);
+	}
+
 	int find_last(uchar ch) const
 	{
-		return m_buf.find_last(ch);
+		return buf.find_last(ch);
 	}
 
 	rbool exist(const rstr& s) const
@@ -436,29 +452,34 @@ struct rstr
 		return ch>=r_char('0')&&ch<=r_char('9');
 	}
 
-	static uchar chartoup(uchar ch)
+	static uchar trans_char_to_up(uchar ch)
 	{
 		return r_cond(ch>=r_char('a')&&ch<=r_char('z'),ch-32,ch);
 	}
 
-	static int upchartonum(uchar ch)
+	static int trans_upchar_to_num(uchar ch)
 	{
 		return r_cond(ch>=r_char('A'),ch-r_char('A')+10,ch-r_char('0'));
 	}
 
-	static int chartonum(uchar ch)
+	static int trans_char_to_num(uchar ch)
 	{
-		return upchartonum(chartoup(ch));
+		return trans_upchar_to_num(trans_char_to_up(ch));
 	}
 
-	static rstr hextodec(rstr s)
+	static uchar trans_hex_to_byte(rstr s)
+	{
+		return (uchar)(trans_char_to_num(s.get(0))*16+trans_char_to_num(s.get(1)));
+	}
+
+	static rstr trans_hex_to_dec(rstr s)
 	{
 		uint a;
 		xf::sscanf(s.cstr_t(),"%x",&a);
 		return rstr(a);
 	}
 
-	static rstr bintodec(rstr s)
+	static rstr trans_bin_to_dec(rstr s)
 	{
 		uint sum=0;
 		uint pro=1;
@@ -493,7 +514,7 @@ struct rstr
 		xf::print(cstr_t());
 	}
 
-	void printl()
+	void printl() const
 	{
 		xf::print((*this+"\n").cstr_t());
 	}

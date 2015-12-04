@@ -20,7 +20,8 @@ int(1)
 
 void main()
 {
-	1.print
+	//1.print
+	print 1
 	"abc".printl
 	("123"+"abc").printl
 	printl "123"+"abc"

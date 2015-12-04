@@ -83,7 +83,7 @@ struct rdir
 	{
 		rstrw ret;
 		wchar ch=r_char('.');
-		int pos=name.m_buf.find_last(ch);
+		int pos=name.buf.find_last(ch);
 		if(pos<name.count())
 		{
 			ret=name.sub(0,pos);
@@ -105,7 +105,7 @@ struct rdir
 			return ret;
 		}
 		ret.set_w(buf.begin());
-		return dir_std_w(ret);
+		return std_dir_w(ret);
 	}
 
 	static rstr get_exe_name()
@@ -132,7 +132,7 @@ struct rdir
 			return ret;
 		}
 		ret.set_w(buf.begin());
-		ret=dir_std_w(ret);
+		ret=std_dir_w(ret);
 		ret+=r_char('/');
 		return r_move(ret);
 	}
@@ -143,7 +143,7 @@ struct rdir
 	}
 	
 	//非win系统区分大小写
-	static rstrw dir_std_w(rstrw s)
+	static rstrw std_dir_w(rstrw s)
 	{
 		for(ushort* p=s.begin();p!=s.end();++p)
 		{
@@ -155,12 +155,12 @@ struct rdir
 		return r_move(s);
 	}
 
-	static rstr dir_std(const rstr& s)
+	static rstr std_dir(const rstr& s)
 	{
-		return dir_std_w(s).torstr();
+		return std_dir_w(s).torstr();
 	}
 
-	static rstrw dir_std_rev_w(rstrw s)
+	static rstrw std_dir_rev_w(rstrw s)
 	{
 		for(ushort* p=s.begin();p!=s.end();++p)
 		{
@@ -172,9 +172,9 @@ struct rdir
 		return r_move(s);
 	}
 
-	static rstr dir_std_rev(const rstr& s)
+	static rstr std_dir_rev(const rstr& s)
 	{
-		return dir_std_rev_w(s).torstr();
+		return std_dir_rev_w(s).torstr();
 	}
 
 	static rbuf<rstr> get_file_bfs(rstr path)
@@ -184,7 +184,7 @@ struct rdir
 		{
 			return ret;
 		}
-		path=dir_std(path);
+		path=std_dir(path);
 		if(path.count()>=1&&path.get(path.count()-1)!=r_char('/'))
 		{
 			path+="/";
@@ -196,7 +196,7 @@ struct rdir
 			path=queue.pop_front();
 			R_WIN32_FIND_DATAW wfd;
 			void* handle=xf::FindFirstFileW(
-				rcode::utf8_to_utf16(path+"*.*").cstrw_t(),&wfd); 
+				rcode::trans_utf8_to_utf16(path+"*.*").cstrw_t(),&wfd); 
 			if((int)handle==-1)
 			{
 				continue;
@@ -207,8 +207,8 @@ struct rdir
 				int wsize=xf::strlenw((wchar*)(&wfd.cFileName))*2;
 				name.set_size(wsize);
 				xf::memcpy(name.begin(),&wfd.cFileName,wsize);
-				name=rcode::utf16_to_utf8(name);
-				name=dir_std(name);
+				name=rcode::trans_utf16_to_utf8(name);
+				name=std_dir(name);
 				if("."!=name&&".."!=name)
 				{
 					if(AND(wfd.dwFileAttributes,

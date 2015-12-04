@@ -7,19 +7,19 @@ struct ymatch
 	//可构造转换传递
 	static rbool is_construct_pass(const tsh& sh,const tsent& src,const rstr& dst)
 	{
-		tclass* ptci=yfind::class_search_t(sh,dst);
+		tclass* ptci=yfind::find_class_t(sh,dst);
 		if(ptci==null)
 		{
 			return false;
 		}
-		tfunc* ptfi=yfind::func_search(*ptci,ybase::get_tname(dst),
+		tfunc* ptfi=yfind::find_func(*ptci,ybase::get_tname(dst),
 			ybase::get_tname(dst)+rsoptr(c_addr),
 			ybase::get_tname(src.type)+rsoptr(c_addr));
 		if(ptfi!=null)
 		{
 			return true;
 		}
-		return null!=yfind::func_search(*ptci,ybase::get_tname(dst),
+		return null!=yfind::find_func(*ptci,ybase::get_tname(dst),
 			ybase::get_tname(dst)+rsoptr(c_addr),ybase::get_tname(src.type));
 	}
 
@@ -60,7 +60,8 @@ struct ymatch
 	static tfunc* find_direct_construct_pass(const tsh& sh,const tclass& tci,const rstr& fname,
 		const rbuf<tsent>& vsent)
 	{
-		for(tfunc* p=tci.vfunc.begin();p!=tci.vfunc.end();p=tci.vfunc.next(p))
+		tfunc* p;
+		for_set(p,tci.vfunc)
 		{
 			if(fname!=p->name)
 			{
@@ -83,7 +84,7 @@ struct ymatch
 		}
 		if(src.vword.count()==1&&
 			(src.vword[0].is_const()||
-			sh.m_key.is_asm_reg(src.vword[0].val))&&
+			sh.key.is_asm_reg(src.vword[0].val))&&
 			ybase::is_quote(dst))
 		{
 			return false;
@@ -121,7 +122,8 @@ struct ymatch
 	static tfunc* find_full_pass(const tsh& sh,const tclass& tci,const rstr& fname,
 		const rbuf<tsent>& vsent)
 	{
-		for(tfunc* p=tci.vfunc.begin();p!=tci.vfunc.end();p=tci.vfunc.next(p))
+		tfunc* p;
+		for_set(p,tci.vfunc)
 		{
 			if(fname!=p->name)
 			{
@@ -168,12 +170,12 @@ struct ymatch
 		{
 			return !ybase::is_quote(v[start+2].val);
 		}
-		tclass* ptci=yfind::class_search(sh,v[start].val);
+		tclass* ptci=yfind::find_class(sh,v[start].val);
 		if(ptci==null)
 		{
 			return false;
 		}
-		tfunc* ptfi=yfind::func_search_dec(*ptci,v[start+2].val);
+		tfunc* ptfi=yfind::find_func_dec(*ptci,v[start+2].val);
 		if(ptfi==null)
 		{
 			return false;
@@ -198,7 +200,7 @@ struct ymatch
 	}
 
 	//先完全传递，找不到再尝试替换单词
-	static tfunc* find_replace(const tsh& sh,const tclass& tci,const rstr& fname,
+	static tfunc* find_and_replace(const tsh& sh,const tclass& tci,const rstr& fname,
 		rbuf<tsent>& vsent)
 	{
 		tfunc* ptfi=find_full_pass(sh,tci,fname,vsent);

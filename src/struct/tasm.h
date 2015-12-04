@@ -29,15 +29,14 @@ struct treg
 
 struct topnd
 {
-	int type;
 	int off;
 	int val;
 
 	enum
 	{
 		c_null,
-		c_reg,//ebp
 		c_imme,//4
+		c_reg,//ebp
 		c_addr,//[ebp+4]
 	};
 
@@ -48,14 +47,8 @@ struct topnd
 
 	void clear()
 	{
-		type=c_null;
 		off=0;
 		val=0;
-	}
-
-	rbool empty()
-	{
-		return type==c_null;
 	}
 };
 
@@ -68,6 +61,30 @@ struct tins
 	tins()
 	{
 		clear();
+	}
+
+	int get_index() const
+	{
+		return type/6;
+	}
+
+	int get_first_type() const
+	{
+		//<c_nop_n是单操作数或无操作数，否则是双操作数
+		if(type<c_nop_n)
+		{
+			return type%6+1;
+		}
+		return type%6%2+2;
+	}
+
+	int get_second_type() const
+	{
+		if(type<c_nop_n)
+		{
+			return topnd::c_null;
+		}
+		return type%6/2+1;
 	}
 
 	void clear()
@@ -118,11 +135,15 @@ struct tins
 		c_jebxnz_r,
 		c_jebxnz_a,
 
-		c_halt_n=60,
+		c_bnot_i=60,
+		c_bnot_r,
+		c_bnot_a,
 
-		c_nop_n=66,
+		c_halt_n=66,
 
-		c_lea_ri=72,
+		c_nop_n=72,
+
+		c_lea_ri=78,
 		c_lea_ai,
 		c_lea_rr,
 		c_lea_ar,
@@ -136,19 +157,19 @@ struct tins
 		c_mov_ra,
 		c_mov_aa,
 
-		c_movb_ri,
-		c_movb_ai,
-		c_movb_rr,
-		c_movb_ar,
-		c_movb_ra,
-		c_movb_aa,
+		c_mov8_ri,
+		c_mov8_ai,
+		c_mov8_rr,
+		c_mov8_ar,
+		c_mov8_ra,
+		c_mov8_aa,
 
-		c_movl_ri,
-		c_movl_ai,
-		c_movl_rr,
-		c_movl_ar,
-		c_movl_ra,
-		c_movl_aa,
+		c_mov64_ri,
+		c_mov64_ai,
+		c_mov64_rr,
+		c_mov64_ar,
+		c_mov64_ra,
+		c_mov64_aa,
 
 		c_add_ri,
 		c_add_ai,
@@ -241,11 +262,7 @@ struct tins
 		c_bor_ra,
 		c_bor_aa,
 
-		c_bnot_i,
-		c_bnot_r,
-		c_bnot_a,
-
-		c_bxor_ri=180,
+		c_bxor_ri,
 		c_bxor_ai,
 		c_bxor_rr,
 		c_bxor_ar,
@@ -388,6 +405,7 @@ struct tasm
 		start=a.start;
 	}
 
+#ifdef SUPPORT_MOVE
 	tasm(tasm&& a)
 	{
 		ins=a.ins;
@@ -396,6 +414,7 @@ struct tasm
 		ptfi=a.ptfi;
 		start=a.start;
 	}
+#endif
 
 	void operator=(const tasm& a)
 	{
@@ -406,6 +425,7 @@ struct tasm
 		start=a.start;
 	}
 
+#ifdef SUPPORT_MOVE
 	void operator=(tasm&& a)
 	{
 		ins=a.ins;
@@ -414,6 +434,7 @@ struct tasm
 		ptfi=a.ptfi;
 		start=a.start;
 	}
+#endif
 
 	void clear()
 	{

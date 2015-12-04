@@ -4,7 +4,7 @@
 
 struct rfile
 {
-	void* m_fp;
+	void* fp;
 	
 	~rfile()
 	{
@@ -13,7 +13,7 @@ struct rfile
 
 	rfile()
 	{
-		m_fp=null;
+		fp=null;
 	}
 
 	rfile(rstr name,rstr mode="r")
@@ -23,15 +23,15 @@ struct rfile
 
 	rbool close()
 	{
-		if(null==m_fp)
+		if(null==fp)
 		{
 			return false;
 		}
-		if(xf::fclose(m_fp)!=0)
+		if(xf::fclose(fp)!=0)
 		{
 			return false;
 		}
-		m_fp=null;
+		fp=null;
 		return true;
 	}
 	
@@ -39,7 +39,7 @@ struct rfile
 	//推荐用 r只读，w写，rw读写，本函数只有二进制模式
 	rbool open(rstr name,rstr mode="r")
 	{
-		m_fp=null;
+		fp=null;
 		if(!exist(name))
 		{
 			if("rw"==mode)
@@ -66,8 +66,8 @@ struct rfile
 		{
 			mode="rb+";
 		}
-		m_fp=xfs::fopen(name,mode);
-		if(null==m_fp)
+		fp=xfs::fopen(name,mode);
+		if(null==fp)
 		{
 			return false;
 		}
@@ -88,21 +88,21 @@ struct rfile
 
 	rbool read(int64 off,int len,void* buf)
 	{
-		if(null==m_fp)
+		if(null==fp)
 		{
 			return false;
 		}
 		set_off64(off);
-		return len==(int)(xf::fread(buf,1,len,m_fp));
+		return len==(int)(xf::fread(buf,1,len,fp));
 	}
 
 	rbool read(int len,void* buf)
 	{
-		if(null==m_fp)
+		if(null==fp)
 		{
 			return false;
 		}
-		return len==(int)(xf::fread(buf,1,len,m_fp));
+		return len==(int)(xf::fread(buf,1,len,fp));
 	}
 	
 	//读取并返回整个文件，通常用于小文件
@@ -183,21 +183,21 @@ struct rfile
 
 	rbool write(int64 off,int len,const void* buf)
 	{
-		if(null==m_fp)
+		if(null==fp)
 		{
 			return false;
 		}
 		set_off64(off);
-		return len==(int)(xf::fwrite(buf,1,len,m_fp));
+		return len==(int)(xf::fwrite(buf,1,len,fp));
 	}
 
 	rbool write(int len,const void* buf)
 	{
-		if(null==m_fp)
+		if(null==fp)
 		{
 			return false;
 		}
-		return len==(int)(xf::fwrite(buf,1,len,m_fp));
+		return len==(int)(xf::fwrite(buf,1,len,fp));
 	}
 
 	rbool write(rstr s)
@@ -232,12 +232,12 @@ struct rfile
 
 	int64 size64()
 	{
-		if(null==m_fp)
+		if(null==fp)
 		{
 			return 0;//返回-1和返回0各有利弊
 		}
 		int64 cur=get_off64();
-		xf::fseek64(m_fp,0,xf::X_SEEK_END);
+		xf::fseek64(fp,0,xf::X_SEEK_END);
 		int64 ret=get_off64();
 		set_off64(cur);
 		return ret;
@@ -250,11 +250,11 @@ struct rfile
 
 	int64 get_off64()
 	{
-		if(null==m_fp)
+		if(null==fp)
 		{
 			return 0;
 		}
-		return xf::ftell64(m_fp);
+		return xf::ftell64(fp);
 	}
 
 	rbool set_off(int off)
@@ -264,7 +264,7 @@ struct rfile
 
 	rbool set_off64(int64 off)
 	{
-		return 0==xf::fseek64(m_fp,off,xf::X_SEEK_SET);
+		return 0==xf::fseek64(fp,off,xf::X_SEEK_SET);
 	}
 
 	static rbool exist(rstr name)

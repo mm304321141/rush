@@ -19,6 +19,8 @@ del /F /Q .\proj\*.user
 rd /S /Q .\proj\debug
 rd /S /Q .\proj\Release
 
+rd /S /Q .\proj\x64
+
 del /F /Q .\rush.asm
 del /F /Q .\rush.cpp
 del /F /Q .\rush.exe

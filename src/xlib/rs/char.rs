@@ -14,13 +14,13 @@
 	{
 		mov esi,this
 		mov edi,a
-		movb [esi],[edi]
+		mov8 [esi],[edi]
 	}
 
 	char(char a)
 	{
 		mov esi,this
-		movb [esi],a
+		mov8 [esi],a
 	}
 	
 	TYPE to<TYPE>()
@@ -56,14 +56,14 @@
 	{
 		mov esi,this
 		mov s_ret,0
-		movb s_ret,[esi]
+		mov8 s_ret,[esi]
 	}
 
 	uint touint()
 	{
 		mov esi,this
 		mov s_ret,0
-		movb s_ret,[esi]
+		mov8 s_ret,[esi]
 	}
 
 	/*rstr torstr()
@@ -75,32 +75,32 @@
 	char tochar()
 	{
 		mov esi,this
-		movb s_ret,[esi]
+		mov8 s_ret,[esi]
 	}
 
 	void operator=(char& a)
 	{
 		mov esi,this
 		mov edi,a
-		movb [esi],[edi]
+		mov8 [esi],[edi]
 	}
 
 	void operator=(char a)
 	{
 		mov esi,this
-		movb [esi],a
+		mov8 [esi],a
 	}
 	
 	void operator=(int a)
 	{
 		mov esi,this
-		movb [esi],a
+		mov8 [esi],a
 	}
 
 	void operator=(uint a)
 	{
 		mov esi,this
-		movb [esi],a
+		mov8 [esi],a
 	}
 
 	void operator++()
@@ -148,13 +148,13 @@
 	void set(char a)
 	{
 		mov esi,this
-		movb [esi],a
+		mov8 [esi],a
 	}
 
 	void set(int a)
 	{
 		mov esi,this
-		movb [esi],a
+		mov8 [esi],a
 	}
 
 	void clear()

@@ -24,7 +24,8 @@ struct zvm
 			}
 			elif(count==3)
 			{
-				reg.eax=((int (*)(int,int,int))func)(v_pto_int(reg.esp),v_pto_int(reg.esp+4),v_pto_int(reg.esp+8));
+				reg.eax=((int (*)(int,int,int))func)(
+					v_pto_int(reg.esp),v_pto_int(reg.esp+4),v_pto_int(reg.esp+8));
 			}
 			elif(count==4)
 			{
@@ -54,7 +55,8 @@ struct zvm
 			}
 			elif(count==3)
 			{
-				((void (*)(int,int,int))func)(v_pto_int(reg.esp),v_pto_int(reg.esp+4),v_pto_int(reg.esp+8));
+				((void (*)(int,int,int))func)(v_pto_int(reg.esp),
+					v_pto_int(reg.esp+4),v_pto_int(reg.esp+8));
 			}
 			elif(count==4)
 			{
@@ -267,6 +269,19 @@ next:
 		case tins::c_jebxnz_a+3:
 			return false;
 
+		case tins::c_bnot_i:
+			return false;
+		case tins::c_bnot_r:
+			v_get_reg(cur->first)=~v_get_reg(cur->first);
+			v_next_ins;
+		case tins::c_bnot_a:
+			v_get_addr(cur->first)=~v_get_addr(cur->first);
+			v_next_ins;
+		case tins::c_bnot_a+1:
+		case tins::c_bnot_a+2:
+		case tins::c_bnot_a+3:
+			return false;
+
 		case tins::c_halt_n:
 			break;
 		case tins::c_halt_n+1:
@@ -319,23 +334,23 @@ next:
 			v_get_addr(cur->first)=v_get_addr(cur->second);
 			v_next_ins;
 
-		case tins::c_movb_ri:
-		case tins::c_movb_ai:
-		case tins::c_movb_rr:
-		case tins::c_movb_ar:
-		case tins::c_movb_ra:
+		case tins::c_mov8_ri:
+		case tins::c_mov8_ai:
+		case tins::c_mov8_rr:
+		case tins::c_mov8_ar:
+		case tins::c_mov8_ra:
 			return false;
-		case tins::c_movb_aa:
+		case tins::c_mov8_aa:
 			v_get_addr_8(cur->first)=v_get_addr_8(cur->second);
 			v_next_ins;
 
-		case tins::c_movl_ri:
-		case tins::c_movl_ai:
-		case tins::c_movl_rr:
-		case tins::c_movl_ar:
-		case tins::c_movl_ra:
+		case tins::c_mov64_ri:
+		case tins::c_mov64_ai:
+		case tins::c_mov64_rr:
+		case tins::c_mov64_ar:
+		case tins::c_mov64_ra:
 			return false;
-		case tins::c_movl_aa:
+		case tins::c_mov64_aa:
 			v_get_addr_64(cur->first)=v_get_addr_64(cur->second);
 			v_next_ins;
 
@@ -584,20 +599,7 @@ next:
 			v_next_ins;
 		case tins::c_bor_aa:
 			v_get_addr_u(cur->first)|=v_get_addr_u(cur->second);
-			v_next_ins;	
-
-		case tins::c_bnot_i:
-			return false;
-		case tins::c_bnot_r:
-			v_get_reg(cur->first)=~v_get_reg(cur->first);
-			v_next_ins;	
-		case tins::c_bnot_a:
-			v_get_addr(cur->first)=~v_get_addr(cur->first);
 			v_next_ins;
-		case tins::c_bnot_a+1:
-		case tins::c_bnot_a+2:
-		case tins::c_bnot_a+3:
-			return false;
 
 		case tins::c_bxor_ri:
 			v_get_reg_u(cur->first)^=v_get_imme_u(cur->second);
@@ -799,7 +801,7 @@ next:
 	static rbool init(tsh& sh,rbuf<uchar>& stack,
 		treg& reg,rbuf<tasm>& init_vasm)
 	{
-		ifn(asm_init(sh,init_vasm))
+		ifn(init_asm(sh,init_vasm))
 		{
 			return false;
 		}
@@ -808,7 +810,7 @@ next:
 		return true;
 	}
 
-	static rbool asm_init(tsh& sh,rbuf<tasm>& vasm)
+	static rbool init_asm(tsh& sh,rbuf<tasm>& vasm)
 	{
 		vasm+=rf::vstr("sub","esp",",","4");
 		vasm+=rf::vstr("call",rsoptr(c_mbk_l),rsoptr(c_addr),

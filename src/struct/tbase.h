@@ -28,14 +28,8 @@ struct tword
 		multi=a.multi;
 	}
 
+#ifdef SUPPORT_MOVE
 	tword(tword&& a)
-	{
-		pos=a.pos;
-		val=a.val;
-		multi=a.multi;
-	}
-
-	void operator=(const tword& a)
 	{
 		pos=a.pos;
 		val=a.val;
@@ -44,11 +38,19 @@ struct tword
 
 	void operator=(tword&& a)
 	{
-		val.m_buf.free();
+		val.buf.free();
 		multi.free();
 		val=a.val;
 		multi=a.multi;
 		pos=a.pos;
+	}
+#endif
+
+	void operator=(const tword& a)
+	{
+		pos=a.pos;
+		val=a.val;
+		multi=a.multi;
 	}
 
 	void clear()
@@ -173,22 +175,27 @@ struct tword
 		return false;
 	}
 
-	rbool is_cdouble() const
+	static rbool is_cdouble_in(const rstr& s)
 	{
-		if(!rstr::is_number(val.get_bottom())||
-			!rstr::is_number(val.get_top()))
+		if(!rstr::is_number(s.get_bottom())||
+			!rstr::is_number(s.get_top()))
 		{
 			return false;
 		}
 		int count=0;
-		for(int i=1;i<val.count();i++)
+		for(int i=1;i<s.count();i++)
 		{
-			if(val[i]==r_char('.'))
+			if(s[i]==r_char('.'))
 			{
 				count++;
 			}
 		}
 		return count==1;
+	}
+
+	rbool is_cdouble() const
+	{
+		return is_cdouble_in(val);
 	}
 
 	//常量指针，一般只用于null
@@ -271,6 +278,10 @@ struct tdata
 	int count;//数组个数
 	int off;//相对偏移
 	rbuf<tword> param;//默认参数
+	rbool is_extern;
+	rbool is_byval;
+	rbool is_sret;
+	rbool is_parray;
 
 	tdata()
 	{
@@ -295,9 +306,27 @@ struct tdata
 		type.clear();
 		name.clear();
 		size=0;
-		count=1;
+		count=-1;
 		off=0;
 		param.clear();
+		is_extern=false;
+		is_byval=false;
+		is_sret=false;
+		is_parray=false;
+	}
+
+	int get_space() const
+	{
+		if(count<0)
+		{
+			return size;
+		}
+		return size*count;
+	}
+
+	rbool is_array() const
+	{
+		return count>=0;
 	}
 
 	friend rbool operator==(const tdata& a,const tdata& b)
@@ -325,14 +354,8 @@ struct tsent
 		vword=a.vword;
 	}
 
+#ifdef SUPPORT_MOVE
 	tsent(tsent&& a)
-	{
-		pos=a.pos;
-		type=a.type;
-		vword=a.vword;
-	}
-
-	void operator=(const tsent& a)
 	{
 		pos=a.pos;
 		type=a.type;
@@ -341,8 +364,16 @@ struct tsent
 
 	void operator=(tsent&& a)
 	{
-		type.m_buf.free();
+		type.buf.free();
 		vword.free();
+		pos=a.pos;
+		type=a.type;
+		vword=a.vword;
+	}
+#endif
+
+	void operator=(const tsent& a)
+	{
 		pos=a.pos;
 		type=a.type;
 		vword=a.vword;
@@ -388,6 +419,9 @@ struct tclass;
 
 struct tfunc
 {
+	rbool is_asm;
+	rbool is_vararg;//C可变参数
+	rbool is_extern;
 	rbool is_final;
 	rbool is_macro;
 	rbool is_cfunc;
@@ -414,7 +448,7 @@ struct tfunc
 	tclass* ptci;//反射到tclass，不用初始化
 
 	uchar* code;//jit代码段
-	rset<tdynamic> sdynamic;
+	rset<tdynamic> s_dynamic;
 	int id;
 	int tid;
 
@@ -433,6 +467,9 @@ struct tfunc
 
 	void clear()
 	{
+		is_asm=false;
+		is_vararg=false;
+		is_extern=false;
 		is_final=false;
 		is_macro=false;
 		is_cfunc=false;
@@ -456,7 +493,7 @@ struct tfunc
 		count=0;
 		ptci=null;
 		code=null;
-		sdynamic.clear();
+		s_dynamic.clear();
 		id=0;
 		tid=0;
 	}
@@ -584,40 +621,40 @@ struct tgpp
 //共享状态
 struct tsh
 {
-	toptr m_optr;
-	tkey m_key;
-	tconf m_conf;
+	toptr optr;
+	tkey key;
+	tconf conf;
 
-	rset<tclass> m_class;
-	rset<tclass> m_classtl;//模板
+	rset<tclass> s_class;
+	rset<tclass> s_class_tl;//模板
 
-	rset<tfile> m_file;
-	rset<tmac> m_vdefine;
+	rset<tfile> s_file;
+	rset<tmac> s_define;
 
-	tclass* m_main;
-	rstr m_main_data;//全局变量存储区
-	rstr m_main_file;
+	tclass* pmain;
+	rstr main_data;//全局变量存储区
+	rstr main_file;
 
-	int m_mode;
-	int m_point_size;
-	uchar* m_main_cont;
+	int mode;
+	int point_size;
+	uchar* main_cont;
 
-	rbuf<top_node> m_match;
+	rbuf<top_node> vmatch;
 
-	rdic<void*> m_func_list;//jit静态函数地址表
-	void* m_hins;
-	int m_ret;
+	rdic<void*> func_list;//jit静态函数地址表
+	int ret_val;
 
-	rset<taddr> m_addr;
-	rdic<void*> m_dll_func;
-	rdic<tfunc*> m_macro;
-	rbuf<rstr> m_path;
+	rset<taddr> addr;
+	rdic<void*> dll_func;
+	rdic<tfunc*> dic_macro;
+	rbuf<rstr> vpath;
 
 	enum
 	{
 		c_vm,
 		c_jit,
 		c_nasm,
+		c_asm,
 		c_gpp,
 		c_js,
 		c_cpp,
@@ -625,9 +662,9 @@ struct tsh
 
 	tsh()
 	{
-		m_main=null;
-		m_mode=c_vm;
-		m_point_size=4;
-		m_main_cont=null;
+		pmain=null;
+		mode=c_vm;
+		point_size=4;
+		main_cont=null;
 	}
 };

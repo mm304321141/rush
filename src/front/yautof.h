@@ -5,7 +5,7 @@
 //自动增加类成员函数
 struct yautof
 {
-	static rbool auto_add_func(const tsh& sh,tclass& tci)
+	static rbool add_func(const tsh& sh,tclass& tci)
 	{
 		if(!tconf::c_auto_addfunc)
 		{
@@ -16,7 +16,6 @@ struct yautof
 		{
 			return true;
 		}
-		rbool added=false;
 		tpos pos;
 		pos.line=1;
 		pos.file=null;
@@ -24,7 +23,7 @@ struct yautof
 		{
 			pos=tci.vfunc.begin()->pos;
 		}
-		if(yfind::destruct_search(tci)==null)
+		if(yfind::find_destruct(tci)==null)
 		{
 			tfunc tfi;
 			tfi.ptci=&tci;
@@ -36,9 +35,8 @@ struct yautof
 
 			tfi.name_dec=tfi.get_dec();
 			tci.vfunc.insert(tfi);
-			added=true;
 		}
-		if(yfind::emptystruct_search(tci)==null)
+		if(yfind::find_empty_struct(tci)==null)
 		{
 			tfunc tfi;
 			tfi.ptci=&tci;
@@ -51,9 +49,8 @@ struct yautof
 
 			tfi.name_dec=tfi.get_dec();
 			tci.vfunc.insert(tfi);
-			added=true;
 		}
-		if(yfind::copystruct_search(tci)==null)
+		if(yfind::find_copy_struct(tci)==null)
 		{
 			tfunc tfi;
 			tfi.ptci=&tci;
@@ -68,13 +65,9 @@ struct yautof
 			add_copy_sent(sh,tfi);
 			tfi.name_dec=tfi.get_dec();
 			tci.vfunc.insert(tfi);
-			added=true;
 		}
-		if(add_copystruct_func(sh,tci))
-		{
-			added=true;
-		}
-		if(yfind::func_search(tci,rsoptr(c_equal),tci.name+rsoptr(c_addr),
+		add_copystruct_func(sh,tci);
+		if(yfind::find_func(tci,rsoptr(c_equal),tci.name+rsoptr(c_addr),
 			tci.name+rsoptr(c_addr))==null)
 		{
 			tfunc tfi;
@@ -90,21 +83,19 @@ struct yautof
 			add_copy_sent(sh,tfi);
 			tfi.name_dec=tfi.get_dec();
 			tci.vfunc.insert(tfi);
-			added=true;
 		}
-		if(yfind::func_search(tci,rsoptr(c_equal),
+		if(yfind::find_func(tci,rsoptr(c_equal),
 			tci.name+rsoptr(c_addr),tci.name)==null)
 		{
-			tfunc tfi=*yfind::func_search(
+			tfunc tfi=*yfind::find_func(
 				tci,rsoptr(c_equal),tci.name+rsoptr(c_addr),
 				tci.name+rsoptr(c_addr));
 			tfi.ptci=&tci;
 			tfi.param[1].type=tci.name;
 			tfi.name_dec=tfi.get_dec();
 			tci.vfunc.insert(tfi);
-			added=true;
 		}
-		if(yfind::func_search(tci,rsoptr(c_addr))==null)
+		if(yfind::find_func(tci,rsoptr(c_addr))==null)
 		{
 			tfunc tfi;
 			tfi.ptci=&tci;
@@ -117,7 +108,7 @@ struct yautof
 
 			tword twi;
 			twi.pos=tfi.pos;
-			if(sh.m_mode==tsh::c_gpp)
+			if(sh.mode==tsh::c_gpp)
 			{
 				//todo:
 				tfi.is_final=true;
@@ -138,15 +129,15 @@ struct yautof
 			{
 				tci.vfunc.insert(tfi);
 			}
-			added=true;
 		}
 		return true;
 	}
 
-	static rbool add_copystruct_func(const tsh& sh,tclass& tci)
+	static void add_copystruct_func(const tsh& sh,tclass& tci)
 	{
 		rbuf<tfunc> temp;
-		for(tfunc* p=tci.vfunc.begin();p!=tci.vfunc.end();p=tci.vfunc.next(p))
+		tfunc* p;
+		for_set(p,tci.vfunc)
 		{
 			if(tci.name!=p->name)
 			{
@@ -169,7 +160,7 @@ struct yautof
 				continue;
 			}
 			tfunc* q;
-			for(q=tci.vfunc.begin();q!=tci.vfunc.end();q=tci.vfunc.next(q))
+			for_set(q,tci.vfunc)
 			{
 				if(q->name!=p->name||q->param.count()!=p->param.count())
 				{
@@ -213,7 +204,6 @@ struct yautof
 		{
 			tci.vfunc.insert(temp[k]);
 		}
-		return !temp.empty();
 	}
 
 	static void add_copy_sent(const tsh& sh,tfunc& tfi)

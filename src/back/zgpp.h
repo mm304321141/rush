@@ -4,9 +4,9 @@
 
 struct zgpp
 {
-	static rbool process(tsh& sh)
+	static rbool proc(tsh& sh)
 	{
-		tfunc* ptfi=yfind::func_search(*sh.m_main,"main");
+		tfunc* ptfi=yfind::find_func(*sh.pmain,"main");
 		if(ptfi==null)
 		{
 			rserror("main not find");
@@ -22,7 +22,7 @@ struct zgpp
 		rstr result_s;
 		build_struct_dec(sh,result_s);
 		rstr head;
-		head+=("#include \""+rcode::utf8_to_gbk(
+		head+=("#include \""+rcode::trans_utf8_to_gbk(
 			ybase::get_rs_dir())+"ext/mingw/gpp.h\"\n");
 
 		head+="\n";
@@ -57,14 +57,16 @@ struct zgpp
 	static void build_struct_dec(tsh& sh,rstr& result)
 	{
 		rset<tgpp> list;//tgpp按照指针大小排序，故每次生成的结构体顺序不一定相同
-		for(tclass* p=sh.m_class.begin();p!=sh.m_class.end();p=sh.m_class.next(p))
+		tclass* p;
+		for_set(p,sh.s_class)
 		{
 			tgpp item;
 			item.p=p;
 			item.visit=false;
 			list.insert(item);
 		}
-		for(tgpp* q=list.begin();q!=list.end();q=list.next(q))
+		tgpp* q;
+		for_set(q,list)
 		{
 			ifn(q->visit)
 			{
@@ -86,7 +88,7 @@ struct zgpp
 			{
 				continue;
 			}
-			tclass* pclass=yfind::class_search(sh,q->p->vdata[i].type);
+			tclass* pclass=yfind::find_class(sh,q->p->vdata[i].type);
 			if(pclass==null)
 			{
 				continue;
@@ -110,16 +112,16 @@ struct zgpp
 		}
 		else
 		{
-			result+=type_trans(q->p->name);
+			result+=trans_type(q->p->name);
 		}
 		result+="\n{\n";
 		for(int i=0;i<q->p->vdata.count();i++)
 		{
-			result+="	"+type_trans(q->p->vdata[i].type)+" "+q->p->vdata[i].name+";\n";
-			if(q->p->vdata[i].count>1)
+			result+="	"+trans_type(q->p->vdata[i].type)+" "+q->p->vdata[i].name+";\n";
+			if(q->p->vdata[i].is_array())
 			{
-				result+="	"+type_trans(q->p->vdata[i].type)+" "+q->p->vdata[i].name+"_";
-				result+=rstr("[")+(q->p->vdata[i].count-1)+"];\n";
+				result+="	"+trans_type(q->p->vdata[i].type)+" "+q->p->vdata[i].name+"_";
+				result+=rstr("[")+(q->p->vdata[i].count-1)+"];\n";//todo 0长数组
 			}
 		}
 		result+="};\n";
@@ -130,7 +132,7 @@ struct zgpp
 		return ybase::is_basic_type(sh,s)||yfind::is_empty_struct_type(sh,s)||s=="ushort"||s=="int64";
 	}
 
-	static rstr type_trans(const rstr& s)
+	static rstr trans_type(const rstr& s)
 	{
 		if(s.sub(0,3)=="rp<")
 		{
@@ -145,14 +147,14 @@ struct zgpp
 		}
 		if(s.get_right()==r_char('&'))
 		{
-			return znasm::symbol_trans(s.sub(0,s.count()-1))+"&";
+			return znasm::trans_symbol(s.sub(0,s.count()-1))+"&";
 		}
-		return znasm::symbol_trans(s);
+		return znasm::trans_symbol(s);
 	}
 
 	static rstr get_func_dec(tfunc& tfi)
 	{
-		return (type_trans(tfi.retval.type)+" "+znasm::get_nasm_symbol(tfi)+
+		return (trans_type(tfi.retval.type)+" "+znasm::get_nasm_symbol(tfi)+
 			"("+get_func_param_declare(tfi)+")");
 	}
 
@@ -165,7 +167,7 @@ struct zgpp
 			{
 				s+=",";
 			}
-			s+=type_trans(tfi.param[j].type)+" "+tfi.param[j].name;
+			s+=trans_type(tfi.param[j].type)+" "+tfi.param[j].name;
 		}
 		return r_move(s);
 	}
@@ -174,12 +176,12 @@ struct zgpp
 	{
 		for(int i=0;i<v.count();i++)
 		{
-			tclass* ptci=yfind::class_search(sh,v[i].val);
+			tclass* ptci=yfind::find_class(sh,v[i].val);
 			if(ptci==null)
 			{
 				continue;
 			}
-			v[i].val=type_trans(v[i].val);
+			v[i].val=trans_type(v[i].val);
 		}
 	}
 
@@ -205,11 +207,11 @@ struct zgpp
 			if(tfi.name=="*"&&tfi.param.count()==1&&tfi.ptci->name.sub(0,3)=="rp<")
 			{
 				//todo:
-				result+="return *("+type_trans(ybase::get_tname(tfi.retval.type))+"*)this;";
+				result+="return *("+trans_type(ybase::get_tname(tfi.retval.type))+"*)this;";
 			}
 			else
 			{
-				rbuf<rstr> vstr=ybase::vword_to_vstr(tfi.vword);
+				rbuf<rstr> vstr=ybase::trans_vword_to_vstr(tfi.vword);
 				result+=rstr::join<rstr>(vstr," ");
 			}
 			result+="\n}\n\n";
@@ -218,26 +220,26 @@ struct zgpp
 		}
 		if(tfi.vsent.empty())
 		{
-			ifn(ysent::process(sh,tfi,tenv()))
+			ifn(ysent::proc(sh,tfi,tenv()))
 			{
 				rserror(tfi,"sent error");
 				return false;
 			}
 		}
 		int id=0;
-		ifn(ret_var_proc(sh,tfi,id))
+		ifn(proc_ret_var(sh,tfi,id))
 		{
 			rserror("");
 			return false;
 		}
-		ifn(param_var_proc(sh,tfi,id))
+		ifn(proc_param_var(sh,tfi,id))
 		{
 			rserror("");
 			return false;
 		}
 		for(int i=0;i<tfi.vsent.count();i++)
 		{
-			if(sh.m_key.is_asm_ins(tfi.vsent[i].vword.get_bottom().val))
+			if(sh.key.is_asm_ins(tfi.vsent[i].vword.get_bottom().val))
 			{
 				continue;
 			}
@@ -249,7 +251,7 @@ struct zgpp
 			{
 				continue;
 			}
-			ifn(yexp::p_exp(sh,tfi.vsent[i],tfi,0,tenv()))
+			ifn(yexp::proc_exp(sh,tfi.vsent[i],tfi,0,tenv()))
 			{
 				return false;
 			}
@@ -263,11 +265,11 @@ struct zgpp
 			result+="	";
 			if(ybase::is_quote(tfi.retval.type))
 			{
-				result+=type_trans(tfi.retval.type.sub_trim(1))+"*";
+				result+=trans_type(tfi.retval.type.sub_trim(1))+"*";
 			}
 			else
 			{
-				result+=type_trans(tfi.retval.type);
+				result+=trans_type(tfi.retval.type);
 			}
 			result+=" "+tfi.retval.name+";\n";
 		}
@@ -275,11 +277,12 @@ struct zgpp
 		{
 			if(!ybase::is_quote(tfi.local[i].type)&&tfi.local[i].name!=rskey(c_pmain))
 			{
-				rstr temp=type_trans(tfi.local[i].type)+" "+tfi.local[i].name;
-				if(tfi.local[i].count>1)
+				rstr temp=trans_type(tfi.local[i].type)+" "+tfi.local[i].name;
+				if(tfi.local[i].is_array())
 				{
 					result+="	"+temp+"_["+tfi.local[i].count+"];\n";
-					result+="	"+type_trans(tfi.local[i].type)+"& "+tfi.local[i].name+"=*"+tfi.local[i].name+"_;\n";
+					result+=("	"+trans_type(tfi.local[i].type)+"& "+tfi.local[i].name+
+						"=*"+tfi.local[i].name+"_;\n");
 				}
 				else
 				{
@@ -297,10 +300,10 @@ struct zgpp
 				//todo:_func_end标号有时不是必须的
 				continue;
 			}
-			rbuf<rstr> vstr=ybase::vword_to_vstr(tfi.vsent[i].vword);
+			rbuf<rstr> vstr=ybase::trans_vword_to_vstr(tfi.vsent[i].vword);
 			if(is_call(sh,vstr))
 			{
-				ifn(call_trans(sh,tfi,vstr))
+				ifn(trans_call(sh,tfi,vstr))
 				{
 					return false;
 				}
@@ -313,12 +316,12 @@ struct zgpp
 			}
 			vtemp+=vstr;
 		}
-		ifn(ret_quote_trans(vtemp,tfi))
+		ifn(trans_ret_quote(vtemp,tfi))
 		{
 			rserror("");
 			return false;
 		}
-		control_trans(tfi,vtemp);
+		trans_control(tfi,vtemp);
 		for(int i=0;i<vtemp.count();i++)
 		{
 			ifn(ybase::is_tag<rstr>(vtemp[i]))
@@ -346,7 +349,7 @@ struct zgpp
 			{
 				continue;
 			}
-			rbuf<rstr> vstr=ybase::vword_to_vstr(tfi.vsent[i].vword);
+			rbuf<rstr> vstr=ybase::trans_vword_to_vstr(tfi.vsent[i].vword);
 			ifn(proc_func_v(sh,tfi,result,vdec,level,vstr))
 			{
 				return false;
@@ -356,7 +359,7 @@ struct zgpp
 		return true;
 	}
 
-	static rbool ret_quote_trans(rbuf<rbuf<rstr> >& v,tfunc& tfi)
+	static rbool trans_ret_quote(rbuf<rbuf<rstr> >& v,tfunc& tfi)
 	{
 		ifn(ybase::is_quote(tfi.retval.type))
 		{
@@ -390,7 +393,7 @@ struct zgpp
 		return true;
 	}
 
-	static void control_trans(tfunc& tfi,rbuf<rbuf<rstr> >& v)
+	static void trans_control(tfunc& tfi,rbuf<rbuf<rstr> >& v)
 	{
 		rbuf<rbuf<rstr> > result;
 		for(int i=0;i<v.count();i++)
@@ -446,10 +449,10 @@ struct zgpp
 				{
 					if(tfi.local[j].name==v[i].get(1)&&ybase::is_quote(tfi.local[j].type))
 					{
-						temp+=type_trans(tfi.local[j].type);
+						temp+=trans_type(tfi.local[j].type);
 						temp+=v[i].get(1);
 						temp+="=";
-						temp+="*("+type_trans(tfi.local[j].type).sub_trim(1)+"*)";
+						temp+="*("+trans_type(tfi.local[j].type).sub_trim(1)+"*)";
 						temp+=v[i].get(3);
 						result+=temp;
 						break;
@@ -487,13 +490,13 @@ struct zgpp
 		{
 			if(v.get(1)==rsoptr(c_addr)&&v.count()==7)
 			{
-				tclass* ptci=yfind::class_search(sh,v[3]);
+				tclass* ptci=yfind::find_class(sh,v[3]);
 				if(ptci==null)
 				{
 					rserror("");
 					return false;
 				}
-				tfunc* ptfi=yfind::func_search_dec(*ptci,v[5]);
+				tfunc* ptfi=yfind::find_func_dec(*ptci,v[5]);
 				if(ptfi==null)
 				{
 					rserror("");
@@ -507,7 +510,7 @@ struct zgpp
 			}
 			if(v.get(1)==rsoptr(c_dot))
 			{
-				rbuf<rbuf<rstr> > vparam=ybase::comma_split<rstr>(
+				rbuf<rbuf<rstr> > vparam=ybase::split_comma<rstr>(
 					sh,v.sub(1,v.count()-1));
 				if(vparam.count()!=3)
 				{
@@ -522,7 +525,7 @@ struct zgpp
 			}
 			if(v.get(1)==rskey(c_pcall))
 			{
-				rbuf<rbuf<rstr> > vparam=ybase::comma_split<rstr>(
+				rbuf<rbuf<rstr> > vparam=ybase::split_comma<rstr>(
 					sh,v.sub(1,v.count()-1));
 				if(vparam.count()!=5)
 				{
@@ -533,7 +536,7 @@ struct zgpp
 				{
 					return false;
 				}
-				vparam=ybase::comma_split<rstr>(
+				vparam=ybase::split_comma<rstr>(
 					sh,vparam[4].sub(1,vparam[4].count()-1));
 				for(int i=0;i<vparam.count();i++)
 				{
@@ -544,13 +547,13 @@ struct zgpp
 				}
 				return true;
 			}
-			tfunc* ptfi=call_find(sh,v);
+			tfunc* ptfi=find_call(sh,v);
 			if(ptfi==null)
 			{
 				rserror("");
 				return false;
 			}
-			rbuf<rbuf<rstr> > vparam=ybase::comma_split<rstr>(
+			rbuf<rbuf<rstr> > vparam=ybase::split_comma<rstr>(
 				sh,v.sub(6,v.count()-2));
 			for(int i=0;i<vparam.count();i++)
 			{
@@ -574,43 +577,43 @@ struct zgpp
 		{
 			return is_call(sh,v.sub(2));
 		}
-		if(call_find(sh,v)!=null)
+		if(find_call(sh,v)!=null)
 		{
 			return true;
 		}
 		return v.get(0)=="["&&(v.get(1)==rskey(c_pcall)||v.get(1)==rsoptr(c_dot));
 	}
 
-	static tfunc* call_find(tsh& sh,const rbuf<rstr>& v)
+	static tfunc* find_call(tsh& sh,const rbuf<rstr>& v)
 	{
 		if(v.get(1)==rsoptr(c_equal))
 		{
-			return call_find(sh,v.sub(2));
+			return find_call(sh,v.sub(2));
 		}
-		tclass* ptci=yfind::class_search(sh,v.get(1));
+		tclass* ptci=yfind::find_class(sh,v.get(1));
 		if(ptci==null)
 		{
 			return null;
 		}
 		rstr fname=v.get(3);
-		return yfind::func_search_dec(*ptci,fname);
+		return yfind::find_func_dec(*ptci,fname);
 	}
 
-	static rbool dot_trans(tsh& sh,tfunc& tfi,rbuf<rstr>& v)
+	static rbool trans_dot(tsh& sh,tfunc& tfi,rbuf<rstr>& v)
 	{
 		rbuf<rstr> result;
-		rbuf<rbuf<rstr> > vparam=ybase::comma_split<rstr>(
+		rbuf<rbuf<rstr> > vparam=ybase::split_comma<rstr>(
 			sh,v.sub(1,v.count()-1));
 		if(vparam.count()!=3)
 		{
 			rserror("");
 			return false;
 		}
-		ifn(call_trans(sh,tfi,vparam[1]))
+		ifn(trans_call(sh,tfi,vparam[1]))
 		{
 			return false;
 		}
-		ifn(call_trans(sh,tfi,vparam[2]))
+		ifn(trans_call(sh,tfi,vparam[2]))
 		{
 			return false;
 		}
@@ -626,12 +629,12 @@ struct zgpp
 		return val.sub(0,val.count()-1).is_number()&&val.get_right()==r_char('p');
 	}
 
-	static rbool call_trans(tsh& sh,tfunc& tfi,rbuf<rstr>& v)
+	static rbool trans_call(tsh& sh,tfunc& tfi,rbuf<rstr>& v)
 	{
 		if(v.get(1)==rsoptr(c_equal))
 		{
 			rbuf<rstr> temp=v.sub(2);
-			rbool retval=call_trans(sh,tfi,temp);
+			rbool retval=trans_call(sh,tfi,temp);
 			v=v.sub(0,2)+temp;
 			return retval;
 		}
@@ -655,16 +658,16 @@ struct zgpp
 		{
 			if(v.count()==7&&v[1]=="&")
 			{
-				v=rf::vstr("((void*)&"+znasm::symbol_trans(v[3]+"."+v[5])+")");
+				v=rf::vstr("((void*)&"+znasm::trans_symbol(v[3]+"."+v[5])+")");
 				return true;
 			}
 			if(v.get(1)==".")
 			{
-				return dot_trans(sh,tfi,v);
+				return trans_dot(sh,tfi,v);
 			}
 			if(v.get(1)==rskey(c_pcall))
 			{
-				rbuf<rbuf<rstr> > vparam=ybase::comma_split<rstr>(
+				rbuf<rbuf<rstr> > vparam=ybase::split_comma<rstr>(
 					sh,v.sub(1,v.count()-1));
 				if(vparam.count()!=5)
 				{
@@ -673,16 +676,16 @@ struct zgpp
 				}
 				for(int i=1;i<vparam[2].count()-1;i+=2)
 				{
-					vparam[2][i]=type_trans(vparam[2][i]);
+					vparam[2][i]=trans_type(vparam[2][i]);
 				}
-				ifn(call_trans(sh,tfi,vparam[3]))
+				ifn(trans_call(sh,tfi,vparam[3]))
 				{
 					return false;
 				}
-				v=rf::vstr("(("+type_trans(vparam[1].get(0))+" (*)("+
+				v=rf::vstr("(("+trans_type(vparam[1].get(0))+" (*)("+
 					rstr::join<rstr>(vparam[2].sub(1,vparam[2].count()-1),"")+"))"+
 					rstr::join<rstr>(vparam[3],"")+")(");
-				vparam=ybase::comma_split<rstr>(
+				vparam=ybase::split_comma<rstr>(
 					sh,vparam[4].sub(1,vparam[4].count()-1));
 				for(int i=0;i<vparam.count();i++)
 				{
@@ -690,7 +693,7 @@ struct zgpp
 					{
 						v[0]+=",";
 					}
-					ifn(call_trans(sh,tfi,vparam[i]))
+					ifn(trans_call(sh,tfi,vparam[i]))
 					{
 						return false;
 					}
@@ -699,7 +702,7 @@ struct zgpp
 				v[0]+=")";
 				return true;
 			}
-			tfunc* ptfi=call_find(sh,v);
+			tfunc* ptfi=find_call(sh,v);
 			if(ptfi==null)
 			{
 				rserror("");
@@ -708,7 +711,7 @@ struct zgpp
 			rbuf<rstr> result;
 			result+=znasm::get_nasm_symbol(*ptfi);
 			result+="(";
-			rbuf<rbuf<rstr> > vparam=ybase::comma_split<rstr>(
+			rbuf<rbuf<rstr> > vparam=ybase::split_comma<rstr>(
 				sh,v.sub(6,v.count()-2));
 			for(int i=0;i<vparam.count();i++)
 			{
@@ -716,7 +719,7 @@ struct zgpp
 				{
 					result+=",";
 				}
-				ifn(call_trans(sh,tfi,vparam[i]))
+				ifn(trans_call(sh,tfi,vparam[i]))
 				{
 					return false;
 				}
@@ -730,13 +733,13 @@ struct zgpp
 		return false;
 	}
 
-	static rbool ret_var_proc(tsh& sh,tfunc& tfi,int& id)
+	static rbool proc_ret_var(tsh& sh,tfunc& tfi,int& id)
 	{
 		for(int j=0;j<c_rs_deep;j++)
 		{
 			for(int i=0;i<tfi.vsent.count();i++)
 			{
-				ifn(ret_var_proc_one(sh,tfi.vsent[i].vword,id,tfi))
+				ifn(proc_ret_var_one(sh,tfi.vsent[i].vword,id,tfi))
 				{
 					return false;
 				}
@@ -749,7 +752,7 @@ struct zgpp
 		return false;
 	}
 
-	static rbool ret_var_proc_one(tsh& sh,rbuf<tword>& v,int& id,tfunc& tfi)
+	static rbool proc_ret_var_one(tsh& sh,rbuf<tword>& v,int& id,tfunc& tfi)
 	{
 		for(int i=0;i<v.count();i++)
 		{
@@ -764,12 +767,12 @@ struct zgpp
 			}
 			else
 			{
-				tclass* ptci=yfind::class_search(sh,v.get(i+1).val);
+				tclass* ptci=yfind::find_class(sh,v.get(i+1).val);
 				if(ptci==null)
 				{
 					continue;
 				}
-				tfunc* ptfi=yfind::func_search_dec(*ptci,v.get(i+3).val);
+				tfunc* ptfi=yfind::find_func_dec(*ptci,v.get(i+3).val);
 				if(ptfi==null)
 				{
 					continue;
@@ -824,13 +827,13 @@ struct zgpp
 		return true;
 	}
 
-	static rbool param_var_proc(tsh& sh,tfunc& tfi,int& id)
+	static rbool proc_param_var(tsh& sh,tfunc& tfi,int& id)
 	{
 		for(int j=0;j<c_rs_deep;j++)
 		{
 			for(int i=0;i<tfi.vsent.count();i++)
 			{
-				ifn(param_var_proc_one(sh,tfi.vsent[i].vword,id,tfi))
+				ifn(proc_param_var_one(sh,tfi.vsent[i].vword,id,tfi))
 				{
 					return false;
 				}
@@ -843,7 +846,7 @@ struct zgpp
 		return false;
 	}
 
-	static rbool param_var_proc_one(tsh& sh,rbuf<tword>& v,int& id,tfunc& tfi)
+	static rbool proc_param_var_one(tsh& sh,rbuf<tword>& v,int& id,tfunc& tfi)
 	{
 		for(int i=0;i<v.count();i++)
 		{
@@ -851,12 +854,12 @@ struct zgpp
 			{
 				continue;
 			}
-			tclass* ptci=yfind::class_search(sh,v.get(i+1).val);
+			tclass* ptci=yfind::find_class(sh,v.get(i+1).val);
 			if(ptci==null)
 			{
 				continue;
 			}
-			tfunc* ptfi=yfind::func_search_dec(*ptci,v.get(i+3).val);
+			tfunc* ptfi=yfind::find_func_dec(*ptci,v.get(i+3).val);
 			if(ptfi==null)
 			{
 				continue;
@@ -866,7 +869,7 @@ struct zgpp
 			{
 				return false;
 			}
-			rbuf<rbuf<tword> > vparam=ybase::comma_split<tword>(sh,v.sub(i+6,right-1));
+			rbuf<rbuf<tword> > vparam=ybase::split_comma<tword>(sh,v.sub(i+6,right-1));
 			for(int j=0;j<ptfi->param.count();j++)
 			{
 				rstr type=ptfi->param[j].type;

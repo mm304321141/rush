@@ -4,7 +4,7 @@
 
 struct rstrw
 {
-	rbuf<ushort> m_buf;
+	rbuf<ushort> buf;
 
 	~rstrw()
 	{
@@ -16,33 +16,35 @@ struct rstrw
 
 	rstrw(const rstrw& s)
 	{
-		m_buf.alloc_not_change(s.m_buf.m_max);
-		m_buf.m_count=s.count();
+		buf.alloc_not_change(s.buf.max_count);
+		buf.cur_count=s.count();
 		xf::memcpy(begin(),s.begin(),s.size());
 	}
 
 	rstrw(const char* p)
 	{
-		rstr tmp=rcode::utf8_to_utf16(rstr(p));//todo:
+		rstr tmp=rcode::trans_utf8_to_utf16(rstr(p));//todo:
 		set_size(tmp.size());
 		xf::memcpy(begin(),tmp.begin(),tmp.size());
 	}
 
 	rstrw(const rstr& s)
 	{
-		rstr tmp=rcode::utf8_to_utf16(s);
+		rstr tmp=rcode::trans_utf8_to_utf16(s);
 		set_size(tmp.size());
 		xf::memcpy(begin(),tmp.begin(),tmp.size());
 	}
 
+#ifdef SUPPORT_MOVE
 	rstrw(rstrw&& s)
 	{
-		m_buf.move(s.m_buf);
+		buf.move(s.buf);
 	}
+#endif
 
 	rstr torstr() const
 	{
-		return rcode::utf16_to_utf8(rstr((char*)begin(),size()));
+		return rcode::trans_utf16_to_utf8(rstr((char*)begin(),size()));
 	}
 
 	int toint()
@@ -64,50 +66,54 @@ struct rstrw
 
 	void operator=(const rstrw& a)
 	{
-		m_buf=a.m_buf;
+		buf=a.buf;
 	}
 
+#ifdef SUPPORT_MOVE
 	void operator=(rstrw&& a)
 	{
-		m_buf.free();
-		m_buf.move(a.m_buf);
+		buf.free();
+		buf.move(a.buf);
 	}
+#endif
 
 	ushort& operator[](int num) const 
 	{
-		return m_buf[num];
+		return buf[num];
 	}
 
 	friend rbool operator==(const rstrw& a,const rstrw& b)
 	{
-		return a.m_buf==b.m_buf;
+		return a.buf==b.buf;
 	}
 
 	friend rbool operator!=(const rstrw& a,const rstrw& b)
 	{
-		return a.m_buf!=b.m_buf;
+		return a.buf!=b.buf;
 	}
 
 	friend rstrw operator+(const rstrw& a,const rstrw& b)
 	{
 		rstrw ret;
-		ret.m_buf=a.m_buf+b.m_buf;
+		ret.buf=a.buf+b.buf;
 		return r_move(ret);
 	}
 
 	void operator+=(const rstrw& a)
 	{
-		m_buf+=a.m_buf;
+		buf+=a.buf;
 	}
 
+#ifdef SUPPORT_MOVE
 	void operator+=(rstrw&& a)
 	{
-		m_buf+=r_move(a.m_buf);
+		buf+=r_move(a.buf);
 	}
+#endif
 
 	void operator+=(ushort ch)
 	{
-		m_buf+=ch;
+		buf+=ch;
 	}
 
 	friend rbool operator<(const rstrw& a,const rstrw& b)
@@ -139,7 +145,7 @@ struct rstrw
 
 	ushort* set_count(int count)
 	{
-		m_buf.realloc_n(count);
+		buf.realloc_n(count);
 		return begin();
 	}
 
@@ -151,34 +157,34 @@ struct rstrw
 	void set_w(const wchar* p)
 	{
 		int len=xf::strlenw(p);
-		m_buf.realloc_n_not_change(rbuf<ushort>::extend_num(len));
-		m_buf.m_count=len;
-		xf::memcpy(m_buf.begin(),p,len*2);
+		buf.realloc_n_not_change(rbuf<ushort>::get_extend_num(len));
+		buf.cur_count=len;
+		xf::memcpy(buf.begin(),p,len*2);
 	}
 
 	void push(ushort ch)
 	{
-		m_buf.push(ch);
+		buf.push(ch);
 	}
 
 	void push_front(ushort ch)
 	{
-		m_buf.push_front(ch);
+		buf.push_front(ch);
 	}
 
 	ushort pop()
 	{
-		return m_buf.pop();
+		return buf.pop();
 	}
 
 	ushort pop_front()
 	{
-		return m_buf.pop_front();
+		return buf.pop_front();
 	}
 
 	int count() const 
 	{
-		return m_buf.count();
+		return buf.count();
 	}
 
 	int size() const
@@ -188,22 +194,22 @@ struct rstrw
 
 	ushort* begin() const 
 	{
-		return m_buf.begin();
+		return buf.begin();
 	}
 
 	ushort* end() const 
 	{
-		return m_buf.end();
+		return buf.end();
 	}
 
 	rbool empty() const 
 	{
-		return m_buf.empty();
+		return buf.empty();
 	}
 
 	void clear()
 	{
-		m_buf.clear();
+		buf.clear();
 	}
 
 	static ushort* next(void* p)
@@ -234,13 +240,13 @@ struct rstrw
 	rstrw sub(int begin,int end) const
 	{
 		rstrw ret;
-		ret.m_buf=m_buf.sub(begin,end);
+		ret.buf=buf.sub(begin,end);
 		return r_move(ret);
 	}
 
 	rbool erase(int begin,int end)
 	{
-		return m_buf.erase(begin,end);
+		return buf.erase(begin,end);
 	}
 
 	rbool erase(int i)
@@ -250,7 +256,7 @@ struct rstrw
 
 	rbool insert(int pos,const rstrw& a)
 	{
-		return m_buf.insert(pos,a.m_buf);
+		return buf.insert(pos,a.buf);
 	}
 
 	ushort get(int i) const
@@ -261,7 +267,7 @@ struct rstrw
 		}
 		else
 		{
-			return m_buf[i];
+			return buf[i];
 		}
 	}
 
@@ -269,7 +275,7 @@ struct rstrw
 	{
 		if(count()>0)
 		{
-			return m_buf.m_p[count()-1];
+			return buf.point[count()-1];
 		}
 		return (ushort)0;
 	}
@@ -278,7 +284,7 @@ struct rstrw
 	{
 		if(count()>0)
 		{
-			return m_buf.m_p[0];
+			return buf.point[0];
 		}
 		return (ushort)0;
 	}
@@ -301,7 +307,7 @@ struct rstrw
 		}
 		for(int i=0;i<count();i++)
 		{
-			if(!is_number(m_buf[i]))
+			if(!is_number(buf[i]))
 			{
 				return false;
 			}
@@ -321,6 +327,6 @@ struct rstrw
 
 	int find_last(ushort ch) const
 	{
-		return m_buf.find_last(ch);
+		return buf.find_last(ch);
 	}
 };

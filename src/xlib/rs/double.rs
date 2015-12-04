@@ -37,11 +37,50 @@
 		rstr s(a)
 		xf.sscanf(s.cstr,"%lf",&this)
 	}
+	
+	double(float a)
+	{
+		push this
+		push a
+		calle "f_to_d",8
+		add esp,8
+	}
+	
+	TYPE to<TYPE>()
+	{
+		xf.error
+	}
+	
+	template<>
+	double to<double>()
+	{
+		return todouble()
+	}
+	
+	template<>
+	float to<float>()
+	{
+		return tofloat()
+	}
+	
+	template<>
+	int to<int>()
+	{
+		return toint()
+	}
+	
+	double todouble()
+	{
+		mov esi,this
+		lea edi,[ebp+s_off s_ret]
+		mov [edi],[esi]
+		mov [edi+4],[esi+4]
+	}
 
 	int toint()
 	{
 		rbuf<char> buf(128)
-		xf.sprintf8(buf.begin,"%.0lf",this)
+		xf.sprintf64(buf.begin,"%.0lf",this)
 		return rstr(buf.begin).toint
 	}
 
@@ -49,6 +88,15 @@
 	{
 		rstr ret(this)
 		return ret
+	}
+	
+	float tofloat()
+	{
+		lea esi,[ebp+s_off s_ret]
+		push esi
+		push this
+		calle "d_to_f",8
+		add esp,8
 	}
 	
 	friend double operator neg(double a)
@@ -177,6 +225,11 @@
 	friend bool operator>=(double a,double b)
 	{
 		return a>b||a==b;
+	}
+	
+	static double infinity()
+	{
+		xf.memcpy(&s_ret,"\x7F\xF0\x00\x00\x00\x00\x00\x00",8);
 	}
 	
 	double abs()

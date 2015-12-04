@@ -16,7 +16,7 @@ struct yopt
 			v[2]==rsoptr(c_comma)&&v[3].is_number());
 	}
 
-	static rbool op_add_sub(const tsh& sh,rbuf<tasm>& vasm)
+	static rbool optimize_add_sub(const tsh& sh,rbuf<tasm>& vasm)
 	{
 		rbuf<tasm> result;
 		for(int i=0;i<vasm.count();i++)
@@ -138,15 +138,15 @@ struct yopt
 		return true;
 	}
 
-	static rbool op_match(const tsh& sh,rbuf<tasm>& vasm)
+	static rbool optimize_match(const tsh& sh,rbuf<tasm>& vasm)
 	{
 		rbuf<tasm> result;
 		for(int i=0;i<vasm.count();i++)
 		{
 			int j;
-			for(j=0;j<sh.m_match.count();j++)
+			for(j=0;j<sh.vmatch.count();j++)
 			{
-				int len=sh.m_match[j].src.count();
+				int len=sh.vmatch[j].src.count();
 				if(i+len>vasm.count())
 				{
 					continue;
@@ -154,7 +154,7 @@ struct yopt
 				int k;
 				for(k=i;k<i+len;k++)
 				{
-					ifn(match(vasm[k],sh.m_match[j].src[k-i]))
+					ifn(match(vasm[k],sh.vmatch[j].src[k-i]))
 					{
 						break;
 					}
@@ -163,8 +163,8 @@ struct yopt
 				{
 					continue;
 				}
-				rbuf<tasm> temp=sh.m_match[j].dst;
-				ifn(replace(vasm.sub(i,i+len),sh.m_match[j].src,temp))
+				rbuf<tasm> temp=sh.vmatch[j].dst;
+				ifn(replace(vasm.sub(i,i+len),sh.vmatch[j].src,temp))
 				{
 					return false;
 				}
@@ -172,7 +172,7 @@ struct yopt
 				i=i+len-1;
 				break;
 			}
-			if(j>=sh.m_match.count())
+			if(j>=sh.vmatch.count())
 			{
 				result+=vasm[i];
 			}

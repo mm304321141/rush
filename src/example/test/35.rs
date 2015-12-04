@@ -15,5 +15,5 @@ void main()
 	a[3]=2
 	a[3].printl
 
-	printl a.begin==a.m_p
+	printl a.begin==a.point
 }

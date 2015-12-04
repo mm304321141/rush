@@ -16,7 +16,7 @@ struct rf
 
 	static int cmd_utf8(rstr s)
 	{
-		return xf::cmd(rcode::utf8_to_gbk(s).cstr_t());
+		return xf::cmd(rcode::trans_utf8_to_gbk(s).cstr_t());
 	}
 
 	static int cmd(rstr s)
@@ -29,7 +29,7 @@ struct rf
 		return r_split<rstr>(xf::GetCommandLineA()," ");
 	}
 
-	static rbuf<rstr> param_split(rstr s)
+	static rbuf<rstr> split_param(rstr s)
 	{
 		rbuf<rstr> v;
 		int j;

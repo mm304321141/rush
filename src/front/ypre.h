@@ -5,29 +5,29 @@
 #include "ysuper.h"
 
 //预处理、获取所有文件
-//词表->m_file.vword
+//词表->s_file.vword
 struct ypre
 {
-	static rbool process(tsh& sh)
+	static rbool proc(tsh& sh)
 	{
-		ifn(auto_import(sh))
+		ifn(import_default(sh))
 		{
 			rserror("");
 			return false;
 		}
-		if(sh.m_main_cont!=null)
+		if(sh.main_cont!=null)
 		{
 			tfile item;
-			item.name=sh.m_main_file;
-			item.cont=sh.m_main_cont;
-			sh.m_file.insert(item);
+			item.name=sh.main_file;
+			item.cont=sh.main_cont;
+			sh.s_file.insert(item);
 		}
 		else
 		{
-			if(!read_file(sh,sh.m_main_file))
+			if(!read_file(sh,sh.main_file))
 			{
 				rserror("can't read main file "+
-					sh.m_main_file.torstr());
+					sh.main_file.torstr());
 				return false;
 			}
 		}
@@ -35,23 +35,24 @@ struct ypre
 		{
 			return false;
 		}
-		for(tfile* p=sh.m_file.begin();p!=sh.m_file.end();p=sh.m_file.next(p))
+		tfile* p;
+		for_set(p,sh.s_file)
 		{
-			if(!obtain_def(sh,sh.m_vdefine,p->vword))
+			if(!obtain_def(sh,sh.s_define,p->vword))
 			{
 				return false;
 			}
 		}
-		for(tfile* p=sh.m_file.begin();p!=sh.m_file.end();p=sh.m_file.next(p))
+		for_set(p,sh.s_file)
 		{
-			if(!ifdef_replace(sh,sh.m_vdefine,p->vword))
+			if(!replace_ifdef(sh,sh.s_define,p->vword))
 			{
 				return false;
 			}
 		}
-		for(tfile* p=sh.m_file.begin();p!=sh.m_file.end();p=sh.m_file.next(p))
+		for_set(p,sh.s_file)
 		{
-			ifn(def_replace(sh,sh.m_vdefine,p->vword))
+			ifn(replace_def(sh,sh.s_define,p->vword))
 			{
 				return false;
 			}
@@ -59,7 +60,7 @@ struct ypre
 		return true;
 	}
 
-	static rbool auto_import(tsh& sh)
+	static rbool import_default(tsh& sh)
 	{
 		ifn(tconf::c_auto_import)
 		{
@@ -80,7 +81,7 @@ struct ypre
 		}
 		tfile item;
 		item.name=name;
-		if(sh.m_file.exist(item))
+		if(sh.s_file.exist(item))
 		{
 			return true;
 		}
@@ -90,30 +91,30 @@ struct ypre
 			return false;
 		}
 		item.cont=rcode::to_utf8_txt(item.cont).sub(3);
-		sh.m_file.insert(item);
+		sh.s_file.insert(item);
 		return true;
 	}
 
-	static rbool str_analyse(const tsh& sh,rstr& src,rbuf<tword>& dst,const tfile* pfile)
+	static rbool parse_str(const tsh& sh,rstr& src,rbuf<tword>& dst,const tfile* pfile)
 	{
-		if(!yword::analyse(sh,src,dst,pfile))
+		if(!yword::parse(sh,src,dst,pfile))
 		{
 			return false;
 		}
-		char_replace(dst);
-		const_replace(dst);
-		combine_double(dst);
-		combine_float(dst);
-		key_replace(sh,dst);
+		replace_char(dst);
+		replace_const(dst);
+		//combine_double(dst);
+		//combine_float(dst);
+		replace_key(sh,dst);
 		if(pfile!=null&&rdir::get_suffix_w(pfile->name)!=rstr("rs"))
 		{
-			extern_replace(sh,dst);
-			this_replace(sh,dst);
+			replace_extern(sh,dst);
+			replace_this(sh,dst);
 		}
 		return true;
 	}
 
-	static void char_replace(rbuf<tword>& v)
+	static void replace_char(rbuf<tword>& v)
 	{
 		for(int i=0;i<v.count();i++)
 		{
@@ -131,8 +132,8 @@ struct ypre
 	static rbool obtain_all_file(tsh& sh)
 	{
 		rbuf<tfile*>  v;
-		for(tfile* p=sh.m_file.begin();
-			p!=sh.m_file.end();p=sh.m_file.next(p))
+		tfile* p;
+		for_set(p,sh.s_file)
 		{
 			v.push(p);
 		}
@@ -150,12 +151,12 @@ struct ypre
 	{
 		rbuf<rstr> vname;
 		count_tab(*p);
-		if(!str_analyse(sh,p->cont,p->vword,p))
+		if(!parse_str(sh,p->cont,p->vword,p))
 		{
 			return false;
 		}
 		//仅编译器内部使用
-		ifn(ifdef_replace(sh,sh.m_vdefine,p->vword))
+		ifn(replace_ifdef(sh,sh.s_define,p->vword))
 		{
 			return false;
 		}
@@ -172,7 +173,7 @@ struct ypre
 				rserror("can't read file "+vname[i].torstr());
 				return false;
 			}
-			tfile* pfile=sh.m_file.find(tfile(vname[i]));
+			tfile* pfile=sh.s_file.find(tfile(vname[i]));
 			if(pfile==null)
 			{
 				return false;
@@ -226,7 +227,7 @@ struct ypre
 			}
 			name.pop();
 			name.pop_front();
-			name=rdir::dir_std(name);
+			name=rdir::std_dir(name);
 			rstr temp=get_abs_name(rdir::get_prev_dir(f.name),name);
 			ifn(rfile::exist(temp))
 			{
@@ -235,7 +236,7 @@ struct ypre
 					return false;
 				}
 			}
-			if(!vname.exist(temp)&&!sh.m_file.exist(tfile(temp)))
+			if(!vname.exist(temp)&&!sh.s_file.exist(tfile(temp)))
 			{
 				vname.push(temp);
 			}
@@ -247,10 +248,10 @@ struct ypre
 	static rbool get_file(const tsh& sh,const rbuf<rstr>& vname,
 		const rstr& name,rstr& abs_name)
 	{
-		for(int i=0;i<sh.m_path.count();i++)
+		for(int i=0;i<sh.vpath.count();i++)
 		{
 			//todo: 直接import
-			abs_name=get_abs_name(sh.m_path[i],name);
+			abs_name=get_abs_name(sh.vpath[i],name);
 			if(rfile::exist(abs_name))
 			{
 				return true;
@@ -301,7 +302,7 @@ struct ypre
 		return get_abs_name(rdir::get_cur_dir_w(),s);
 	}
 
-	static void this_replace(const tsh& sh,rbuf<tword>& v)
+	static void replace_this(const tsh& sh,rbuf<tword>& v)
 	{
 		for(int i=0;i<v.count();i++)
 		{
@@ -329,7 +330,7 @@ struct ypre
 		ybase::arrange(v);
 	}
 
-	static void extern_replace(const tsh& sh,rbuf<tword>& v)
+	static void replace_extern(const tsh& sh,rbuf<tword>& v)
 	{
 		for(int i=0;i<v.count();i++)
 		{
@@ -346,7 +347,7 @@ struct ypre
 		ybase::arrange(v);
 	}
 
-	static void key_replace(const tsh& sh,rbuf<tword>& v)
+	static void replace_key(const tsh& sh,rbuf<tword>& v)
 	{
 		for(int i=0;i<v.count();i++)
 		{
@@ -399,7 +400,7 @@ struct ypre
 		ybase::arrange(v);
 	}
 
-	static rbool def_replace_one(const tsh& sh,rbuf<tword>& v,const rset<tmac>& vmac)
+	static rbool replace_def_one(const tsh& sh,rbuf<tword>& v,const rset<tmac>& vmac)
 	{
 		tmac item;
 		for(int i=0;i<v.count();i++)
@@ -426,11 +427,11 @@ struct ypre
 		return true;
 	}
 
-	static rbool def_replace(const tsh& sh,const rset<tmac>& vdefine,rbuf<tword>& v)
+	static rbool replace_def(const tsh& sh,const rset<tmac>& vdefine,rbuf<tword>& v)
 	{
 		for(int i=0;i<c_rs_deep;i++)
 		{
-			ifn(def_replace_one(sh,v,vdefine))
+			ifn(replace_def_one(sh,v,vdefine))
 			{
 				return false;
 			}
@@ -498,7 +499,7 @@ struct ypre
 	}
 
 	//fixme:
-	static rbool ifdef_replace(const tsh& sh,const rset<tmac>& vdefine,rbuf<tword>& v)
+	static rbool replace_ifdef(const tsh& sh,const rset<tmac>& vdefine,rbuf<tword>& v)
 	{
 		tmac item;
 		for(int i=v.count()-1;i>=0;i--)
@@ -570,7 +571,7 @@ struct ypre
 		return true;
 	}
 
-	static void combine_double(rbuf<tword>& v)
+	/*static void combine_double(rbuf<tword>& v)
 	{
 		for(int i=1;i<v.count()-1;i++)
 		{
@@ -586,7 +587,7 @@ struct ypre
 			}
 		}
 		ybase::arrange(v);
-	}
+	}*/
 
 	static void combine_float(rbuf<tword>& v)
 	{
@@ -618,19 +619,19 @@ struct ypre
 		ybase::arrange(v);
 	}
 
-	static void const_replace(rbuf<tword>& v)
+	static void replace_const(rbuf<tword>& v)
 	{
 		for(int i=0;i<v.count();i++)
 		{
-			const_replace(v[i]);
+			replace_const_word(v[i]);
 		}
 	}
 
-	static void const_replace(tword& word)
+	static void replace_const_word(tword& word)
 	{
 		if(word.val.count()>0&&rstr::is_number(word.val[0]))
 		{
-			if(r_find_a<uchar>(word.val.m_buf,r_char('_'))<word.val.count())
+			if(r_find_a<uchar>(word.val.buf,r_char('_'))<word.val.count())
 			{
 				rstr s;
 				for(int i=0;i<word.val.count();i++)
@@ -647,11 +648,11 @@ struct ypre
 		{
 			if(word.val[0]==r_char('0')&&word.val[1]==r_char('x'))
 			{
-				word.val=rstr::hextodec(word.val.sub(2));
+				word.val=rstr::trans_hex_to_dec(word.val.sub(2));
 			}
 			if(word.val[0]==r_char('0')&&word.val[1]==r_char('b'))
 			{
-				word.val=rstr::bintodec(word.val.sub(2));
+				word.val=rstr::trans_bin_to_dec(word.val.sub(2));
 			}
 		}
 	}

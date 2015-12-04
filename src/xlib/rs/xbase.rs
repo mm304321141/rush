@@ -50,6 +50,11 @@
 #define null 0p
 #define NULL 0p
 
+define$ for_set(_mword,_mword)
+{
+	for(($0)=($1).begin();($0)!=($1).end();($0)=($1).next($0))
+}
+
 #define elif else if
 #define while for
 #define default else

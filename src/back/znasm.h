@@ -4,9 +4,9 @@
 
 struct znasm
 {
-	static rbool process(tsh& sh)
+	static rbool proc(tsh& sh)
 	{
-		tfunc* ptfi=yfind::func_search(*sh.m_main,"main");
+		tfunc* ptfi=yfind::find_func(*sh.pmain,"main");
 		if(ptfi==null)
 		{
 			rf::printl("main not find");
@@ -20,9 +20,10 @@ struct znasm
 			return false;
 		}
 		rstr head;
-		head+=("%include '"+rcode::utf8_to_gbk(
+		head+=("%include '"+rcode::trans_utf8_to_gbk(
 			ybase::get_rs_dir())+"ext/nasm/windemos.inc'\n");
-		for(rstr* p=scall.begin();p!=scall.end();p=scall.next(p))
+		rstr* p;
+		for_set(p,scall)
 		{
 			ifn(is_ex_func(sh,*p))
 			{
@@ -35,7 +36,7 @@ struct znasm
 		head+="[section .bss]\n";
 		head+="align 32\n";
 		head+="resb 4\n";
-		head+=rstr("_PMAIN_A: resb ")+sh.m_main_data.size()+"\n";
+		head+=rstr("_PMAIN_A: resb ")+sh.main_data.size()+"\n";
 		add_lambda(sh,head);
 		head+="\n";
 		head+="[section .data]\n";
@@ -61,7 +62,7 @@ struct znasm
 		head+="endproc\n";
 		head+="\n";
 
-		head+=("%include '"+rcode::utf8_to_gbk(
+		head+=("%include '"+rcode::trans_utf8_to_gbk(
 			ybase::get_rs_dir())+"ext/nasm/exfunc.inc'\n");
 
 		rstr name=ybase::get_main_name(sh)+".asm";
@@ -107,8 +108,8 @@ struct znasm
 
 	static void add_lambda(tsh& sh,rstr& result)
 	{
-		for(tclass* p=sh.m_class.begin();
-			p!=sh.m_class.end();p=sh.m_class.next(p))
+		tclass* p;
+		for_set(p,sh.s_class)
 		{
 			add_lambda(result,*p);
 		}
@@ -116,7 +117,8 @@ struct znasm
 
 	static void add_lambda(rstr& result,tclass& tci)
 	{
-		for(tfunc* p=tci.vfunc.begin();p!=tci.vfunc.end();p=tci.vfunc.next(p))
+		tfunc* p;
+		for_set(p,tci.vfunc)
 		{
 			if(p->lambda_data.empty())
 			{
@@ -126,7 +128,7 @@ struct znasm
 		}
 	}
 
-	static tfunc* call_find(tsh& sh,tasm& item)
+	static tfunc* find_call(tsh& sh,tasm& item)
 	{
 		int i;
 		for(i=1;i<item.vstr.count();i++)
@@ -142,17 +144,17 @@ struct znasm
 			return null;
 		}
 		i+=2;
-		tclass* ptci=yfind::class_search(sh,item.vstr.get(i));
+		tclass* ptci=yfind::find_class(sh,item.vstr.get(i));
 		if(ptci==null)
 		{
 			return null;
 		}
 		i+=2;
 		rstr fname=item.vstr.get(i);
-		return yfind::func_search_dec(*ptci,fname);
+		return yfind::find_func_dec(*ptci,fname);
 	}
 
-	static rstr symbol_trans(const rstr& s)
+	static rstr trans_symbol(const rstr& s)
 	{
 		rstr ret;
 		for(int i=0;i<s.count();i++)
@@ -171,7 +173,7 @@ struct znasm
 
 	static rstr get_nasm_symbol(tfunc& tfi)
 	{
-		return symbol_trans(tfi.ptci->name+"."+tfi.name_dec);
+		return trans_symbol(tfi.ptci->name+"."+tfi.name_dec);
 	}
 
 	static rbool is_jmp_ins_nasm(const rstr& s)
@@ -197,7 +199,7 @@ struct znasm
 		tfi.count=1;
 		if(tfi.vasm.empty())
 		{
-			if(!zbin::cp_vword_to_vasm(sh,tfi,tenv()))
+			if(!zbin::compile_vword_to_vasm(sh,tfi,tenv()))
 			{
 				return false;
 			}
@@ -223,7 +225,7 @@ struct znasm
 		}
 		for(int i=0;i<tfi.vasm.count();i++)
 		{
-			tfunc* ptfi=call_find(sh,tfi.vasm[i]);
+			tfunc* ptfi=find_call(sh,tfi.vasm[i]);
 			if(ptfi==null)
 			{
 				continue;
@@ -233,6 +235,8 @@ struct znasm
 				return false;
 			}
 		}
+		//释放掉vasm可在编译大型程序时降低内存消耗，但可能影响执行速度
+		tfi.vasm.free();
 		return true;
 	}
 
@@ -303,7 +307,7 @@ struct znasm
 		{
 			return false;
 		}
-		int type=sh.m_key.get_key_index(vstr[0]);
+		int type=sh.key.get_key_index(vstr[0]);
 		tfunc* ptfi;
 		switch(type)
 		{
@@ -315,7 +319,7 @@ struct znasm
 			result+="	invoke "+ybase::del_quote(vstr.get(1))+"\n";
 			return true;
 		case tkey::c_call:
-			ptfi=call_find(sh,item);
+			ptfi=find_call(sh,item);
 			if(ptfi==null)
 			{
 				result+=("	call dword "+
@@ -331,7 +335,7 @@ struct znasm
 			result+="	ret "+vstr.get(1)+"\n";
 			return true;
 		case tkey::c_push:
-			ptfi=call_find(sh,item);
+			ptfi=find_call(sh,item);
 			if(ptfi==null)
 			{
 				result+="	push dword "+link_vstr(vstr.sub(1))+"\n";
@@ -376,7 +380,7 @@ struct znasm
 				result+="	mov "+get_opnd1(vstr)+" , ecx\n";
 				return true;
 			}
-			ptfi=call_find(sh,item);
+			ptfi=find_call(sh,item);
 			if(ptfi==null)
 			{
 				result+="	mov dword "+link_vstr(vstr.sub(1))+"\n";
@@ -387,11 +391,11 @@ struct znasm
 					get_nasm_symbol(*ptfi)+"\n");
 			}
 			return true;
-		case tkey::c_movb:
+		case tkey::c_mov8:
 			result+="	mov cl , "+get_opnd2(vstr)+"\n";
 			result+="	mov "+get_opnd1(vstr)+" , cl\n";
 			return true;
-		case tkey::c_movl:
+		case tkey::c_mov64:
 			return false;
 		case tkey::c_add:
 			if(count_mbk_l(vstr)==2)
@@ -513,7 +517,7 @@ struct znasm
 			return ncmp(result,vstr,"	setbe bl\n");
 		case tkey::c_rn:
 			if(vstr.count()==3&&
-				!sh.m_key.is_asm_reg(vstr[2])&&
+				!sh.key.is_asm_reg(vstr[2])&&
 				is_jmp_ins_nasm(vstr[1]))
 			{
 				result+=("	"+vstr[1]+" "+get_nasm_symbol(tfi)+"_"+
