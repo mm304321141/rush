@@ -27,8 +27,11 @@ void main()
 ```
 
 对比上一节的程序可以看到Rush的一些特点：
+<br/>
 1. 更彻底地类型推断，C++11需要使用关键字auto，Rush可以省略auto
+<br/>
 2. 函数定义和函数调用均可省略后面的小括号
+<br/>
 3. 语句后面的分号也可以省略
 
 ##### 3. 面向对象
@@ -340,11 +343,11 @@ add esp , 4
 <br/>
 所有的寄存器也可以当做一个int类型的变量使用，比如想查看一下esp的值可以直接这样：
 ```cpp
-puts esp
+print esp
 ```
 想计算ecx与edx的商可以这样：
 ```cpp
-puts ecx/edx
+print ecx/edx
 ```
 判断寄存器是否为0：
 ```cpp
@@ -432,11 +435,11 @@ int func<T>(int a)
 ```cpp
 void main()
 {
-	puts func<+>(10)
-	puts func<*>(10)
+	print func<+>(10)
+	print func<*>(10)
 	
-	puts func<+> 10
-	puts func<*> 10
+	print func<+> 10
+	print func<*> 10
 }
 ```
 
@@ -446,11 +449,11 @@ void main()
 {
 	int* p=1p
 	p.to<char*>.printl
-	putsl typeof(p.to<char*>)
+	printl typeof(p.to<char*>)
 
 	A a
-	puts a.func<2>
-	puts a.func<5>
+	print a.func<2>
+	print a.func<5>
 }
 
 class A
@@ -485,7 +488,7 @@ mac fadd(a,b)
 这时用
 ```cpp
 c=fadd2(1,2)*fadd2(1,2)
-puts c
+print c
 ```
 得到的是5，显然不是我们想要的结果，所以建议宏加上一些小括号避免优先级问题。
 <br/>
@@ -497,12 +500,12 @@ void main()
 	pro=1
 	for i=2;i<=10;i++
 		pro+=i
-	puts pro
+	print pro
 	
 	pro=1
 	for i=2;i<=10;i++
 		pro*=i
-	puts pro
+	print pro
 }
 ```
 这是一个循环求和与循环求阶乘的程序，可以看到两段代码明显有相似之处，那么用mac定义一个宏：（宏中的花括号和分号不能省略）
@@ -514,7 +517,7 @@ mac fpro(T)
     {
     	pro T i;
     }
-	puts(pro);
+	print(pro);
 }
 ```
 最后可以这样调用：
@@ -530,13 +533,13 @@ void main()
 <br/>
 另外，Rush还支持一种拆分宏，比如：
 ```cpp
-#putsl(1,'abc',98)
+#printl(1,'abc',98)
 ```
 宏展开后是这样：
 ```cpp
-putsl(1)
-putsl('abc')
-putsl(98)
+printl(1)
+printl('abc')
+printl(98)
 ```
 那么连续插入vector或者set就很方便了：
 ```cpp
@@ -658,7 +661,7 @@ Rush支持静态闭包：
 void main()
 {
     int a=2
-    void[lambda(){puts a}]
+    void[lambda(){print a}]
 }
 ```
 对于匿名函数访问外层变量，Rush会调用赋值函数进行复制（与C++11的[=]类似）。
@@ -666,11 +669,11 @@ void main()
 <br/>
 目前Rush的闭包有3个限制：
 <br/>
-1.不能在匿名函数中访问需要析构的外层变量。
+1. 不能在匿名函数中访问需要析构的外层变量。
 <br/>
-2.闭包需要访问的外层变量不能使用类型推断。
+2. 闭包需要访问的外层变量不能使用类型推断。
 <br/>
-3.闭包不是线程安全的。
+3. 闭包不是线程安全的。
 <br/>
 <br/>
 Rush的匿名函数写法和普通函数差不多：
@@ -706,9 +709,9 @@ class B:A
 ```cpp
 B b
 b.fa
-puts b.m_a
+print b.m_a
 b.fb
-puts b.m_a
+print b.m_a
 ```
 可以看到B类继承了A类的数据成员m_a和函数成员fa。对于B类继承自A类，Rush只是简单地拷贝代码，因此，Rush的继承对程序员是透明的：
 ```cpp
@@ -733,9 +736,13 @@ class B
 <br/>
 <br/>
 Rush目前支持3种继承：
+<br/>
 1. 模板继承模板 A<T>:B<T>
+<br/>
 2. 模板继承非模板 A<T>:C,D
+<br/>
 3. 非模板继承非模板 E:C
+<br/>
 <br/>
 暂不支持继承模板实例 C:A<int>
 <br/>
@@ -747,6 +754,7 @@ src\example\test\18_2.rs
 ##### 19. 变参函数
 
 Rush使用中括号进行变参函数调用。
+<br/>
 <br/>
 求两个数的和：
 ```cpp
@@ -877,6 +885,7 @@ printl ch.toint
 ```
 将输出255。
 <br/>
+<br/>
 注意和标准C的区别，Rush将char转换为int不会进行符号扩展。如果需要char和uint的相互转换请修改src\xlib\rs\char.rs这个文件。
 <br/>
 <br/>
@@ -897,6 +906,7 @@ func(uint(2))
 ```
 所以，请小心定义拷贝构造函数。
 <br/>
+<br/>
 另外，和Java一样，Rush推荐尽量少使用无符号数。
 
 ##### 24. 动态数组
@@ -913,6 +923,7 @@ a.push(2)
 ```
 
 Rush用rbuf代替STL的vector，用rstr代替string，用法大致相同。push就是vector的push_back，而cstr就是string的c_str。
+<br/>
 <br/>
 打开src\xlib\rs\xbase.rs可以找到：
 ```cpp
@@ -1052,7 +1063,7 @@ class A
 	A(A& a)
 	{
 		m_p=r_new<int>5
-		for i=0 to 4
+		for i=0;i<=4;i++
 			m_p[i]=a.m_p[i]
 	}
 	
@@ -1063,7 +1074,7 @@ class A
 			m_p=null
 	}
 	
-	operator=(A& a)
+	void operator=(A& a)
 	{
 		this.~A
 		this.A(a)
@@ -1370,6 +1381,7 @@ for
 
 while和for是同义语，是否赋初值和执行增量仅取决于条件表达式里面有没有分号。
 <br/>
+<br/>
 另外，Rush有两种continue，一种是不执行增量直接进行条件判断：
 ```cpp
 continued
@@ -1448,8 +1460,11 @@ void main()
 ```
 
 目前Rush的模板有3个限制：
+<br/>
 1. 不支持模板元编程。
+<br/>
 2. 不支持模板默认参数。
+<br/>
 3. 不支持变参模板。
 <br/>
 <br/>
@@ -1528,6 +1543,7 @@ Rush的new和delete既不是运算符，也不是关键字，而是模板函数：
 p=r_new<int>(5)
 ```
 表示从堆中分配5个int。
+<br/>
 <br/>
 释放刚才分配的内存：（不需要delete [] p）
 ```cpp
