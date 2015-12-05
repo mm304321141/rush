@@ -407,10 +407,6 @@ struct tdynamic
 	int key;
 	rbuf<rbuf<rstr> > vparam;
 
-	tdynamic()
-	{
-	}
-
 	friend rbool operator<(const tdynamic& a,const tdynamic& b)
 	{
 		return a.key<b.key;
@@ -542,23 +538,6 @@ struct tclass
 	{
 		size=0;
 		is_friend=false;
-	}
-
-	tclass(const tclass& a)
-	{
-		name=a.name;
-		s_mac=a.s_mac;
-		vdata=a.vdata;
-		s_func=a.s_func;
-		s_func_tl=a.s_func_tl;
-		s_func_infer=a.s_func_infer;
-
-		vword=a.vword;
-		vtl=a.vtl;
-		vfather=a.vfather;
-
-		size=a.size;
-		is_friend=a.is_friend;
 	}
 
 	friend rbool operator<(const tclass& a,const tclass& b)

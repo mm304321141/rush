@@ -414,6 +414,15 @@ struct tasm
 		ptfi=a.ptfi;
 		start=a.start;
 	}
+
+	void operator=(tasm&& a)
+	{
+		ins=a.ins;
+		vstr=a.vstr;
+		pos=a.pos;
+		ptfi=a.ptfi;
+		start=a.start;
+	}
 #endif
 
 	void operator=(const tasm& a)
@@ -424,17 +433,6 @@ struct tasm
 		ptfi=a.ptfi;
 		start=a.start;
 	}
-
-#ifdef SUPPORT_MOVE
-	void operator=(tasm&& a)
-	{
-		ins=a.ins;
-		vstr=a.vstr;
-		pos=a.pos;
-		ptfi=a.ptfi;
-		start=a.start;
-	}
-#endif
 
 	void clear()
 	{
