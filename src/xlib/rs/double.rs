@@ -119,7 +119,7 @@
 		mov [edi+4],[esi+4]
 	}
 
-	friend operator<->(double& a,double& b)
+	friend void operator<->(double& a,double& b)
 	{
 		c=a
 		a=b

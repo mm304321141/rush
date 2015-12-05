@@ -200,8 +200,8 @@ struct zmain
 	}
 };
 
-//todo C++不支持mixin，只能这么写
-rbool r_compile_func_to_x86(tsh& sh,tfunc& tfi,tenv env)
+//C++不支持mixin，只能这么写
+rbool r_zjit_compile_func_to_x86(tsh& sh,tfunc& tfi,tenv env)
 {
 	return zjit::compile_func_to_x86(sh,tfi,env);
 }

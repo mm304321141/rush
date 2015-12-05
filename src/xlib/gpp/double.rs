@@ -56,7 +56,7 @@
 		this=a;
 	}
 
-	friend operator<->(double& a,double& b)
+	friend void operator<->(double& a,double& b)
 	{
 		c=a
 		a=b

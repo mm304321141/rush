@@ -257,6 +257,19 @@ struct yfind
 		return null;
 	}
 
+	static tfunc* find_func_infer(const tclass& tci,const rstr& fname)
+	{
+		tfunc* p;
+		for_set(p,tci.vfunc_infer)
+		{
+			if(fname==p->name)
+			{
+				return p;
+			}
+		}
+		return null;
+	}
+
 	static tfunc* find_func(const tclass& tci,const rstr& fname,
 		const rstr& a,const rstr& b)
 	{

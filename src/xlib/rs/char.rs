@@ -108,7 +108,7 @@
 		this=toint+1
 	}
 
-	friend operator<->(char& a,char& b)
+	friend void operator<->(char& a,char& b)
 	{
 		c=a
 		a=b

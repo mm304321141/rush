@@ -105,7 +105,7 @@
 		this=toint-1
 	}
 
-	friend operator<->(ushort& a,ushort& b)
+	friend void operator<->(ushort& a,ushort& b)
 	{
 		c=a
 		a=b

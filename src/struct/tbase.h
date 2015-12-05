@@ -282,6 +282,7 @@ struct tdata
 	rbool is_byval;
 	rbool is_sret;
 	rbool is_parray;
+	rbool is_infer;
 
 	tdata()
 	{
@@ -313,6 +314,7 @@ struct tdata
 		is_byval=false;
 		is_sret=false;
 		is_parray=false;
+		is_infer=false;
 	}
 
 	int get_space() const
@@ -419,6 +421,7 @@ struct tclass;
 
 struct tfunc
 {
+	rbool is_infer;
 	rbool is_asm;
 	rbool is_vararg;//C可变参数
 	rbool is_extern;
@@ -440,9 +443,7 @@ struct tfunc
 	rbuf<tsent> vsent;//语句表
 	rbuf<tasm> vasm;
 
-	//tpos first_pos;//first_pos似乎没用
-	//tpos last_pos;
-	tpos pos;
+	tpos pos;//起始行
 	
 	int64 count;
 	tclass* ptci;//反射到tclass，不用初始化
@@ -467,6 +468,7 @@ struct tfunc
 
 	void clear()
 	{
+		is_infer=false;
 		is_asm=false;
 		is_vararg=false;
 		is_extern=false;
@@ -527,6 +529,7 @@ struct tclass
 	rbuf<tdata> vdata;//数据成员列表
 	rset<tfunc> vfunc;//函数成员列表
 	rset<tfunc> vfunctl;//模板函数列表
+	rset<tfunc> vfunc_infer;
 
 	rbuf<tword> vword;
 	rbuf<ttl> vtl;
@@ -548,6 +551,7 @@ struct tclass
 		vdata=a.vdata;
 		vfunc=a.vfunc;
 		vfunctl=a.vfunctl;
+		vfunc_infer=a.vfunc_infer;
 
 		vword=a.vword;
 		vtl=a.vtl;

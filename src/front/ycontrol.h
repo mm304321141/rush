@@ -43,10 +43,6 @@ struct ycontrol
 		tfi.vword+=rstr("_func_end");
 		tfi.vword+=rsoptr(c_colon);
 		tfi.vword+=rsoptr(c_semi);
-		ifn(replace_return(sh,tfi.vword,tfi))
-		{
-			return false;
-		}
 		rbuf<rbuf<tword> > vsent=r_split_a<tword>(
 			tfi.vword,tword(rsoptr(c_semi)));
 		for(int i=0;i<vsent.count();i++)
@@ -224,72 +220,6 @@ struct ycontrol
 			}
 		}
 		ybase::arrange(v);
-		return true;
-	}
-
-	static rbool replace_return(const tsh& sh,rbuf<tword>& v,const tfunc& tfi)
-	{
-		rbuf<tword> result;
-		for(int i=0;i<v.count();i++)
-		{
-			if(v[i]!=rskey(c_return))
-			{
-				result.push(v[i]);
-				continue;
-			}
-			int pos=v.find(rsoptr(c_semi),i);
-			if(pos>=v.count())
-			{
-				return false;
-			}
-			rbuf<tword> sent=v.sub(i+1,pos);
-			ifn(sent.empty())
-			{
-				if(ybase::is_quote(tfi.retval.type))
-				{
-					//todo: 应放在后端处理
-					if(sh.mode==tsh::c_gpp)
-					{
-						result+=sent;
-						result+=rsoptr(c_semi);
-					}
-					else
-					{
-						result+=rsoptr(c_addr);
-						result+=rsoptr(c_sbk_l);
-						result+=sent;
-						result+=rsoptr(c_sbk_r);
-						result+=rsoptr(c_semi);
-
-						result+=rskey(c_mov);
-						result+=rsoptr(c_mbk_l);
-						result+=rskey(c_ebp);
-						result+=rsoptr(c_plus);
-						result+=rskey(c_s_off);
-						result+=tfi.retval.name;
-						result+=rsoptr(c_mbk_r);
-						result+=rsoptr(c_comma);
-						result+=rskey(c_ebx);
-						result+=rsoptr(c_semi);
-					}
-				}
-				else
-				{
-					result+=tfi.retval.name;
-					result+=rsoptr(c_sbk_l);
-					result+=rsoptr(c_sbk_l);
-					result+=sent;
-					result+=rsoptr(c_sbk_r);
-					result+=rsoptr(c_sbk_r);
-					result+=rsoptr(c_semi);
-				}
-			}
-			result+=rskey(c_jmp);
-			result+=rstr("_func_end");
-			result+=rsoptr(c_semi);
-			i=pos;
-		}
-		v=result;
 		return true;
 	}
 

@@ -544,16 +544,78 @@ struct yexp
 		return true;
 	}
 
+	static rbool proc_infer(tsh& sh,const tsent& src,const tsent* pfirst,tsent& outopnd,
+		tfunc& tfi,int level,int& i,tclass* ptci,tfunc* ptfi,tenv env)
+	{
+		extern rbool r_ysent_proc(tsh& sh,tfunc& tfi,tenv env);
+		rstr fname=src.vword[i].val;
+		int left=i+1;
+		int right;
+		right=ybase::find_symm_sbk(sh,src.vword,left);
+		if(right>=src.vword.count())
+		{
+			rserror(src,"call miss )");
+			return false;
+		}
+		rbuf<tsent> vsent;
+		ybase::split_param(sh,vsent,src.vword.sub(left+1,right),src);
+		for(int j=0;j<vsent.count();j++)
+		{
+			ifn(proc_exp(sh,vsent[j],tfi,level,env))
+			{
+				return false;
+			}
+		}
+		if(pfirst!=null&&vsent.count()!=ptfi->param.count())
+		{
+			vsent.push_front(*pfirst);//插入DOT前的对象
+		}
+		if(vsent.count()!=ptfi->param.count())
+		{
+			rserror();
+			return false;
+		}
+		tfunc temp=*ptfi;
+		for(int k=0;k<vsent.count();k++)
+		{
+			temp.param[k].type=vsent[k].type;
+		}
+		temp.name_dec=temp.get_dec();
+		ymemb::obtain_size_func(sh,temp);
+		ptci->vfunc.insert_c(temp);
+		ptfi=ymatch::find_and_replace(sh,*ptci,fname,vsent);
+		if(null==ptfi)
+		{
+			rserror(src,"p_call can't find call");
+			return false;
+		}
+		ifn(r_ysent_proc(sh,*ptfi,env))
+		{
+			return false;
+		}
+		set_func(sh,outopnd,vsent,ptfi);
+		i=right;
+		return true;
+	}
+
 	static rbool proc_call(tsh& sh,const tsent& src,const tsent* pfirst,tsent& outopnd,
-		tfunc& tfi,int level,int& i,const tclass* ptci,tenv env)
+		tfunc& tfi,int level,int& i,tclass* ptci,tenv env)
 	{
 		rstr cname=ptci->name;
 		rstr fname=src.vword[i].val;
-		tfunc* ptfi=yfind::find_func(*ptci,fname);
-		if(ptfi!=null&&ptfi->is_vararg&&src.vword.get(i+1).val==rsoptr(c_sbk_l)||
-			src.vword.get(i+1).val==rsoptr(c_mbk_l))
+		tfunc* ptfi=yfind::find_func_infer(*ptci,fname);
+		if(ptfi!=null)
 		{
-			return proc_vararg(sh,src,pfirst,outopnd,tfi,level,i,ptci,env);
+			return proc_infer(sh,src,pfirst,outopnd,tfi,level,i,ptci,ptfi,env); 
+		}
+		ptfi=yfind::find_func(*ptci,fname);
+		if(ptfi!=null)
+		{
+			if(ptfi->is_vararg&&src.vword.get(i+1).val==rsoptr(c_sbk_l)||
+				src.vword.get(i+1).val==rsoptr(c_mbk_l))
+			{
+				return proc_vararg(sh,src,pfirst,outopnd,tfi,level,i,ptci,env);
+			}
 		}
 		if(pfirst!=null&&ybase::get_tname(pfirst->type)==rskey(c_var)&&
 			null==yfind::find_func(*ptci,fname))

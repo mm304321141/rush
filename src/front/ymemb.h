@@ -418,10 +418,10 @@ struct ymemb
 			}
 			else
 			{
-				//item.type="var&";
-				//item.name=vword.get(0).val;
-				rserror(vword.get(0),"miss data type or name");
-				return false;
+				item.is_infer=true;
+				item.type="void";
+				item.name=vword.get(start).val;
+				//类型推导不能是C数组
 			}
 		}
 		if(item.type.empty()||item.name.empty())
@@ -465,7 +465,8 @@ struct ymemb
 		rbuf<rbuf<tword> > list=ybase::split_comma<tword>(sh,param);
 		int i=0;
 		//如果第一个参数只有类型，则表明是返回值
-		if(!list.empty()&&list[0].count()==1&&
+		if(!list.empty()&&
+			list[0].count()==1&&
 			yfind::is_class_t(sh,list[0].get_bottom().val))
 		{
 			item.retval.type=list[0].get_bottom().val;
@@ -547,16 +548,28 @@ struct ymemb
 		}
 		else
 		{
-			if(yfind::is_class_t(sh,v.get(start).val)
-				&&v.get(start+1).val!=rsoptr(c_sbk_l)
-				&&!v.get(start+1).val.empty())
+			if(yfind::is_class_t(sh,v.get(start).val))
 			{
-				item.retval.type=v.get(start).val;
-				start++;
+				if(v.get(start+1).val==rsoptr(c_sbk_l))
+				{
+					item.retval.type=rskey(c_void);
+				}
+				else
+				{
+					item.retval.type=v.get(start).val;
+					start++;
+				}
+			}
+			elif(v.get(start).val==rsoptr(c_destruct)&&
+				yfind::is_class_t(sh,v.get(start+1).val)&&
+				v.get(start+2).val==rsoptr(c_sbk_l))
+			{
+				item.retval.type=rskey(c_void);
 			}
 			else
 			{
 				item.retval.type=rskey(c_void);
+				item.is_infer=true;
 			}
 		}
 		if(item.retval.type.empty())
@@ -629,6 +642,10 @@ struct ymemb
 			{
 				item.is_vararg=true;
 				continue;
+			}
+			if(ditem.is_infer)
+			{
+				item.is_infer=true;
 			}
 			if(ditem.is_array())
 			{
@@ -779,6 +796,18 @@ struct ymemb
 			ifn(parse_func(sh,item,vhead))
 			{
 				return false;
+			}
+			if(item.is_infer)
+			{
+				item.name_dec=item.get_dec();
+				if(tci.vfunc_infer.exist(item))
+				{
+					rserror(v.get_bottom(),"func infer redefined");
+					return false;
+				}
+				item.vword=v.sub(left,right+1);
+				tci.vfunc_infer.insert(item);
+				return true;
 			}
 			if(item.name.sub(0,7)!="_LAMBDA")
 			{

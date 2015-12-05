@@ -13,6 +13,10 @@ struct ysent
 {
 	static rbool proc(tsh& sh,tfunc& tfi,tenv env)
 	{
+		ifn(tfi.vsent.empty())
+		{
+			return true;
+		}
 		if(env.ptfi!=null)
 		{
 			add_class(sh,tfi,env);
@@ -73,6 +77,7 @@ struct ysent
 		{
 			return false;
 		}
+		replace_return(sh,tfi);
 		ifn(yrep::replace_typeof(sh,tfi,env))
 		{
 			return false;
@@ -160,14 +165,14 @@ struct ysent
 
 	static rbool replace_macro(tsh& sh,tfunc& tfi)
 	{
-		extern rbool r_compile_func_to_x86(tsh& sh,tfunc& tfi,tenv env);
+		extern rbool r_zjit_compile_func_to_x86(tsh& sh,tfunc& tfi,tenv env);
 		rbuf<tword>& v=tfi.vword;
 		for(int i=0;i<v.count();i++)
 		{
 			if(sh.dic_macro.exist(v[i].val))
 			{
 				tfunc* ptfi=sh.dic_macro[v[i].val];
-				ifn(r_compile_func_to_x86(sh,*ptfi,tenv()))
+				ifn(r_zjit_compile_func_to_x86(sh,*ptfi,tenv()))
 				{
 					return false;
 				}
@@ -372,6 +377,20 @@ struct ysent
 			vtemp+=r_move(sent.vword);
 			sent.vword=r_move(vtemp);
 		}
+		elif(tfi.is_infer&&sent.vword.count()>=2&&sent.vword[0].val==rskey(c_return))
+		{
+			tsent temp=sent.sub(1,sent.vword.count());
+			ifn(yrep::replace_typeof_one(sh,tfi,temp,env))
+			{
+				return false;
+			}
+			ifn(yexp::proc_exp(sh,temp,tfi,0,env))
+			{
+				return false;
+			}
+			tfi.retval.type=temp.type;
+			tfi.retval.size=yfind::get_type_size(sh,tfi.retval.type);
+		}
 		return true;
 	}
 
@@ -463,4 +482,74 @@ struct ysent
 		ybase::part_vsent(tfi);
 		return true;
 	}
+
+	static void replace_return(const tsh& sh,tfunc& tfi)
+	{
+		for(int i=0;i<tfi.vsent.count();i++)
+		{
+			replace_return_v(sh,tfi.vsent[i].vword,tfi);
+		}
+		ybase::part_vsent(tfi);
+	}
+
+	static void replace_return_v(const tsh& sh,rbuf<tword>& v,const tfunc& tfi)
+	{
+		rbuf<tword> result;
+		if(v.get(0).val!=rskey(c_return))
+		{
+			return;
+		}
+		rbuf<tword> sent=v.sub(1);
+		ifn(sent.empty())
+		{
+			if(ybase::is_quote(tfi.retval.type))
+			{
+				//todo: 应放在后端处理
+				if(sh.mode==tsh::c_gpp)
+				{
+					result+=sent;
+					result+=rsoptr(c_semi);
+				}
+				else
+				{
+					result+=rsoptr(c_addr);
+					result+=rsoptr(c_sbk_l);
+					result+=sent;
+					result+=rsoptr(c_sbk_r);
+					result+=rsoptr(c_semi);
+
+					result+=rskey(c_mov);
+					result+=rsoptr(c_mbk_l);
+					result+=rskey(c_ebp);
+					result+=rsoptr(c_plus);
+					result+=rskey(c_s_off);
+					result+=tfi.retval.name;
+					result+=rsoptr(c_mbk_r);
+					result+=rsoptr(c_comma);
+					result+=rskey(c_ebx);
+					result+=rsoptr(c_semi);
+				}
+			}
+			else
+			{
+				result+=tfi.retval.name;
+				result+=rsoptr(c_sbk_l);
+				result+=rsoptr(c_sbk_l);
+				result+=sent;
+				result+=rsoptr(c_sbk_r);
+				result+=rsoptr(c_sbk_r);
+				result+=rsoptr(c_semi);
+			}
+		}
+		result+=rskey(c_jmp);
+		result+=rstr("_func_end");
+		v=r_move(result);
+		return;
+	}
 };
+
+//todo C++不支持mixin，只能这么写
+rbool r_ysent_proc(tsh& sh,tfunc& tfi,tenv env)
+{
+	return ysent::proc(sh,tfi,env);
+}

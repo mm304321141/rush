@@ -80,7 +80,7 @@
 		this=a;
 	}
 
-	friend operator<->(int64& a,int64& b)
+	friend void operator<->(int64& a,int64& b)
 	{
 		c=a
 		a=b

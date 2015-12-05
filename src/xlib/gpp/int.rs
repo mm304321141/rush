@@ -112,7 +112,7 @@
 		this=a;
 	}
 
-	friend operator<->(int& a,int& b)
+	friend void operator<->(int& a,int& b)
 	{
 		c=a
 		a=b

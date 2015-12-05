@@ -38,7 +38,7 @@ class rbufm<T>
 		m_column=a.m_column
 	}
 
-	=(rbufm<T>& a)
+	void =(rbufm<T>& a)
 	{
 		m_buf=a.m_buf
 		m_level=a.m_level

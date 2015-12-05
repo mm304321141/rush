@@ -251,7 +251,7 @@ rbuf<T> array<T>(int num)
 
 //采用类似的办法可以回溯函数的调用栈，
 //即可从被调用函数访问到调用函数的局部变量
-_reti(int addr,int i)
+void _reti(int addr,int i)
 {
 	mov ecx,addr
 	mov eax,i

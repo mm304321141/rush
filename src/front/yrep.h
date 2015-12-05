@@ -216,7 +216,8 @@ struct yrep
 				v[i-1]==rsoptr(c_mbk_l)||
 				v[i-1]==rsoptr(c_comma)||
 				v[i-1]==rsoptr(c_equal_equal)||
-				v[i-1]==rsoptr(c_not_equal))
+				v[i-1]==rsoptr(c_not_equal)||
+				v[i-1]==rskey(c_return))
 			{
 				v[i].val="neg";
 			}

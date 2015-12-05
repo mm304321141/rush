@@ -97,7 +97,7 @@
 		mov [edi],[esi]
 	}
 
-	friend operator<->(uint& a,uint& b)
+	friend void operator<->(uint& a,uint& b)
 	{
 		c=a
 		a=b
