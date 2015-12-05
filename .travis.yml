@@ -1,0 +1,10 @@
+language: cpp
+compiler:
+    - g++
+script: g++ src/rush.cxx -o rush -w -m32 -std=c++11
+notifications:
+    email:
+        - 287848066@qq.com
+os:
+    - linux
+    - osx
