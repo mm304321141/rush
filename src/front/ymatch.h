@@ -61,7 +61,7 @@ struct ymatch
 		const rbuf<tsent>& vsent)
 	{
 		tfunc* p;
-		for_set(p,tci.vfunc)
+		for_set(p,tci.s_func)
 		{
 			if(fname!=p->name)
 			{
@@ -123,7 +123,7 @@ struct ymatch
 		const rbuf<tsent>& vsent)
 	{
 		tfunc* p;
-		for_set(p,tci.vfunc)
+		for_set(p,tci.s_func)
 		{
 			if(fname!=p->name)
 			{

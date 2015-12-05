@@ -19,9 +19,9 @@ struct yautof
 		tpos pos;
 		pos.line=1;
 		pos.file=null;
-		ifn(tci.vfunc.empty())
+		ifn(tci.s_func.empty())
 		{
-			pos=tci.vfunc.begin()->pos;
+			pos=tci.s_func.begin()->pos;
 		}
 		if(yfind::find_destruct(tci)==null)
 		{
@@ -34,7 +34,7 @@ struct yautof
 			tfi.retval=tdata(rskey(c_void),rstr());
 
 			tfi.name_dec=tfi.get_dec();
-			tci.vfunc.insert(tfi);
+			tci.s_func.insert(tfi);
 		}
 		if(yfind::find_empty_struct(tci)==null)
 		{
@@ -48,7 +48,7 @@ struct yautof
 			tfi.retval=tdata(rskey(c_void),rstr());
 
 			tfi.name_dec=tfi.get_dec();
-			tci.vfunc.insert(tfi);
+			tci.s_func.insert(tfi);
 		}
 		if(yfind::find_copy_struct(tci)==null)
 		{
@@ -64,7 +64,7 @@ struct yautof
 
 			add_copy_sent(sh,tfi);
 			tfi.name_dec=tfi.get_dec();
-			tci.vfunc.insert(tfi);
+			tci.s_func.insert(tfi);
 		}
 		add_copystruct_func(sh,tci);
 		if(yfind::find_func(tci,rsoptr(c_equal),tci.name+rsoptr(c_addr),
@@ -82,7 +82,7 @@ struct yautof
 
 			add_copy_sent(sh,tfi);
 			tfi.name_dec=tfi.get_dec();
-			tci.vfunc.insert(tfi);
+			tci.s_func.insert(tfi);
 		}
 		if(yfind::find_func(tci,rsoptr(c_equal),
 			tci.name+rsoptr(c_addr),tci.name)==null)
@@ -93,7 +93,7 @@ struct yautof
 			tfi.ptci=&tci;
 			tfi.param[1].type=tci.name;
 			tfi.name_dec=tfi.get_dec();
-			tci.vfunc.insert(tfi);
+			tci.s_func.insert(tfi);
 		}
 		if(yfind::find_func(tci,rsoptr(c_addr))==null)
 		{
@@ -127,7 +127,7 @@ struct yautof
 			tfi.name_dec=tfi.get_dec();
 			if(yfind::is_class(sh,tfi.retval.type))
 			{
-				tci.vfunc.insert(tfi);
+				tci.s_func.insert(tfi);
 			}
 		}
 		return true;
@@ -137,7 +137,7 @@ struct yautof
 	{
 		rbuf<tfunc> temp;
 		tfunc* p;
-		for_set(p,tci.vfunc)
+		for_set(p,tci.s_func)
 		{
 			if(tci.name!=p->name)
 			{
@@ -160,7 +160,7 @@ struct yautof
 				continue;
 			}
 			tfunc* q;
-			for_set(q,tci.vfunc)
+			for_set(q,tci.s_func)
 			{
 				if(q->name!=p->name||q->param.count()!=p->param.count())
 				{
@@ -187,7 +187,7 @@ struct yautof
 					break;
 				}
 			}
-			if(q!=tci.vfunc.end())
+			if(q!=tci.s_func.end())
 			{
 				continue;
 			}
@@ -202,7 +202,7 @@ struct yautof
 		}
 		for(int k=0;k<temp.count();k++)
 		{
-			tci.vfunc.insert(temp[k]);
+			tci.s_func.insert(temp[k]);
 		}
 	}
 

@@ -50,7 +50,7 @@ struct zjit
 			{
 				return false;
 			}
-			sh.addr.insert(taddr(
+			sh.s_point.insert(taddr(
 				(uint)(tfi.code),(uint)(tfi.code+size),&tfi));
 		}
 		int cur=0;
@@ -308,9 +308,9 @@ struct zjit
 	{
 		char* name=(char*)(ins.first.val);
 		void* addr=null;
-		if(sh.func_list.find(name)!=null)
+		if(sh.dic_bind_func.find(name)!=null)
 		{
-			addr=sh.func_list[name];
+			addr=sh.dic_bind_func[name];
 		}
 		if(addr==null)
 		{

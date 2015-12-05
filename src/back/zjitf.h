@@ -132,7 +132,7 @@ struct zjitf
 
 	static tfunc* get_cur_func(uchar* pasm)
 	{
-		taddr* p=get_psh()->addr.find(taddr((uint)pasm,(uint)pasm+1,null));
+		taddr* p=get_psh()->s_point.find(taddr((uint)pasm,(uint)pasm+1,null));
 		if(p==null)
 		{
 			return null;
@@ -148,13 +148,13 @@ struct zjitf
 	static void* find_dll_q(const char* name)
 	{
 		tsh& sh=*get_psh();
-		if(sh.dll_func.exist(name))
+		if(sh.dic_dll_func.exist(name))
 		{
-			return sh.dll_func[name];
+			return sh.dic_dll_func[name];
 		}
-		if(sh.func_list.exist(name))
+		if(sh.dic_bind_func.exist(name))
 		{
-			return sh.func_list[name];
+			return sh.dic_bind_func[name];
 		}
 		return find_dll_full(name);
 	}

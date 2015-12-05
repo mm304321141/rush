@@ -168,12 +168,12 @@ struct zbin
 		}
 		if(item.ins.type==tins::c_calle_i)
 		{
-			ifn(sh.func_list.exist((char*)(item.ins.first.val)))
+			ifn(sh.dic_bind_func.exist((char*)(item.ins.first.val)))
 			{
 				rserror((char*)(item.ins.first.val));
 				return false;
 			}
-			item.ins.first.val=(int)(sh.func_list[(char*)(item.ins.first.val)]);
+			item.ins.first.val=(int)(sh.dic_bind_func[(char*)(item.ins.first.val)]);
 		}
 		return true;
 	}

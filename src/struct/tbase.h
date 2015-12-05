@@ -525,11 +525,11 @@ struct tfunc
 struct tclass
 {
 	rstr name;
-	rset<tmac> vmac;//宏列表
+	rset<tmac> s_mac;//宏列表
 	rbuf<tdata> vdata;//数据成员列表
-	rset<tfunc> vfunc;//函数成员列表
-	rset<tfunc> vfunctl;//模板函数列表
-	rset<tfunc> vfunc_infer;
+	rset<tfunc> s_func;//函数成员列表
+	rset<tfunc> s_func_tl;//模板函数列表
+	rset<tfunc> s_func_infer;
 
 	rbuf<tword> vword;
 	rbuf<ttl> vtl;
@@ -547,11 +547,11 @@ struct tclass
 	tclass(const tclass& a)
 	{
 		name=a.name;
-		vmac=a.vmac;
+		s_mac=a.s_mac;
 		vdata=a.vdata;
-		vfunc=a.vfunc;
-		vfunctl=a.vfunctl;
-		vfunc_infer=a.vfunc_infer;
+		s_func=a.s_func;
+		s_func_tl=a.s_func_tl;
+		s_func_infer=a.s_func_infer;
 
 		vword=a.vword;
 		vtl=a.vtl;
@@ -645,11 +645,11 @@ struct tsh
 
 	rbuf<top_node> vmatch;
 
-	rdic<void*> func_list;//jit静态函数地址表
+	rdic<void*> dic_bind_func;//jit静态函数地址表
 	int ret_val;
 
-	rset<taddr> addr;
-	rdic<void*> dll_func;
+	rset<taddr> s_point;
+	rdic<void*> dic_dll_func;
 	rdic<tfunc*> dic_macro;
 	rbuf<rstr> vpath;
 

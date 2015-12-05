@@ -14,8 +14,8 @@ struct znasm
 		}
 		rstr result;
 		rbuf<rstr> vconst;
-		rset<rstr> scall;
-		ifn(proc_func(sh,*ptfi,result,vconst,scall))
+		rset<rstr> s_call;
+		ifn(proc_func(sh,*ptfi,result,vconst,s_call))
 		{
 			return false;
 		}
@@ -23,7 +23,7 @@ struct znasm
 		head+=("%include '"+rcode::trans_utf8_to_gbk(
 			ybase::get_rs_dir())+"ext/nasm/windemos.inc'\n");
 		rstr* p;
-		for_set(p,scall)
+		for_set(p,s_call)
 		{
 			ifn(is_ex_func(sh,*p))
 			{
@@ -118,7 +118,7 @@ struct znasm
 	static void add_lambda(rstr& result,tclass& tci)
 	{
 		tfunc* p;
-		for_set(p,tci.vfunc)
+		for_set(p,tci.s_func)
 		{
 			if(p->lambda_data.empty())
 			{
@@ -184,7 +184,7 @@ struct znasm
 
 	//将一个函数翻译成NASM汇编代码
 	static rbool proc_func(tsh& sh,tfunc& tfi,rstr& result,
-		rbuf<rstr>& vconst,rset<rstr>& scall,int level=0)
+		rbuf<rstr>& vconst,rset<rstr>& s_call,int level=0)
 	{
 		if(level>300)
 		{
@@ -215,7 +215,7 @@ struct znasm
 				continue;
 			}
 			rstr s;
-			ifn(proc_asm(sh,tfi,tfi.vasm[i],s,vconst,scall))
+			ifn(proc_asm(sh,tfi,tfi.vasm[i],s,vconst,s_call))
 			{
 				rserror(tfi.vasm[i]);
 				rserror(tfi);
@@ -230,7 +230,7 @@ struct znasm
 			{
 				continue;
 			}
-			ifn(proc_func(sh,*ptfi,result,vconst,scall,level))
+			ifn(proc_func(sh,*ptfi,result,vconst,s_call,level))
 			{
 				return false;
 			}
@@ -299,7 +299,7 @@ struct znasm
 	}
 
 	static rbool proc_asm(tsh& sh,tfunc& tfi,tasm& item,
-		rstr& result,rbuf<rstr>& vconst,rset<rstr>& scall)
+		rstr& result,rbuf<rstr>& vconst,rset<rstr>& s_call)
 	{
 		rbuf<rstr>& vstr=item.vstr;
 		proc_const_str(vstr,vconst);
@@ -314,7 +314,7 @@ struct znasm
 		case tkey::c_calle:
 			if(ybase::del_quote(vstr.get(1))!="printf")//todo:
 			{
-				scall.insert_c(ybase::del_quote(vstr.get(1)));
+				s_call.insert_c(ybase::del_quote(vstr.get(1)));
 			}
 			result+="	invoke "+ybase::del_quote(vstr.get(1))+"\n";
 			return true;

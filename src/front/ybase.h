@@ -64,7 +64,7 @@ struct ybase
 	static void print_func_dec(const tclass& tci)
 	{
 		tfunc* p;
-		for_set(p,tci.vfunc)
+		for_set(p,tci.s_func)
 		{
 			get_func_declare(tci,*p).printl();
 		}

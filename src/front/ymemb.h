@@ -4,7 +4,7 @@
 #include "ysuper.h"
 
 //提取类内部的成员，函数默认参数处理
-//zclass::vword->vdata,vfunc,vmac
+//zclass::vword->vdata,s_func,s_mac
 struct ymemb
 {
 	static rbool proc(tsh& sh)
@@ -247,12 +247,12 @@ struct ymemb
 				eitem.vstr.push(rstr(enum_val));
 				enum_val++;
 			}
-			if(tci.vmac.exist(eitem))
+			if(tci.s_mac.exist(eitem))
 			{
 				rserror(v.get_bottom(),"enum redefined");
 				return false;
 			}
-			tci.vmac.insert(eitem);
+			tci.s_mac.insert(eitem);
 		}
 		return true;
 	}
@@ -261,7 +261,7 @@ struct ymemb
 	{
 		if(v.get(i+1).val=="$")
 		{
-			ifn(ysuper::add_super_mac(sh,v,i,tci.vmac))
+			ifn(ysuper::add_super_mac(sh,v,i,tci.s_mac))
 			{
 				return false;
 			}
@@ -342,12 +342,12 @@ struct ymemb
 				}
 			}
 		}
-		if(tci.vmac.exist(mitem))
+		if(tci.s_mac.exist(mitem))
 		{
 			rserror(v.get_bottom(),"mac redefined");
 			return false;
 		}
-		tci.vmac.insert(mitem);
+		tci.s_mac.insert(mitem);
 		return true;
 	}
 
@@ -753,12 +753,12 @@ struct ymemb
 			}
 			obtain_size_func(sh,item);
 			item.name_dec=item.get_dec();
-			if(tci.vfunc.exist(item))
+			if(tci.s_func.exist(item))
 			{
 				rserror(v.get_bottom(),"func redefined");
 				return false;
 			}
-			tci.vfunc.insert(item);
+			tci.s_func.insert(item);
 			return true;
 		}
 		int left=v.find(tword(rsoptr(c_bbk_l)));
@@ -800,13 +800,13 @@ struct ymemb
 			if(item.is_infer)
 			{
 				item.name_dec=item.get_dec();
-				if(tci.vfunc_infer.exist(item))
+				if(tci.s_func_infer.exist(item))
 				{
 					rserror(v.get_bottom(),"func infer redefined");
 					return false;
 				}
 				item.vword=v.sub(left,right+1);
-				tci.vfunc_infer.insert(item);
+				tci.s_func_infer.insert(item);
 				return true;
 			}
 			if(item.name.sub(0,7)!="_LAMBDA")
@@ -815,7 +815,7 @@ struct ymemb
 			}
 			obtain_size_func(sh,item);
 			item.name_dec=item.get_dec();
-			if(tci.vfunc.exist(item))
+			if(tci.s_func.exist(item))
 			{
 				if(check_tl)
 				{
@@ -825,12 +825,12 @@ struct ymemb
 				return true;
 			}
 			item.vword=v.sub(left+1,right);
-			tci.vfunc.insert(item);
+			tci.s_func.insert(item);
 			if(item.is_macro)
 			{
-				sh.dic_macro[item.name]=tci.vfunc.find(item);
+				sh.dic_macro[item.name]=tci.s_func.find(item);
 			}
-			ifn(proc_default_param(sh,*tci.vfunc.find(item)))
+			ifn(proc_default_param(sh,*tci.s_func.find(item)))
 			{
 				return false;
 			}
@@ -838,13 +838,13 @@ struct ymemb
 		else
 		{
 			item.name_dec=item.get_dec();
-			if(tci.vfunctl.exist(item))
+			if(tci.s_func_tl.exist(item))
 			{
 				rserror(v.get_bottom(),"functl redefined");
 				return false;
 			}
 			item.vword=vhead+v.sub(left,right+1);
-			tci.vfunctl.insert(item);
+			tci.s_func_tl.insert(item);
 		}
 		return true;
 	}
@@ -852,7 +852,7 @@ struct ymemb
 	static void obtain_size_func_all(const tsh& sh,tclass& tci)
 	{
 		tfunc* p;
-		for_set(p,tci.vfunc)
+		for_set(p,tci.s_func)
 		{
 			obtain_size_func(sh,*p);
 		}
@@ -1019,12 +1019,12 @@ struct ymemb
 				ftemp.param[j].param.free();
 			}
 			ftemp.name_dec=ftemp.get_dec();
-			if(tfi.ptci->vfunc.exist(ftemp))
+			if(tfi.ptci->s_func.exist(ftemp))
 			{
 				rserror(tfi.vword.get_bottom(),"func redefined");
 				return false;
 			}
-			tfi.ptci->vfunc.insert(ftemp);
+			tfi.ptci->s_func.insert(ftemp);
 		}
 		for(i=0;i<tfi.param.count();i++)
 		{

@@ -36,6 +36,6 @@
 #define rsja znasm::get_opnd1_v(vstr)
 #define rsjb znasm::get_opnd2_v(vstr)
 #define rsj4(a,b,c,d) (zjiti::a(build_ins(sh,rskey(c_nop),b,c,d)))
-#define rsjf(a,b) sh.func_list[a]=(void*)&b
+#define rsjf(a,b) sh.dic_bind_func[a]=(void*)&b
 
 #define rserror rf::printl(rstr("rs_src:")+__FILE__+" "+__LINE__);ybase::error

@@ -160,7 +160,7 @@ struct yfind
 	static tfunc* find_func_multi_param_n(const tclass& tci,const rstr& fname)
 	{
 		tfunc* p;
-		for_set(p,tci.vfunc)
+		for_set(p,tci.s_func)
 		{
 			if(fname==p->name&&
 				!p->is_friend&&
@@ -177,7 +177,7 @@ struct yfind
 	static tfunc* find_func_empty_param_n(const tclass& tci,const rstr& fname)
 	{
 		tfunc* p;
-		for_set(p,tci.vfunc)
+		for_set(p,tci.s_func)
 		{
 			if(fname==p->name&&
 				!p->is_friend&&
@@ -194,7 +194,7 @@ struct yfind
 	static tfunc* find_func_multi_param_f(const tclass& tci,const rstr& fname)
 	{
 		tfunc* p;
-		for_set(p,tci.vfunc)
+		for_set(p,tci.s_func)
 		{
 			if(fname==p->name&&
 				p->is_friend&&
@@ -210,7 +210,7 @@ struct yfind
 	static tfunc* find_func_empty_param_f(const tclass& tci,const rstr& fname)
 	{
 		tfunc* p;
-		for_set(p,tci.vfunc)
+		for_set(p,tci.s_func)
 		{
 			if(fname==p->name&&
 				p->is_friend&&
@@ -233,21 +233,21 @@ struct yfind
 			tfi.param.push(vtype[i]);
 		}
 		tfi.name_dec=tfi.get_dec();
-		return tci.vfunc.find(tfi);
+		return tci.s_func.find(tfi);
 	}
 
 	static tfunc* find_func_dec(const tclass& tci,const rstr& func_dec)
 	{
 		tfunc tfi;
 		tfi.name_dec=func_dec;
-		return tci.vfunc.find(tfi);
+		return tci.s_func.find(tfi);
 	}
 	
 	//根据函数名搜索函数
 	static tfunc* find_func(const tclass& tci,const rstr& fname)
 	{
 		tfunc* p;
-		for_set(p,tci.vfunc)
+		for_set(p,tci.s_func)
 		{
 			if(fname==p->name)
 			{
@@ -260,7 +260,7 @@ struct yfind
 	static tfunc* find_func_infer(const tclass& tci,const rstr& fname)
 	{
 		tfunc* p;
-		for_set(p,tci.vfunc_infer)
+		for_set(p,tci.s_func_infer)
 		{
 			if(fname==p->name)
 			{
@@ -278,7 +278,7 @@ struct yfind
 		item.param.push(a);
 		item.param.push(b);
 		item.name_dec=item.get_dec();
-		return tci.vfunc.find(item);
+		return tci.s_func.find(item);
 	}
 
 	static tfunc* find_func(const tclass& tci,const rstr& fname,const rstr& a)
@@ -287,7 +287,7 @@ struct yfind
 		item.name=fname;
 		item.param.push(a);
 		item.name_dec=item.get_dec();
-		return tci.vfunc.find(item);
+		return tci.s_func.find(item);
 	}
 
 	static tfunc* find_ftl(const tclass& tci,const rstr& name)
@@ -295,7 +295,7 @@ struct yfind
 		tfunc item;
 		item.name=name;
 		item.name_dec=item.get_dec();
-		return tci.vfunctl.find(item);
+		return tci.s_func_tl.find(item);
 	}
 
 	static tfunc* find_destruct(const tclass& tci)

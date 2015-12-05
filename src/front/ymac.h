@@ -62,7 +62,7 @@ struct ymac
 			else
 			{
 				tfunc* p;
-				for_set(p,ptci->vfunc)
+				for_set(p,ptci->s_func)
 				{
 					result+=head;
 					result+=tword(rsoptr(c_addr));
@@ -126,12 +126,12 @@ struct ymac
 			int right=i;
 			tmac item;
 			item.name=v[i].val;
-			if(ptci->vmac.exist(item))
+			if(ptci->s_mac.exist(item))
 			{
 				ifn(i>1&&v.get(i-1).val==rsoptr(c_dot))
 				{
 					ifn(replace_param(sh,v,i,
-						*ptci->vmac.find(item),right))
+						*ptci->s_mac.find(item),right))
 					{
 						return false;
 					}
@@ -140,12 +140,12 @@ struct ymac
 				}
 			}
 			ptci=sh.pmain;
-			if(ptci->vmac.exist(item))
+			if(ptci->s_mac.exist(item))
 			{
 				ifn(i>1&&v.get(i-1).val==rsoptr(c_dot))
 				{
 					ifn(replace_param(sh,v,i,
-						*ptci->vmac.find(item),right))
+						*ptci->s_mac.find(item),right))
 					{
 						return false;
 					}
@@ -168,9 +168,9 @@ struct ymac
 			}
 			i++;
 			item.name=v.get(i).val;
-			if(ptci->vmac.exist(item))
+			if(ptci->s_mac.exist(item))
 			{
-				ifn(replace_param(sh,v,i,*ptci->vmac.find(item),right))
+				ifn(replace_param(sh,v,i,*ptci->s_mac.find(item),right))
 				{
 					return false;
 				}

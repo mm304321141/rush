@@ -582,7 +582,7 @@ struct yexp
 		}
 		temp.name_dec=temp.get_dec();
 		ymemb::obtain_size_func(sh,temp);
-		ptci->vfunc.insert_c(temp);
+		ptci->s_func.insert_c(temp);
 		ptfi=ymatch::find_and_replace(sh,*ptci,fname,vsent);
 		if(null==ptfi)
 		{

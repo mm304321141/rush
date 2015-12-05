@@ -400,13 +400,13 @@ struct ypre
 		ybase::arrange(v);
 	}
 
-	static rbool replace_def_one(const tsh& sh,rbuf<tword>& v,const rset<tmac>& vmac)
+	static rbool replace_def_one(const tsh& sh,rbuf<tword>& v,const rset<tmac>& s_mac)
 	{
 		tmac item;
 		for(int i=0;i<v.count();i++)
 		{
 			item.name=v[i].val;
-			tmac* p=vmac.find(item);
+			tmac* p=s_mac.find(item);
 			if(p==null)
 			{
 				continue;
@@ -427,11 +427,11 @@ struct ypre
 		return true;
 	}
 
-	static rbool replace_def(const tsh& sh,const rset<tmac>& vdefine,rbuf<tword>& v)
+	static rbool replace_def(const tsh& sh,const rset<tmac>& s_define,rbuf<tword>& v)
 	{
 		for(int i=0;i<c_rs_deep;i++)
 		{
-			ifn(replace_def_one(sh,v,vdefine))
+			ifn(replace_def_one(sh,v,s_define))
 			{
 				return false;
 			}
@@ -443,7 +443,7 @@ struct ypre
 		return false;
 	}
 
-	static rbool obtain_def(const tsh& sh,rset<tmac>& vdefine,rbuf<tword>& v)
+	static rbool obtain_def(const tsh& sh,rset<tmac>& s_define,rbuf<tword>& v)
 	{
 		for(int i=0;i<v.count();i++)
 		{
@@ -464,7 +464,7 @@ struct ypre
 			if(v.get(i+1)=="$")
 			{
 				int right=i;
-				ifn(ysuper::add_super_mac(sh,v,right,vdefine))
+				ifn(ysuper::add_super_mac(sh,v,right,s_define))
 				{
 					return false;
 				}
@@ -484,13 +484,13 @@ struct ypre
 				item.vstr.push(v[k].val);
 				v[k].clear();
 			}
-			if(vdefine.exist(item))
+			if(s_define.exist(item))
 			{
-				vdefine.erase(item);
+				s_define.erase(item);
 				/*rserror(v.get(i+1),"redefined");
 				return false;*/
 			}
-			vdefine.insert(item);
+			s_define.insert(item);
 			v[i+1].clear();
 			v[i].clear();
 		}
@@ -499,7 +499,7 @@ struct ypre
 	}
 
 	//fixme:
-	static rbool replace_ifdef(const tsh& sh,const rset<tmac>& vdefine,rbuf<tword>& v)
+	static rbool replace_ifdef(const tsh& sh,const rset<tmac>& s_define,rbuf<tword>& v)
 	{
 		tmac item;
 		for(int i=v.count()-1;i>=0;i--)
@@ -536,7 +536,7 @@ struct ypre
 					break;
 				}
 			}
-			rbool defined=vdefine.exist(item);
+			rbool defined=s_define.exist(item);
 			if(key==rskey(c_ifdef))
 			{
 				if(defined)

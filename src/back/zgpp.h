@@ -56,27 +56,27 @@ struct zgpp
 
 	static void build_struct_dec(tsh& sh,rstr& result)
 	{
-		rset<tgpp> list;//tgpp按照指针大小排序，故每次生成的结构体顺序不一定相同
+		rset<tgpp> s_list;//tgpp按照指针大小排序，故每次生成的结构体顺序不一定相同
 		tclass* p;
 		for_set(p,sh.s_class)
 		{
 			tgpp item;
 			item.p=p;
 			item.visit=false;
-			list.insert(item);
+			s_list.insert(item);
 		}
 		tgpp* q;
-		for_set(q,list)
+		for_set(q,s_list)
 		{
 			ifn(q->visit)
 			{
 				q->visit=true;
-				build_struct_dec_one(sh,q,list,result);
+				build_struct_dec_one(sh,q,s_list,result);
 			}
 		}
 	}
 
-	static void build_struct_dec_one(tsh& sh,tgpp* q,rset<tgpp>& list,rstr& result)
+	static void build_struct_dec_one(tsh& sh,tgpp* q,rset<tgpp>& s_list,rstr& result)
 	{
 		if(is_internal_type(sh,q->p->name))
 		{
@@ -93,7 +93,7 @@ struct zgpp
 			{
 				continue;
 			}
-			tgpp* pitem=list.find(tgpp(pclass));
+			tgpp* pitem=s_list.find(tgpp(pclass));
 			if(pitem==null)
 			{
 				continue;
@@ -103,7 +103,7 @@ struct zgpp
 				continue;
 			}
 			pitem->visit=true;
-			build_struct_dec_one(sh,pitem,list,result);
+			build_struct_dec_one(sh,pitem,s_list,result);
 		}
 		result+="struct ";
 		if(q->p->name=="main")

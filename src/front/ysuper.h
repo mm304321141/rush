@@ -5,7 +5,7 @@
 //超级宏
 struct ysuper
 {
-	static rbool add_super_mac(const tsh& sh,const rbuf<tword>& v,int& i,rset<tmac>& vmac)
+	static rbool add_super_mac(const tsh& sh,const rbuf<tword>& v,int& i,rset<tmac>& s_mac)
 	{
 		tmac mitem;
 		mitem.is_super=true;
@@ -35,13 +35,13 @@ struct ysuper
 			return false;
 		}
 		mitem.vstr=ybase::trans_vword_to_vstr(v.sub(left+1,right));
-		if(vmac.exist(mitem))
+		if(s_mac.exist(mitem))
 		{
-			vmac.erase(mitem);
+			s_mac.erase(mitem);
 			/*rserror(v.get_bottom(),"mac redefined");
 			return false;*/
 		}
-		vmac.insert(mitem);
+		s_mac.insert(mitem);
 		i=right;
 		return true;
 	}

@@ -178,7 +178,7 @@ struct zmain
 		for_set(p,sh.s_class)
 		{
 			tfunc* q;
-			for_set(q,p->vfunc)
+			for_set(q,p->s_func)
 			{
 				if(q->vasm.empty())
 				{

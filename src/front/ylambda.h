@@ -94,7 +94,7 @@ struct ylambda
 			{
 				continue;
 			}
-			v[i].val=rstr("_LAMBDA")+tci.vfunc.count();
+			v[i].val=rstr("_LAMBDA")+tci.s_func.count();
 			ifn(ymemb::add_func(sh,tci,v.sub(i,right+1),false))
 			{
 				return false;
