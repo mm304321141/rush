@@ -347,7 +347,7 @@ struct rstr
 	{
 		rstr result=(*this);
 		r_reverse<uchar>(result.buf);
-		return result;
+		return r_move(result);
 	}
 
 	rbool erase(int begin,int end)

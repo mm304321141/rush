@@ -138,7 +138,7 @@ struct zjs
 				rserror(tfi);
 				return false;
 			}
-			result+=s;
+			result+=r_move(s);
 		}
 		result+="}}}\n";
 		for(int i=0;i<tfi.vasm.count();i++)

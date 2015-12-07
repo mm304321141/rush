@@ -314,7 +314,7 @@ struct zgpp
 				vstr.push_front("=");
 				vstr.push_front("ebx");
 			}
-			vtemp+=vstr;
+			vtemp+=r_move(vstr);
 		}
 		ifn(trans_ret_quote(vtemp,tfi))
 		{
