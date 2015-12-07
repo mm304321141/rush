@@ -472,7 +472,7 @@ struct zgpp
 				result+=v[i];
 			}
 		}
-		v=result;
+		v=r_move(result);
 	}
 
 	static rbool proc_func_v(tsh& sh,tfunc& tfi,rstr& result,
@@ -617,10 +617,10 @@ struct zgpp
 		{
 			return false;
 		}
-		result+=vparam[1];
+		result+=r_move(vparam[1]);
 		result+=".";
-		result+=vparam[2];
-		v=result;
+		result+=r_move(vparam[2]);
+		v=r_move(result);
 		return true;
 	}
 
@@ -726,7 +726,7 @@ struct zgpp
 				result+=vparam[i];
 			}
 			result+=")";
-			v=result;
+			v=r_move(result);
 			return true;
 		}
 		rserror("");

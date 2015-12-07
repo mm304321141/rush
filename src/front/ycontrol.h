@@ -49,7 +49,7 @@ struct ycontrol
 		{
 			tsent sent;
 			sent.vword=vsent[i];
-			tfi.vsent+=sent;
+			tfi.vsent+=r_move(sent);
 		}
 		return true;
 	}
@@ -110,11 +110,11 @@ struct ycontrol
 				tword item;
 				item.pos=v[end].pos;
 				item.val=rsoptr(c_semi);
-				result+=item;
+				result+=r_move(item);
 			}
 			i=end;
 		}
-		v=result;
+		v=r_move(result);
 		return true;
 	}
 
@@ -305,8 +305,8 @@ struct ycontrol
 			{
 				return false;
 			}
-			result+=center;
-			v=result;
+			result+=r_move(center);
+			v=r_move(result);
 			return true;
 		}
 		return true;
@@ -347,7 +347,7 @@ struct ycontrol
 				result+=v[i];
 			}
 		}
-		v=result;
+		v=r_move(result);
 		return true;
 	}
 
@@ -390,8 +390,8 @@ struct ycontrol
 			{
 				return false;
 			}
-			result+=temp;
-			v=result;
+			result+=r_move(temp);
+			v=r_move(result);
 			return true;
 		}
 		return true;
@@ -464,8 +464,8 @@ struct ycontrol
 			{
 				return false;
 			}
-			result+=temp;
-			v=result;
+			result+=r_move(temp);
+			v=r_move(result);
 			return true;
 		}
 		return true;
@@ -530,8 +530,8 @@ struct ycontrol
 			{
 				return false;
 			}
-			result+=temp;
-			v=result;
+			result+=r_move(temp);
+			v=r_move(result);
 			return true;
 		}
 		return true;

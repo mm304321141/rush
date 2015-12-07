@@ -278,6 +278,6 @@ struct yword
 		result.push(temp);
 		result.push(word);
 		temp.val=rsoptr(c_sbk_r);
-		result.push(temp);
+		result.push(r_move(temp));
 	}
 };

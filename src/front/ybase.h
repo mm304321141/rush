@@ -121,7 +121,7 @@ struct ybase
 			}
 			s+=v[i].val+" ";
 		}
-		return s;
+		return r_move(s);
 	}
 
 	static rstr get_func_param_declare(const tfunc& tfi)
@@ -250,7 +250,7 @@ struct ybase
 	{
 		if(is_point_quote(s))
 		{
-			return s;
+			return r_move(s);
 		}
 		return s+"&";
 	}

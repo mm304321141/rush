@@ -544,6 +544,7 @@ struct yexp
 		return true;
 	}
 
+	//todo: process this
 	static rbool proc_infer(tsh& sh,const tsent& src,const tsent* pfirst,tsent& outopnd,
 		tfunc& tfi,int level,int& i,tclass* ptci,tfunc* ptfi,tenv env)
 	{
@@ -830,7 +831,7 @@ struct yexp
 					outopnd.vword+=rsoptr(c_comma);
 					outopnd.vword+=tword(name);
 					outopnd.vword+=tword(rsoptr(c_mbk_r));
-					sopnd.push(outopnd);
+					sopnd.push(r_move(outopnd));
 					continue;
 				}
 				if(src.vword.get(i+1)==rsoptr(c_tbk_l)&&

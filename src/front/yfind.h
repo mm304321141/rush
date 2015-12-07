@@ -321,9 +321,9 @@ struct yfind
 	{
 		tclass& tci=*tfi.ptci;
 		return (tci.name==tfi.name&&
-				tfi.param.count()==1&&
-				tfi.param[0].type==tci.name+rsoptr(c_addr)&&
-				tfi.retval.type==rskey(c_void));
+			tfi.param.count()==1&&
+			tfi.param[0].type==tci.name+rsoptr(c_addr)&&
+			tfi.retval.type==rskey(c_void));
 	}
 
 	static tfunc* find_copy_struct(const tclass& tci)
