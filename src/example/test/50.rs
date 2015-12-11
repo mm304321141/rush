@@ -7,6 +7,7 @@ void main()
 	test4
 	test5
 	test6
+	test7
 }
 
 //浮点测试
@@ -69,3 +70,14 @@ void test6()
 	printl ORM[1,2,4,8]
 	printl ORM[1]
 }
+
+void test7():
+	rbuf<int> v
+	v.push(1)
+	v.push(2)
+	v.push(3)
+	printl v.count
+	v.push(4)
+	v.push(5)
+	printl v.count
+	

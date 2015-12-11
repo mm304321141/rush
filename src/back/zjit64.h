@@ -10,12 +10,7 @@ struct zjit
 	static rbool run(tsh& sh)
 	{
 #ifndef _RS
-		tfunc* ptfi=yfind::find_func(*sh.pmain,"__declare");
-		/*if(ptfi!=null)
-		{
-			compile_func_to_x86(sh,*ptfi,tenv());
-		}*/
-		ptfi=yfind::find_func(*sh.pmain,"main_c");
+		tfunc* ptfi=yfind::find_func(*sh.pmain,"main_c");
 		if(ptfi==null)
 		{
 			rf::printl("main not find");
@@ -41,13 +36,6 @@ struct zjit
 		{
 			return false;
 		}
-		if(tfi.name=="v_delete"&&tfi.ptci->name=="rbuf<char>")
-		{
-			ybase::print_func_asm(tfi);
-		}
-		//rf::printl(tfi.name_dec);
-		//ybase::print_func_asm(tfi);
-		//rf::printl();
 		int size=tfi.vasm.count()*12;//todo 估算法并不是最好的方法
 		size=r_ceil_div(size,4096)*4096;
 		if(tfi.code==null)
@@ -80,13 +68,6 @@ struct zjit
 				rserror(tfi.vasm[i],"can't build jit ins");
 				return false;
 			}
-			//rf::print(tfi.name+" ");
-			/*rstr::join<rstr>(tfi.vasm[i].vstr," ").printl();
-			for(int k=0;k<s.count();k++)
-			{
-				rf::print(rstr::format("%02X",s[k]));
-			}
-			rf::printl();*/
 			if(cur+s.count()>size)
 			{
 				rserror(tfi,"func too big");
@@ -187,8 +168,8 @@ struct zjit
 		case tkey::c_lea:
 			if(znasm::count_mbk_l(vstr)==2)
 			{
-				rserror();
-				return rstr();
+				return (rsj4(b_lea,rskey(c_rcx),rsoptr(c_comma),rsjb)+
+					rsj4(b_mov64,rsja,rsoptr(c_comma),rskey(c_rcx)));
 			}
 			return zjiti::b_lea(ins);
 		case tkey::c_mov:

@@ -5,7 +5,7 @@ class A
 	
 	A()
 	{
-		m_p=r_new<int>5	
+		m_p=r_new<int>5
 	}
 	
 	~A()

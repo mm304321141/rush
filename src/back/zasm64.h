@@ -499,13 +499,12 @@ struct zasm
 			if(src.vword.get_bottom().is_caddr())
 			{
 				vasm+=rf::vstr(rskey(c_mov64),rskey(c_rbx),rsoptr(c_comma),src.vword[0].val);
+				vasm+=rf::vstr(rskey(c_push),rskey(c_rbx));
 			}
 			else
 			{
-				vasm+=rf::vstr(rskey(c_mov64),rskey(c_rbx),rsoptr(c_comma),
-					src.vword[0].val.sub_trim(1));
+				vasm+=rf::vstr(rskey(c_push),src.vword[0].val.sub_trim(1));
 			}
-			vasm+=rf::vstr(rskey(c_push),rskey(c_rbx));
 		}
 		elif(src.vword[0].is_cstr())
 		{

@@ -206,6 +206,7 @@ struct zjitf
 		rsjf("ftell",xf::ftell);
 		rsjf("fseek",xf::fseek);
 		rsjf("_wfopen",xf::_wfopen);
+		rsjf("fopen",xf::fopen);
 		rsjf("fclose",xf::fclose);
 		rsjf("fread",xf::fread);
 		rsjf("fwrite",xf::fwrite);

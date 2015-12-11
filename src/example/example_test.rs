@@ -37,8 +37,8 @@ void main()
 	vtime.push(xf.tick-time)
 	time=xf.tick
 	
-	/*for i=0;i<vname.count;i++
-		check_jit(vname[i],'rush64')*/
+	for i=0;i<vname.count;i++
+		check_jit(vname[i],'rush64')
 		
 	vtime.push(xf.tick-time)
 	time=xf.tick

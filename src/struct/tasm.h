@@ -49,8 +49,8 @@ struct treg
 
 struct topnd
 {
-	int off;
 	int val;
+	int off;
 
 	enum
 	{
@@ -73,7 +73,7 @@ struct topnd
 
 	int64& val64() const
 	{
-		return *(int64*)(&off);
+		return *(int64*)this;
 	}
 
 	rbool is_reg64() const

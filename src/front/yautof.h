@@ -119,7 +119,11 @@ struct yautof
 			}
 			else
 			{
+#ifdef _WIN64
+				ybase::push_twi(tfi.vword,twi,rskey(c_mov64));
+#else
 				ybase::push_twi(tfi.vword,twi,rskey(c_mov));
+#endif
 				ybase::push_twi(tfi.vword,twi,rskey(c_s_ret));
 				ybase::push_twi(tfi.vword,twi,rsoptr(c_comma));
 				ybase::push_twi(tfi.vword,twi,rskey(c_this));

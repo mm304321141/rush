@@ -184,7 +184,7 @@ namespace xf
 		sub rsp,40
 		mov64 rcx,size
 		calle "malloc",5
-		mov s_ret,eax
+		mov64 s_ret,rax
 		add esp,40
 	}
 

@@ -274,7 +274,11 @@ struct zbin
 			{
 				//123
 				otype=topnd::c_imme;
+#ifdef _WIN64
+				o.val64()=v.top().toint64();
+#else
 				o.val=v.top().touint();
+#endif
 				return true;
 			}
 			elif(v[0].get_bottom()==r_char('\"'))
