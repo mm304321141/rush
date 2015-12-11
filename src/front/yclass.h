@@ -275,7 +275,7 @@ struct yclass
 		insert_type(sh,rskey(c_rd16),2);
 		insert_type(sh,rskey(c_rd32),4);
 		insert_type(sh,rskey(c_rd64),8);
-		insert_type(sh,rskey(c_rdp),sh.point_size);
+		insert_type(sh,rskey(c_rdp),c_point_size);
 	}
 
 	static rbool proc_inherit_all(tsh& sh)

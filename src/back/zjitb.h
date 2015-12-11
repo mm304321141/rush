@@ -63,7 +63,7 @@ struct zjitb
 	static rstr build_a(const tins& ins,int one,int two)
 	{
 		rstr s;
-		if(ins.first.off==treg::c_esp)
+		if(ins.first.off==treg::c_esp||ins.first.off==treg::c_rsp)
 		{
 			s.set_size(7);
 		}
@@ -117,6 +117,17 @@ struct zjitb
 		return r_move(s);
 	}
 
+	static rstr build_ri_64(const tins& ins,int one,int two)
+	{
+		rstr s;
+		s.set_size(10);
+		s[0]=one;
+		s[1]=two;
+		set_reg_bit(ins.first.off,&s[1]);
+		*(int64*)(&s[2])=ins.second.val64();
+		return r_move(s);
+	}
+
 	static rstr build_rr(const tins& ins,int one,int two)
 	{
 		rstr s;
@@ -128,10 +139,22 @@ struct zjitb
 		return r_move(s);
 	}
 
+	static rstr build_rr(const tins& ins,int one,int two,int three)
+	{
+		rstr s;
+		s.set_size(3);
+		s[0]=one;
+		s[1]=two;
+		s[2]=three;
+		set_reg_bit_center(ins.first.off,&s[2]);
+		set_reg_bit(ins.second.off,&s[2]);
+		return r_move(s);
+	}
+
 	static rstr build_ra(const tins& ins,int one,int two)
 	{
 		rstr s;
-		if(ins.second.off==treg::c_esp)
+		if(ins.second.off==treg::c_esp||ins.second.off==treg::c_rsp)
 		{
 			s.set_size(7);
 		}
@@ -146,10 +169,29 @@ struct zjitb
 		return r_move(s);
 	}
 
+	static rstr build_ra(const tins& ins,int one,int two,int three)
+	{
+		rstr s;
+		if(ins.second.off==treg::c_esp||ins.second.off==treg::c_rsp)
+		{
+			s.set_size(8);
+		}
+		else
+		{
+			s.set_size(7);
+		}
+		s[0]=one;
+		s[1]=two;
+		s[2]=three;
+		set_reg_bit_center(ins.first.off,&s[2]);
+		set_addr_bit(ins.second.off,&s[2],ins.second.val);
+		return r_move(s);
+	}
+
 	static rstr build_ai(const tins& ins,int one,int two)
 	{
 		rstr s;
-		if(ins.first.off==treg::c_esp)
+		if(ins.first.off==treg::c_esp||ins.first.off==treg::c_rsp)
 		{
 			s.set_size(11);
 			*(int*)&s[7]=ins.second.val;
@@ -168,7 +210,7 @@ struct zjitb
 	static rstr build_ar(const tins& ins,int one,int two)
 	{
 		rstr s;
-		if(ins.first.off==treg::c_esp)
+		if(ins.first.off==treg::c_esp||ins.first.off==treg::c_rsp)
 		{
 			s.set_size(7);
 		}
@@ -183,10 +225,10 @@ struct zjitb
 		return r_move(s);
 	}
 
-	static rstr build_ra(const tins& ins,int one,int two,int three)
+	static rstr build_ar(const tins& ins,int one,int two,int three)
 	{
 		rstr s;
-		if(ins.second.off==treg::c_esp)
+		if(ins.first.off==treg::c_esp||ins.first.off==treg::c_rsp)
 		{
 			s.set_size(8);
 		}
@@ -197,15 +239,15 @@ struct zjitb
 		s[0]=one;
 		s[1]=two;
 		s[2]=three;
-		set_reg_bit_center(ins.first.off,&s[2]);
-		set_addr_bit(ins.second.off,&s[2],ins.second.val);
+		set_addr_bit(ins.first.off,&s[2],ins.first.val);
+		set_reg_bit_center(ins.second.off,&s[2]);
 		return r_move(s);
 	}
 
 	//设置寄存器相对寻址位
 	static void set_addr_bit(int off,uchar* start,int val)
 	{
-		if(off==treg::c_esp)
+		if(off==treg::c_esp||off==treg::c_rsp)
 		{
 			*start|=0x4;
 			*(start+1)=0x24;
@@ -213,31 +255,71 @@ struct zjitb
 			return;
 		}
 		*(int*)(start+1)=val;
-		if(off==treg::c_ebp)
+		if(off==treg::c_ebp||off==treg::c_rbp)//todo 改为switch
 		{
 			*start|=0x5;
 		}
-		elif(off==treg::c_esi)
+		elif(off==treg::c_esi||off==treg::c_rsi)
 		{
 			*start|=0x6;
 		}
-		elif(off==treg::c_edi)
+		elif(off==treg::c_edi||off==treg::c_rdi)
 		{
 			*start|=0x7;
 		}
-		elif(off==treg::c_eax)
+		elif(off==treg::c_eax||off==treg::c_rax)
 		{
 			*start|=0x0;
 		}
-		elif(off==treg::c_ebx)
+		elif(off==treg::c_ebx||off==treg::c_rbx)
 		{
 			*start|=0x3;
 		}
-		elif(off==treg::c_ecx)
+		elif(off==treg::c_ecx||off==treg::c_rcx)
 		{
 			*start|=0x1;
 		}
-		elif(off==treg::c_edx)
+		elif(off==treg::c_edx||off==treg::c_rdx)
+		{
+			*start|=0x2;
+		}
+	}
+
+	static void set_addr_bit_64(int off,uchar* start,int64 val)
+	{
+		if(off==treg::c_rsp)
+		{
+			*start|=0x4;
+			*(start+1)=0x24;
+			*(int64*)(start+2)=val;
+			return;
+		}
+		*(int64*)(start+1)=val;
+		if(off==treg::c_rbp)
+		{
+			*start|=0x5;
+		}
+		elif(off==treg::c_rsi)
+		{
+			*start|=0x6;
+		}
+		elif(off==treg::c_rdi)
+		{
+			*start|=0x7;
+		}
+		elif(off==treg::c_rax)
+		{
+			*start|=0x0;
+		}
+		elif(off==treg::c_rbx)
+		{
+			*start|=0x3;
+		}
+		elif(off==treg::c_rcx)
+		{
+			*start|=0x1;
+		}
+		elif(off==treg::c_rdx)
 		{
 			*start|=0x2;
 		}
@@ -277,6 +359,40 @@ struct zjitb
 		{
 			*start|=0x2;
 		}
+#ifdef _WIN64
+		elif(off==treg::c_rsp)
+		{
+			*start|=0x4;
+		}
+		elif(off==treg::c_rbp)
+		{
+			*start|=0x5;
+		}
+		elif(off==treg::c_rsi)
+		{
+			*start|=0x6;
+		}
+		elif(off==treg::c_rdi)
+		{
+			*start|=0x7;
+		}
+		elif(off==treg::c_rax)
+		{
+			*start|=0x0;
+		}
+		elif(off==treg::c_rbx)
+		{
+			*start|=0x3;
+		}
+		elif(off==treg::c_rcx)
+		{
+			*start|=0x1;
+		}
+		elif(off==treg::c_rdx)
+		{
+			*start|=0x2;
+		}
+#endif
 	}
 
 	static void set_reg_bit_center(int off,uchar* start)
@@ -313,5 +429,39 @@ struct zjitb
 		{
 			*start|=0x2<<3;
 		}
+#ifdef _WIN64
+		elif(off==treg::c_rsp)
+		{
+			*start|=0x4<<3;
+		}
+		elif(off==treg::c_rbp)
+		{
+			*start|=0x5<<3;
+		}
+		elif(off==treg::c_rsi)
+		{
+			*start|=0x6<<3;
+		}
+		elif(off==treg::c_rdi)
+		{
+			*start|=0x7<<3;
+		}
+		elif(off==treg::c_rax)
+		{
+			*start|=0x0<<3;
+		}
+		elif(off==treg::c_rbx)
+		{
+			*start|=0x3<<3;
+		}
+		elif(off==treg::c_rcx)
+		{
+			*start|=0x1<<3;
+		}
+		elif(off==treg::c_rdx)
+		{
+			*start|=0x2<<3;
+		}
+#endif
 	}
 };

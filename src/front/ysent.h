@@ -517,7 +517,18 @@ struct ysent
 					result+=sent;
 					result+=rsoptr(c_sbk_r);
 					result+=rsoptr(c_semi);
-
+#ifdef _WIN64
+					result+=rskey(c_mov64);
+					result+=rsoptr(c_mbk_l);
+					result+=rskey(c_rbp);
+					result+=rsoptr(c_plus);
+					result+=rskey(c_s_off);
+					result+=tfi.retval.name;
+					result+=rsoptr(c_mbk_r);
+					result+=rsoptr(c_comma);
+					result+=rskey(c_rbx);
+					result+=rsoptr(c_semi);
+#else
 					result+=rskey(c_mov);
 					result+=rsoptr(c_mbk_l);
 					result+=rskey(c_ebp);
@@ -528,6 +539,7 @@ struct ysent
 					result+=rsoptr(c_comma);
 					result+=rskey(c_ebx);
 					result+=rsoptr(c_semi);
+#endif
 				}
 			}
 			else

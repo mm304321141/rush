@@ -188,6 +188,7 @@ struct zjitf
 		rsjf("d_to_f",d_to_f);
 		rsjf("f_to_d",f_to_d);
 
+		rsjf("print",xf::print);
 		rsjf("printf",xf::printf);
 		rsjf("_vsnprintf",xf::vsnprintf);
 		rsjf("sscanf",xf::sscanf);

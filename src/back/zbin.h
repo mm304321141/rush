@@ -2,7 +2,11 @@
 
 #include "../front/ysent.h"
 #include "../front/yword.h"
+#ifdef _WIN64
+#include "zasm64.h"
+#else
 #include "zasm.h"
+#endif
 
 //生成二进制代码类
 struct zbin
@@ -86,7 +90,6 @@ struct zbin
 			ybase::is_jmp_ins(oasm.ins.type)&&
 			!sh.key.is_asm_reg(oasm.vstr[1]))
 		{
-			int line=oasm.vstr[1].toint();
 			int i;
 			for(i=0;i<vasm.count();i++)
 			{
@@ -272,6 +275,7 @@ struct zbin
 				//123
 				otype=topnd::c_imme;
 				o.val=v.top().touint();
+				return true;
 			}
 			elif(v[0].get_bottom()==r_char('\"'))
 			{
@@ -283,13 +287,19 @@ struct zbin
 				}
 				item.vstr[index]=v[0];
 				otype=topnd::c_imme;
+#ifdef _WIN64
+				o.val64()=(int64)(item.vstr[index].begin());
+#else
 				o.val=(uint)(item.vstr[index].begin());
+#endif
+				return true;
 			}
 			else
 			{
 				//ebp
 				otype=topnd::c_reg;
 				o.off=get_reg_off(sh,v.top());
+				return true;
 			}
 		}
 		elif(v.count()==3)
@@ -301,6 +311,7 @@ struct zbin
 				otype=topnd::c_addr;
 				o.off=get_reg_off(sh,v[1]);
 				o.val=0;
+				return true;
 			}
 			elif(v.bottom()==rsoptr(c_sbk_l)&&
 				v.top()==rsoptr(c_sbk_r)&&
@@ -308,6 +319,7 @@ struct zbin
 			{
 				otype=topnd::c_imme;
 				o.val=v[1].touint();
+				return true;
 			}
 			else
 			{
@@ -324,6 +336,7 @@ struct zbin
 			{
 				o.val=-o.val;
 			}
+			return true;
 		}
 		elif(v.count()==7&&v[1]==rsoptr(c_addr))
 		{
@@ -342,7 +355,11 @@ struct zbin
 				return false;
 			}
 			otype=topnd::c_imme;
+#ifdef _WIN64
+			o.val64()=(int64)(ptfi->vasm.begin());
+#else
 			o.val=(int)(ptfi->vasm.begin());
+#endif
 			return true;
 		}
 		elif(v.count()==0)
@@ -353,11 +370,6 @@ struct zbin
 		{
 			return false;
 		}
-		if(o.off>=r_size(treg))
-		{
-			return false;
-		}
-		return true;
 	}
 
 	static void trans_cstr(rstr& src)
@@ -412,44 +424,84 @@ struct zbin
 
 	static int get_reg_off(tsh& sh,const rstr& s)
 	{
-		treg reg;
-		int ret=r_size(treg);
-		if(rskey(c_eax)==s)
+		if(rskey(c_eax)==s)//todo get_key_index后switch
 		{
-			ret=(int)(&reg.eax)-(int)(&reg);
+			return treg::c_eax;
 		}
 		elif(rskey(c_ebx)==s)
 		{
-			ret=(int)(&reg.ebx)-(int)(&reg);
+			return treg::c_ebx;
 		}
 		elif(rskey(c_ecx)==s)
 		{
-			ret=(int)(&reg.ecx)-(int)(&reg);
+			return treg::c_ecx;
 		}
 		elif(rskey(c_edx)==s)
 		{
-			ret=(int)(&reg.edx)-(int)(&reg);
+			return treg::c_edx;
 		}
 		elif(rskey(c_esi)==s)
 		{
-			ret=(int)(&reg.esi)-(int)(&reg);
+			return treg::c_esi;
 		}
 		elif(rskey(c_edi)==s)
 		{
-			ret=(int)(&reg.edi)-(int)(&reg);
+			return treg::c_edi;
 		}
 		elif(rskey(c_esp)==s)
 		{
-			ret=(int)(&reg.esp)-(int)(&reg);
+			return treg::c_esp;
 		}
 		elif(rskey(c_ebp)==s)
 		{
-			ret=(int)(&reg.ebp)-(int)(&reg);
+			return treg::c_ebp;
 		}
 		elif(rskey(c_eip)==s)
 		{
-			ret=(int)(&reg.eip)-(int)(&reg);
+			return treg::c_eip;
 		}
-		return ret;
+#ifdef _WIN64
+		elif(rskey(c_rax)==s)
+		{
+			return treg::c_rax;
+		}
+		elif(rskey(c_rbx)==s)
+		{
+			return treg::c_rbx;
+		}
+		elif(rskey(c_rcx)==s)
+		{
+			return treg::c_rcx;
+		}
+		elif(rskey(c_rdx)==s)
+		{
+			return treg::c_rdx;
+		}
+		elif(rskey(c_rsi)==s)
+		{
+			return treg::c_rsi;
+		}
+		elif(rskey(c_rdi)==s)
+		{
+			return treg::c_rdi;
+		}
+		elif(rskey(c_rsp)==s)
+		{
+			return treg::c_rsp;
+		}
+		elif(rskey(c_rbp)==s)
+		{
+			return treg::c_rbp;
+		}
+		elif(rskey(c_rip)==s)
+		{
+			return treg::c_rip;
+		}
+#endif
+		else
+		{
+			rserror(s);
+			return r_size(treg);
+		}
 	}
 };

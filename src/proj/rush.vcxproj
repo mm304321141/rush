@@ -105,7 +105,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <OutputFile>$(OutDir)..\..\..\..\bin\$(ProjectName).exe</OutputFile>
+      <OutputFile>$(OutDir)..\..\..\..\bin\$(ProjectName)64.exe</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -143,7 +143,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <OutputFile>$(OutDir)..\..\..\..\bin\$(ProjectName).exe</OutputFile>
+      <OutputFile>$(OutDir)..\..\..\..\bin\$(ProjectName)64.exe</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -151,6 +151,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\back\zasm.h" />
+    <ClInclude Include="..\back\zasm64.h" />
     <ClInclude Include="..\back\zbin.h" />
     <ClInclude Include="..\back\zcpp.h" />
     <ClInclude Include="..\back\zgpp.h" />
@@ -163,6 +164,7 @@
     <ClInclude Include="..\back\zmain.h" />
     <ClInclude Include="..\back\znasm.h" />
     <ClInclude Include="..\back\zopt.h" />
+    <ClInclude Include="..\back\zjit64.h" />
     <ClInclude Include="..\front\yadd.h" />
     <ClInclude Include="..\front\yautof.h" />
     <ClInclude Include="..\front\ybase.h" />

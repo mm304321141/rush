@@ -3,7 +3,11 @@
 #include "../front/yclass.h"
 #include "../front/yformat.h"
 #include "zvm.h"
+#ifdef _WIN64
+#include "zjit64.h"
+#else
 #include "zjit.h"
+#endif
 #include "zgpp.h"
 #include "zjs.h"
 #include "zcpp.h"
@@ -20,6 +24,9 @@ struct zmain
 		{
 			return false;
 		}
+#ifdef _WIN64
+		sh.s_define.insert_c(tmac(rstr("_RS64")));
+#endif
 		sh.s_define.insert_c(tmac(rstr("_RS")));
 		if(vparam[1]=="-jit")
 		{
@@ -28,12 +35,6 @@ struct zmain
 		}
 		elif(vparam[1]=="-gpp")
 		{
-			sh.mode=tsh::c_gpp;
-			sh.s_define.insert_c(tmac(rstr("_RGPP")));
-		}
-		elif(vparam[1]=="-gpp64")
-		{
-			sh.point_size=8;
 			sh.mode=tsh::c_gpp;
 			sh.s_define.insert_c(tmac(rstr("_RGPP")));
 		}

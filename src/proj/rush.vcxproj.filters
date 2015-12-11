@@ -212,5 +212,11 @@
     <ClInclude Include="..\back\zcpp.h">
       <Filter>back</Filter>
     </ClInclude>
+    <ClInclude Include="..\back\zjit64.h">
+      <Filter>back</Filter>
+    </ClInclude>
+    <ClInclude Include="..\back\zasm64.h">
+      <Filter>back</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

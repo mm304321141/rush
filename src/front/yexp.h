@@ -514,7 +514,7 @@ struct yexp
 	}
 
 	static rbool set_vsent(const tsh& sh,tpos pos,rbuf<tsent>& vsent,
-		tfunc& tfi,int level,tenv env)
+		tfunc& tfi)
 	{
 		tsent sent;
 		tword word;
@@ -647,7 +647,7 @@ struct yexp
 		}
 		if(ptfi!=null&&ptfi->is_dynamic)
 		{
-			ifn(set_vsent(sh,src.vword[i].pos,vsent,tfi,level,env))
+			ifn(set_vsent(sh,src.vword[i].pos,vsent,tfi))
 			{
 				return false;
 			}

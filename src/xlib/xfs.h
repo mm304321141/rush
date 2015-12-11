@@ -11,7 +11,11 @@ struct xfs
 		return xf::_wfopen(rstrw(name).cstrw_t(),rstrw(mode).cstrw_t());
 #endif
 #ifdef _RS
+#ifdef _RS64
+		return xf::fopen(name.cstr_t(),mode.cstr_t());
+#else
 		return xf::_wfopen(rstrw(name).cstrw_t(),rstrw(mode).cstrw_t());
+#endif
 #endif
 #ifdef __GNUC__
 		return xf::fopen(name.cstr_t(),mode.cstr_t());

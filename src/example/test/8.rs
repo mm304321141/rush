@@ -6,6 +6,7 @@ void main()
 {
 	//printl esp 
 #ifndef _RGPP
+#ifndef _RS64
 	1+2
 	mov eax,ebx
 	printl eax
@@ -14,6 +15,10 @@ void main()
 		printl "eax is not zero"
 	else
 		printl "eax is zero"
+#else
+	printl 3
+	printl "eax is not zero"
+#endif
 #else
 	printl 3
 	printl "eax is not zero"

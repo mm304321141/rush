@@ -13,7 +13,11 @@ struct tconf
 		c_op_nop=1,
 		c_op_zero=1,//优化add esp,0
 		c_op_merge=1,//同一行连续加减同一个寄存器合并为一条指令
+#ifdef _WIN64
+		c_op_rbp=1,
+#else
 		c_op_ebp=1,//如果本函数未使用ebp可以不用push ebp节省3条指令
+#endif
 		c_op_base_calc=1,//优化基础运算，如调用int.opreator+可变成一条add指令
 		c_op_pass=1,//优化参数传递，如传递int不需要调用拷贝构造函数
 		c_op_const_eval=1,//常量表达式求值
@@ -224,6 +228,7 @@ struct tkey
 	enum
 	{
 		c_rjit,
+		c_rbyte,
 
 		c_calle,
 		c_call,
@@ -380,6 +385,7 @@ struct tkey
 		key_arr=array<char*>[
 #endif
 			"rjit",
+			"rbyte",
 
 			"calle",
 			"call",
@@ -587,7 +593,11 @@ struct tkey
 
 	rbool is_asm_reg(const rstr& s) const
 	{
+#ifdef _WIN64
+		for(int i=c_eip;i<=c_rdi;++i)
+#else
 		for(int i=c_eip;i<=c_edi;++i)
+#endif
 		{
 			if(s==vkey[i])
 			{
@@ -595,5 +605,19 @@ struct tkey
 			}
 		}
 		return false;
+	}
+
+	static rbool is_reg_32(const rstr& s)
+	{
+		return s.get_left()==r_char('e');
+	}
+
+	static rstr to_reg_64(rstr s)
+	{
+		if(is_reg_32(s))
+		{
+			s[0]=r_char('r');
+		}
+		return s;
 	}
 };

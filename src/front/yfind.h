@@ -9,7 +9,7 @@ struct yfind
 	{
 		if(ybase::is_point_quote(s))
 		{
-			return sh.point_size;
+			return c_point_size;
 		}
 		tclass* ptci=find_class_t(sh,s);
 		if(ptci!=null)

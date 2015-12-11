@@ -19,7 +19,6 @@ struct zcpp
 		{
 			return false;
 		}
-		int mem_size=100*1024*1024;
 		int stack_size=2*1024*1024;
 		rstr head;
 

@@ -11,10 +11,10 @@ struct zjit
 	{
 #ifndef _RS
 		tfunc* ptfi=yfind::find_func(*sh.pmain,"__declare");
-		if(ptfi!=null)
+		/*if(ptfi!=null)
 		{
 			compile_func_to_x86(sh,*ptfi,tenv());
-		}
+		}*/
 		ptfi=yfind::find_func(*sh.pmain,"main_c");
 		if(ptfi==null)
 		{
@@ -41,7 +41,14 @@ struct zjit
 		{
 			return false;
 		}
-		int size=tfi.vasm.count()*6;//todo 估算法并不是最好的方法
+		if(tfi.name=="v_delete"&&tfi.ptci->name=="rbuf<char>")
+		{
+			ybase::print_func_asm(tfi);
+		}
+		//rf::printl(tfi.name_dec);
+		//ybase::print_func_asm(tfi);
+		//rf::printl();
+		int size=tfi.vasm.count()*12;//todo 估算法并不是最好的方法
 		size=r_ceil_div(size,4096)*4096;
 		if(tfi.code==null)
 		{
@@ -69,9 +76,17 @@ struct zjit
 			rstr s=trans_asm_to_x86(sh,tfi.vasm[i],tfi.code+cur);
 			if(s.empty())
 			{
+				rf::printl(tfi.name_dec);
 				rserror(tfi.vasm[i],"can't build jit ins");
 				return false;
 			}
+			//rf::print(tfi.name+" ");
+			/*rstr::join<rstr>(tfi.vasm[i].vstr," ").printl();
+			for(int k=0;k<s.count();k++)
+			{
+				rf::print(rstr::format("%02X",s[k]));
+			}
+			rf::printl();*/
 			if(cur+s.count()>size)
 			{
 				rserror(tfi,"func too big");
@@ -125,7 +140,7 @@ struct zjit
 			rserror(oasm);
 			return false;
 		}
-		oasm.ins.first.val=(uint)(vasm[j].start);
+		oasm.ins.first.val64()=(int64)(vasm[j].start);
 		uchar* real=oasm.start;
 		rstr s=trans_asm_to_x86(sh,oasm,real);
 		if(s.empty())
@@ -144,8 +159,9 @@ struct zjit
 		rstr s;
 		switch(ins.get_index())
 		{
+		case tkey::c_rbyte:
+			return zjitb::build_one(ins.first.val);
 		case tkey::c_calle:
-			//todo 应判断start与item.start差值是否超过2G
 			return proc_calle(sh,ins,start);
 		case tkey::c_call:
 			return zjiti::b_call(ins,start);
@@ -169,45 +185,43 @@ struct zjit
 		case tkey::c_nop:
 			return zjiti::b_nop();
 		case tkey::c_lea:
-			if(znasm::count_mbk_l(vstr)!=2)
+			if(znasm::count_mbk_l(vstr)==2)
 			{
-				return zjiti::b_lea(ins);
+				rserror();
+				return rstr();
 			}
-			//应该检查b_lea是否返回空串
-			return (rsj4(b_lea,rskey(c_ecx),rsoptr(c_comma),rsjb)+
-				rsj4(b_mov,rsja,rsoptr(c_comma),rskey(c_ecx)));
+			return zjiti::b_lea(ins);
 		case tkey::c_mov:
-			if(znasm::count_mbk_l(vstr)!=2)
+			if(znasm::count_mbk_l(vstr)==2)
 			{
-				return zjiti::b_mov(ins);
+				return (rsj4(b_mov,rskey(c_ecx),rsoptr(c_comma),rsjb)+
+					rsj4(b_mov,rsja,rsoptr(c_comma),rskey(c_ecx)));
 			}
-			return (rsj4(b_mov,rskey(c_ecx),rsoptr(c_comma),rsjb)+
-				rsj4(b_mov,rsja,rsoptr(c_comma),rskey(c_ecx)));
+			return zjiti::b_mov(ins);
 		case tkey::c_mov8:
 			return (rsj4(b_mov8_cl_addr,rskey(c_ecx),rsoptr(c_comma),rsjb)+
 				rsj4(b_mov8_addr_cl,rsja,rsoptr(c_comma),rskey(c_ecx)));
 		case tkey::c_mov64:
-			s+=rsj4(b_mov,rskey(c_ecx),rsoptr(c_comma),rsjb);
-			s+=rsj4(b_mov,rsja,rsoptr(c_comma),rskey(c_ecx));
-			ins.first.val+=4;
-			ins.second.val+=4;
-			s+=rsj4(b_mov,rskey(c_ecx),rsoptr(c_comma),rsjb);
-			s+=rsj4(b_mov,rsja,rsoptr(c_comma),rskey(c_ecx));
-			return r_move(s);
+			if(znasm::count_mbk_l(vstr)==2)
+			{
+				return (rsj4(b_mov64,rskey(c_rcx),rsoptr(c_comma),rsjb)+
+					rsj4(b_mov64,rsja,rsoptr(c_comma),rskey(c_rcx)));
+			}
+			return zjiti::b_mov64(ins);
 		case tkey::c_add:
-			if(znasm::count_mbk_l(vstr)!=2)
+			if(znasm::count_mbk_l(vstr)==2)
 			{
-				return zjiti::b_add(ins);
+				rserror();
+				return rstr();
 			}
-			return (rsj4(b_mov,rskey(c_ecx),rsoptr(c_comma),rsjb)+
-				rsj4(b_add,rsja,rsoptr(c_comma),rskey(c_ecx)));
+			return zjiti::b_add(ins);
 		case tkey::c_sub:
-			if(znasm::count_mbk_l(vstr)!=2)
+			if(znasm::count_mbk_l(vstr)==2)
 			{
-				return zjiti::b_sub(ins);
+				rserror();
+				return rstr();
 			}
-			return (rsj4(b_mov,rskey(c_ecx),rsoptr(c_comma),rsjb)+
-				rsj4(b_sub,rsja,rsoptr(c_comma),rskey(c_ecx)));
+			return zjiti::b_sub(ins);
 		case tkey::c_imul:
 			return (rsj4(b_mov,rskey(c_ecx),rsoptr(c_comma),rsja)+
 				rsj4(b_imul,rskey(c_ecx),rsoptr(c_comma),rsjb)+
@@ -307,7 +321,7 @@ struct zjit
 
 	static rstr proc_calle(tsh& sh,tins& ins,uchar* start)
 	{
-		char* name=(char*)(ins.first.val);
+		char* name=(char*)(ins.first.val64());
 		void* addr=null;
 		if(sh.dic_bind_func.find(name)!=null)
 		{
@@ -318,7 +332,7 @@ struct zjit
 			//addr=zjitf::find_dll_full(name);
 			return rstr();
 		}
-		ins.first.val=(int)addr;
+		ins.first.val64()=(int64)addr;
 		return zjiti::b_call(ins,start);
 	}
 
@@ -364,7 +378,7 @@ struct zjit
 				return false;
 			}
 			otype=topnd::c_imme;
-			o.val=(uint)(ptfi->code);
+			o.val64()=(int64)(ptfi->code);
 			return true;
 		}
 		return zbin::parse_opnd(sh,item,index,v,o,otype);

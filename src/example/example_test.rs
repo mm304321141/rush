@@ -37,14 +37,26 @@ void main()
 	vtime.push(xf.tick-time)
 	time=xf.tick
 	
-	for i=0;i<vname.count;i++
-		check_jit(vname[i])
+	/*for i=0;i<vname.count;i++
+		check_jit(vname[i],'rush64')*/
 		
 	vtime.push(xf.tick-time)
 	time=xf.tick
 	
 	for i=0;i<vname.count;i++
-		check_nasm(vname[i])
+		check_jit(vname[i],'rush')
+		
+	vtime.push(xf.tick-time)
+	time=xf.tick
+	
+	for i=0;i<vname.count;i++
+		check_nasm(vname[i],'rnasm64')
+		
+	vtime.push(xf.tick-time)
+	time=xf.tick
+	
+	for i=0;i<vname.count;i++
+		check_nasm(vname[i],'rnasm')
 	
 	vtime.push(xf.tick-time)
 	time=xf.tick
@@ -80,16 +92,18 @@ void check_vm(rstr a)
 		'../src/example/answer/'+a+'.txt')
 }
 
-void check_jit(rstr a)
+void check_jit(rstr a,rstr name)
 {
-	rf.cmd('rush -jit ../src/example/test/'+a+'.rs > ../src/example/answer/'+a+'_tmp.txt')
-	check_jit('../src/example/answer/'+a+'_tmp.txt','../src/example/answer/'+a+'.txt')
+	//name.printl
+	//printl(name+' -jit ../src/example/test/'+a+'.rs > ../src/example/answer/'+a+'_tmp.txt')
+	rf.cmd(name+' -jit ../src/example/test/'+a+'.rs > ../src/example/answer/'+a+'_tmp.txt')
+	check_jit('../src/example/answer/'+a+'_tmp.txt','../src/example/answer/'+a+'.txt',name)
 }
 
-void check_nasm(rstr a)
+void check_nasm(rstr a,rstr name)
 {
-	rf.cmd('rnasm \"../src/example/test/'+a+'.rs\" > \"../src/example/answer/'+a+'_tmp.txt\"')
-	check_nasm('../src/example/answer/'+a+'_tmp.txt','../src/example/answer/'+a+'.txt')
+	rf.cmd(name+' \"../src/example/test/'+a+'.rs\" > \"../src/example/answer/'+a+'_tmp.txt\"')
+	check_nasm('../src/example/answer/'+a+'_tmp.txt','../src/example/answer/'+a+'.txt',name)
 }
 
 void check_gpp(rstr a)
@@ -116,7 +130,7 @@ void check_vm(rstr a,rstr b)
 		g_sta_ok=0
 }
 
-void check_jit(rstr a,rstr b)
+void check_jit(rstr a,rstr b,rstr name)
 {
 	g_total++
 	cont=rfile.read_all_n(a);
@@ -125,13 +139,13 @@ void check_jit(rstr a,rstr b)
 	else
 		print('* * * error ')
 		g_sta_ok=0
-	printl('jit '+rdir.get_name(a)+' vs '+rdir.get_name(b))
+	printl(r_cond<rstr>(name=='rush','jit ','jit64 ')+rdir.get_name(a)+' vs '+rdir.get_name(b))
 	if rfile.remove(a)
 		printl('* * * error ')
 		g_sta_ok=0
 }
 
-void check_nasm(rstr a,rstr b)
+void check_nasm(rstr a,rstr b,rstr name)
 {
 	g_total++
 	cont=rfile.read_all_n(a)
@@ -141,7 +155,7 @@ void check_nasm(rstr a,rstr b)
 	else
 		print('* * * error ')
 		g_sta_ok=0
-	printl('nasm '+rdir.get_name(a)+' vs '+rdir.get_name(b))
+	printl(name+' '+rdir.get_name(a)+' vs '+rdir.get_name(b))
 	if rfile.remove(a)
 		printl('* * * error ')
 		g_sta_ok=0

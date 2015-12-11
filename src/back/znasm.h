@@ -42,15 +42,21 @@ struct znasm
 		head+="[section .data]\n";
 		head+="align 32\n";
 		head+="db 0,0,0,0\n";//防止数据段为空
-		add_str(sh,head,vconst);
+		add_str(head,vconst);
 		
 		head+="\n";
 		head+="[section .text]\n";
 		head+="proc demo11, ptrdiff_t argcount, ptrdiff_t cmdline\n";
 		head+="locals none\n";
+#ifdef _WIN64
+		head+="	sub rsp , 8\n";
+		head+="	call main2Emain2829\n";
+		head+="	add rsp , 8\n";
+#else
 		head+="	sub esp , 4\n";
 		head+="	call main2Emain2829\n";
 		head+="	add esp , 4\n";
+#endif
 		head+="	xor eax , eax\n";
 		head+="endproc\n";
 		head+="proc _rs_main\n";
@@ -61,10 +67,13 @@ struct znasm
 		head+="\n";
 		head+="endproc\n";
 		head+="\n";
-
+#ifdef _WIN64
+		head+=("%include '"+rcode::trans_utf8_to_gbk(
+			ybase::get_rs_dir())+"ext/nasm/exfunc64.inc'\n");
+#else
 		head+=("%include '"+rcode::trans_utf8_to_gbk(
 			ybase::get_rs_dir())+"ext/nasm/exfunc.inc'\n");
-
+#endif
 		rstr name=ybase::get_main_name(sh)+".asm";
 		rfile file;
 		ifn(file.open_n(name,"rw"))
@@ -82,12 +91,18 @@ struct znasm
 
 	static rbool is_ex_func(tsh& sh,const rstr& s)
 	{
+#ifdef _WIN64
+		if(s=="imull"||s=="idivl"||s=="imodl"||s=="clsbl")
+		{
+			return true;
+		}
+#endif
 		return (s==rskey(c_bshl)||s==rskey(c_bshr)||s==rskey(c_bsar)||
 			s=="faddl"||s=="fsubl"||s=="fmull"||s=="fdivl"||s=="fclsbl"||
 			s=="addl"||s=="subl");
 	}
 
-	static void add_str(tsh& sh,rstr& result,rbuf<rstr>& vconst)
+	static void add_str(rstr& result,rbuf<rstr>& vconst)
 	{
 		for(int i=0;i<vconst.count();i++)
 		{
@@ -256,48 +271,6 @@ struct znasm
 		}
 	}
 
-	static rbool have_single_esp(tsh& sh,tasm& item)
-	{
-		for(int i=0;i<item.vstr.count();i++)
-		{
-			if(item.vstr[i]==rskey(c_esp)||item.vstr[i]==rskey(c_ebp))
-			{
-				if(item.vstr.get(i-1)!=rsoptr(c_mbk_l))
-				{
-					return true;
-				}
-				if(item.vstr.get(i+2).toint()<4)
-				{
-					return true;
-				}
-				if(item.vstr.get(i+1)!=rsoptr(c_plus))
-				{
-					return true;
-				}
-			}
-			if(item.vstr[i].get_bottom()==r_char('\"')&&item.vstr[i].count()>=2)
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-
-	static void fix_esp(tsh& sh,tasm& item)
-	{
-		for(int i=0;i<item.vstr.count();i++)
-		{
-			if(item.vstr[i]!=rskey(c_esp)&&item.vstr[i]!=rskey(c_ebp))
-			{
-				continue;
-			}
-			if(item.vstr.count()>i+2&&item.vstr[i+2].is_number())
-			{
-				item.vstr[i+2]=item.vstr[i+2].toint()-4;
-			}
-		}
-	}
-
 	static rbool proc_asm(tsh& sh,tfunc& tfi,tasm& item,
 		rstr& result,rbuf<rstr>& vconst,rset<rstr>& s_call)
 	{
@@ -311,6 +284,9 @@ struct znasm
 		tfunc* ptfi;
 		switch(type)
 		{
+		case tkey::c_rbyte:
+			result+="	db "+link_vstr(vstr.sub(1))+"\n";
+			return true;
 		case tkey::c_calle:
 			if(ybase::del_quote(vstr.get(1))!="printf")//todo:
 			{
@@ -322,8 +298,13 @@ struct znasm
 			ptfi=find_call(sh,item);
 			if(ptfi==null)
 			{
+#ifdef _WIN64
+				result+=("	call qword "+
+					link_vstr(vstr.sub(1))+"\n");
+#else
 				result+=("	call dword "+
 					link_vstr(vstr.sub(1))+"\n");
+#endif
 				return true;
 			}
 			result+="	call "+get_nasm_symbol(*ptfi)+"\n";
@@ -338,7 +319,18 @@ struct znasm
 			ptfi=find_call(sh,item);
 			if(ptfi==null)
 			{
+#ifdef _WIN64
+				if(sh.key.is_asm_reg(get_opnd1(vstr)))
+				{
+					result+="	push qword "+sh.key.to_reg_64(get_opnd1(vstr))+"\n";
+				}
+				else
+				{
+					result+="	push qword "+link_vstr(vstr.sub(1))+"\n";
+				}
+#else
 				result+="	push dword "+link_vstr(vstr.sub(1))+"\n";
+#endif
 			}
 			else
 			{
@@ -346,7 +338,11 @@ struct znasm
 			}
 			return true;
 		case tkey::c_pop:
+#ifdef _WIN64
+			result+="	pop qword "+link_vstr(vstr.sub(1))+"\n";
+#else
 			result+="	pop dword "+link_vstr(vstr.sub(1))+"\n";
+#endif
 			return true;
 		case tkey::c_jmp:
 			result+="	jmp "+get_nasm_symbol(tfi)+"_"+vstr.get(1)+"\n";
@@ -360,9 +356,19 @@ struct znasm
 			result+="	jnz "+get_nasm_symbol(tfi)+"_"+vstr.get(1)+"\n";
 			return true;
 		case tkey::c_nop:
-			result+="	nop\n";
 			return true;
 		case tkey::c_lea:
+#ifdef _WIN64
+			if(count_mbk_l(vstr)==2)
+			{
+				result+="	lea rcx , "+get_opnd2(vstr)+"\n";
+				result+="	mov "+get_opnd1(vstr)+" , rcx\n";
+			}
+			else
+			{
+				result+="	lea qword "+link_vstr(vstr.sub(1))+"\n";
+			}
+#else
 			if(count_mbk_l(vstr)==2)
 			{
 				result+="	lea ecx , "+get_opnd2(vstr)+"\n";
@@ -372,8 +378,10 @@ struct znasm
 			{
 				result+="	lea dword "+link_vstr(vstr.sub(1))+"\n";
 			}
+#endif
 			return true;
 		case tkey::c_mov:
+			//X64中mov rcx,0与mov ecx,0等价
 			if(count_mbk_l(vstr)==2)
 			{
 				result+="	mov ecx , "+get_opnd2(vstr)+"\n";
@@ -396,7 +404,23 @@ struct znasm
 			result+="	mov "+get_opnd1(vstr)+" , cl\n";
 			return true;
 		case tkey::c_mov64:
-			return false;
+			if(count_mbk_l(vstr)==2)
+			{
+				result+="	mov rcx , "+get_opnd2(vstr)+"\n";
+				result+="	mov "+get_opnd1(vstr)+" , rcx\n";
+				return true;
+			}
+			ptfi=find_call(sh,item);
+			if(ptfi==null)
+			{
+				result+="	mov qword "+link_vstr(vstr.sub(1))+"\n";
+			}
+			else
+			{
+				result+=("	mov qword "+get_opnd1(vstr)+" , "+
+					get_nasm_symbol(*ptfi)+"\n");
+			}
+			return true;
 		case tkey::c_add:
 			if(count_mbk_l(vstr)==2)
 			{
@@ -405,6 +429,14 @@ struct znasm
 			}
 			else
 			{
+#ifdef _WIN64
+				if(sh.key.is_asm_reg(get_opnd1(vstr))||
+					sh.key.is_asm_reg(get_opnd2(vstr)))
+				{
+					result+="	add "+link_vstr(vstr.sub(1))+"\n";
+					return true;
+				}
+#endif
 				result+=("	add dword "+
 					link_vstr(vstr.sub(1))+"\n");
 			}
@@ -417,6 +449,14 @@ struct znasm
 			}
 			else
 			{
+#ifdef _WIN64
+				if(sh.key.is_asm_reg(get_opnd1(vstr))||
+					sh.key.is_asm_reg(get_opnd2(vstr)))
+				{
+					result+="	sub "+link_vstr(vstr.sub(1))+"\n";
+					return true;
+				}
+#endif
 				result+="	sub dword "+link_vstr(vstr.sub(1))+"\n";
 			}
 			return true;

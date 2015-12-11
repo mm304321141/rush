@@ -1,7 +1,11 @@
 ﻿#pragma once
 
 #define c_rs_deep 150
+#ifdef _WIN64
+#define c_point_size 8
+#else
 #define c_point_size 4
+#endif
 
 #define rskey(a) (sh.key[tkey::a])
 #define rsoptr(a) (sh.optr[toptr::a])

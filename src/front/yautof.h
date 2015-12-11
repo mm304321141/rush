@@ -66,7 +66,7 @@ struct yautof
 			tfi.name_dec=tfi.get_dec();
 			tci.s_func.insert(tfi);
 		}
-		add_copystruct_func(sh,tci);
+		add_copystruct_func(tci);
 		if(yfind::find_func(tci,rsoptr(c_equal),tci.name+rsoptr(c_addr),
 			tci.name+rsoptr(c_addr))==null)
 		{
@@ -133,7 +133,7 @@ struct yautof
 		return true;
 	}
 
-	static void add_copystruct_func(const tsh& sh,tclass& tci)
+	static void add_copystruct_func(tclass& tci)
 	{
 		rbuf<tfunc> temp;
 		tfunc* p;

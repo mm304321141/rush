@@ -16,6 +16,30 @@ void main()
 }
 
 #ifndef _RGPP
+#ifdef _RS64
+int sum(int count,...)
+{
+	size=r_ceil_div(sizeof(int),8)*8
+	char* p=&count
+	p+=size
+	int ret=0
+	for i=0;i<count;i++
+		ret+=*p.to<int*>
+		p+=size
+	*p.to<int*> =ret
+
+	mov64 rcx,0
+	mov ecx,size
+	imul ecx,count
+	add rcx,8
+	pop rbp
+	add rsp,sizeof(s_local)
+	mov64 rax,[rsp]
+	push rcx
+	push rax
+	call &_reti
+}
+#else
 int sum(int count,...)
 {
 	//sub esp,sizeof(s_local)
@@ -39,6 +63,7 @@ int sum(int count,...)
 
 	//这里有编译器自动增加的语句
 }
+#endif
 #else
 int sum(int count,...)
 {

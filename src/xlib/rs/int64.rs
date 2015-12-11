@@ -30,7 +30,6 @@
 		mov esi,this
 		mov [esi],a
 		mov [esi+4],0
-		mov edi,a
 		if(a<0)
 		{
 			mov esi,this

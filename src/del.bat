@@ -28,6 +28,8 @@ del /F /Q .\rush.exe
 del /F /Q .\example\test\*.exe
 del /F /Q .\example\test\*.cpp
 del /F /Q .\example\test\*.js
+del /F /Q .\example\test\*.asm
+del /F /Q .\example\test\*.obj
 del /F /Q .\example\test\*.html
 del /F /Q ..\bin\rush_gpp.asm
 del /F /Q ..\bin\rush_nasm.asm

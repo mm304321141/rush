@@ -619,7 +619,6 @@ struct tsh
 	rstr main_file;
 
 	int mode;
-	int point_size;
 	uchar* main_cont;
 
 	rbuf<top_node> vmatch;
@@ -647,7 +646,6 @@ struct tsh
 	{
 		pmain=null;
 		mode=c_vm;
-		point_size=4;
 		main_cont=null;
 	}
 };

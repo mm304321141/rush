@@ -153,11 +153,13 @@ struct ypre
 		count_tab(*p);
 		ifn(parse_str(sh,p->cont,p->vword,p))
 		{
+			rserror();
 			return false;
 		}
 		//仅编译器内部使用
 		ifn(replace_ifdef(sh,sh.s_define,p->vword))
 		{
+			rserror();
 			return false;
 		}
 		ifn(obtain_name(sh,vname,p->vword,*p))
@@ -176,10 +178,12 @@ struct ypre
 			tfile* pfile=sh.s_file.find(tfile(vname[i]));
 			if(pfile==null)
 			{
+				rserror();
 				return false;
 			}
 			ifn(proc_file(sh,pfile))
 			{
+				rserror();
 				return false;
 			}
 		}
@@ -223,6 +227,7 @@ struct ypre
 			}
 			if(name.count()<3)
 			{
+				rserror();
 				return false;
 			}
 			name.pop();
@@ -231,8 +236,9 @@ struct ypre
 			rstr temp=get_abs_name(rdir::get_prev_dir(f.name),name);
 			ifn(rfile::exist(temp))
 			{
-				ifn(get_file(sh,vname,name,temp))
+				ifn(get_file(sh,name,temp))
 				{
+					rserror();
 					return false;
 				}
 			}
@@ -245,8 +251,7 @@ struct ypre
 		return true;
 	}
 
-	static rbool get_file(const tsh& sh,const rbuf<rstr>& vname,
-		const rstr& name,rstr& abs_name)
+	static rbool get_file(const tsh& sh,const rstr& name,rstr& abs_name)
 	{
 		for(int i=0;i<sh.vpath.count();i++)
 		{

@@ -5,10 +5,10 @@ void main()
 	C 1 [2 *3]
 	C 1 [2*3*4]
 	D 1 [2 3]
-	
+
 	v=array<int>[7,8,9]
 	v.join('').printl
-	
+
 	v=E(1,2,3)
 	v.join('').printl
 	

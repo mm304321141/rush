@@ -1,2 +1,4 @@
 ext/clang/
 ext/emscripten/
+ext/LuaJIT/
+ext/test/

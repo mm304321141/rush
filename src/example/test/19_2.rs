@@ -16,6 +16,27 @@ class A
 	rbuf<int> m_arr
 
 #ifndef _RGPP
+#ifdef _RS64
+	void push(int count)
+	{
+		size=r_ceil_div(sizeof(int),8)*8
+		char* p=&count
+		p+=size
+		for i=0;i<count;i++
+			m_arr.push(*p.to<int*>)
+			p+=size
+		mov64 rcx,0
+		mov ecx,size
+		imul ecx,count
+		add rcx,16
+		pop rbp
+		add rsp,sizeof(s_local)
+		mov64 rax,[rsp]
+		push rcx
+		push rax
+		call &_reti
+	}
+#else
 	void push(int count)
 	{
 		//sub esp,sizeof(s_local)
@@ -41,6 +62,7 @@ class A
 
 		//这里有编译器自动增加的语句
 	}
+#endif
 #else
 	void push(int count)
 	{

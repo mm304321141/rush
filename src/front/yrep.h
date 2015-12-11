@@ -354,7 +354,11 @@ struct yrep
 				rbuf<rstr> vdst;
 				if(v.get(i-1).val==rsoptr(c_addr))
 				{
+#ifdef _WIN64
+					vdst.push(rstr("rbp"));
+#else
 					vdst.push(rstr("ebp"));
+#endif
 					vdst.push(rstr("+"));
 					vdst.push(rstr(ptdi->off));
 					v[i-1].clear();
@@ -362,7 +366,11 @@ struct yrep
 				else
 				{
 					vdst.push(rstr(rsoptr(c_mbk_l)));
+#ifdef _WIN64
+					vdst.push(rstr("rbp"));
+#else
 					vdst.push(rstr("ebp"));
+#endif
 					vdst.push(rstr("+"));
 					vdst.push(rstr(ptdi->off));
 					vdst.push(rstr(rsoptr(c_mbk_r)));

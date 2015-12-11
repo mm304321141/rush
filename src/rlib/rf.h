@@ -5,13 +5,22 @@
 struct rf
 {
 	static void printl(rstr s=rstr())
-	{
+	{\
 		print(s+"\n");
 	}
 
 	static void print(rstr s=rstr())
 	{
 		xf::print((char*)(s.cstr()));
+	}
+
+	static int abs(int a)
+	{
+		if(a<0)
+		{
+			return -a;
+		}
+		return a;
 	}
 
 	static int cmd_utf8(rstr s)

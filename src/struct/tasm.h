@@ -4,26 +4,46 @@
 
 struct treg
 {
+	uint eip_e;
 	uint eip;
+	uint esp_e;
 	uint esp;
+	uint ebp_e;
 	uint ebp;
+	uint esi_e;
 	uint esi;
+	uint edi_e;
 	uint edi;
+	uint eax_e;
 	uint eax;
+	uint ebx_e;
 	uint ebx;
+	uint ecx_e;
 	uint ecx;
+	uint edx_e;
 	uint edx;
 
 	enum 
 	{
-		c_esp=4,
-		c_ebp=8,
-		c_esi=12,
-		c_edi=16,
-		c_eax=20,
-		c_ebx=24,
-		c_ecx=28,
-		c_edx=32
+		c_eip=4,
+		c_esp=12,
+		c_ebp=20,
+		c_esi=28,
+		c_edi=36,
+		c_eax=44,
+		c_ebx=52,
+		c_ecx=60,
+		c_edx=68,
+
+		c_rip=0,
+		c_rsp=8,
+		c_rbp=16,
+		c_rsi=24,
+		c_rdi=32,
+		c_rax=40,
+		c_rbx=48,
+		c_rcx=56,
+		c_rdx=64
 	};
 };
 
@@ -49,6 +69,16 @@ struct topnd
 	{
 		off=0;
 		val=0;
+	}
+
+	int64& val64() const
+	{
+		return *(int64*)(&off);
+	}
+
+	rbool is_reg64() const
+	{
+		return off%8==0;
 	}
 };
 
@@ -102,48 +132,104 @@ struct tins
 	enum
 	{
 		c_rjit_n,
+		c_rjit_n1,
+		c_rjit_n2,
+		c_rjit_n3,
+		c_rjit_n4,
+		c_rjit_n5,
 
-		c_calle_i=6,
+		c_byte_i,
+		c_byte_i1,
+		c_byte_i2,
+		c_byte_i3,
+		c_byte_i4,
+		c_byte_i5,
 
-		c_call_i=12,
+		c_calle_i,
+		c_calle_i1,
+		c_calle_i2,
+		c_calle_i3,
+		c_calle_i4,
+		c_calle_i5,
+
+		c_call_i,
 		c_call_r,
 		c_call_a,
+		c_call_a1,
+		c_call_a2,
+		c_call_a3,
 
-		c_ret_n=18,
+		c_ret_n,
+		c_ret_n1,
+		c_ret_n2,
+		c_ret_n3,
+		c_ret_n4,
+		c_ret_n5,
 
-		c_ret_i=24,
+		c_ret_i,
 		c_ret_r,
 		c_ret_a,
+		c_ret_a1,
+		c_ret_a2,
+		c_ret_a3,
 
-		c_push_i=30,
+		c_push_i,
 		c_push_r,
 		c_push_a,
+		c_push_a1,
+		c_push_a2,
+		c_push_a3,
 
-		c_pop_i=36,
+		c_pop_i,
 		c_pop_r,
 		c_pop_a,
+		c_pop_a1,
+		c_pop_a2,
+		c_pop_a3,
 
-		c_jmp_i=42,
+		c_jmp_i,
 		c_jmp_r,
 		c_jmp_a,
+		c_jmp_a1,
+		c_jmp_a2,
+		c_jmp_a3,
 
-		c_jebxz_i=48,
+		c_jebxz_i,
 		c_jebxz_r,
 		c_jebxz_a,
+		c_jebxz_a1,
+		c_jebxz_a2,
+		c_jebxz_a3,
 
-		c_jebxnz_i=54,
+		c_jebxnz_i,
 		c_jebxnz_r,
 		c_jebxnz_a,
+		c_jebxnz_a1,
+		c_jebxnz_a2,
+		c_jebxnz_a3,
 
-		c_bnot_i=60,
+		c_bnot_i,
 		c_bnot_r,
 		c_bnot_a,
+		c_bnot_a1,
+		c_bnot_a2,
+		c_bnot_a3,
 
-		c_halt_n=66,
+		c_halt_n,
+		c_halt_n1,
+		c_halt_n2,
+		c_halt_n3,
+		c_halt_n4,
+		c_halt_n5,
 
-		c_nop_n=72,
+		c_nop_n,
+		c_nop_n1,
+		c_nop_n2,
+		c_nop_n3,
+		c_nop_n4,
+		c_nop_n5,
 
-		c_lea_ri=78,
+		c_lea_ri,
 		c_lea_ai,
 		c_lea_rr,
 		c_lea_ar,

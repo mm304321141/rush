@@ -428,7 +428,7 @@ struct rstr
 
 	int find(uchar ch,int begin=0) const
 	{
-		return buf.find(ch);
+		return buf.find(ch,begin);
 	}
 
 	int find_last(uchar ch) const
