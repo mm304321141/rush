@@ -1,11 +1,6 @@
 ﻿#pragma once
 
 #define c_rs_deep 150
-#ifdef _WIN64
-#define c_point_size 8
-#else
-#define c_point_size 4
-#endif
 
 #define rskey(a) (sh.key[tkey::a])
 #define rsoptr(a) (sh.optr[toptr::a])
@@ -42,4 +37,35 @@
 #define rsj4(a,b,c,d) (zjiti::a(build_ins(sh,rskey(c_nop),b,c,d)))
 #define rsjf(a,b) sh.dic_bind_func[a]=(void*)&b
 
+#define rsa0(ins) vasm+=rf::vstr(rskey(ins))
+#define rsa1(ins,a) vasm+=rf::vstr(rskey(ins),a)
+#define rsa2(ins,a,b) vasm+=rf::vstr(rskey(ins),a,rsoptr(c_comma),b)
+#define rsmbk1(a) rsoptr(c_mbk_l),a,rsoptr(c_mbk_r)
+#define rsmbk3(a,b,c) rsoptr(c_mbk_l),a,b,c,rsoptr(c_mbk_r)
+#define rsmbk5(a,b,c,d,e) rsoptr(c_mbk_l),a,b,c,d,e,rsoptr(c_mbk_r)
+
 #define rserror rf::printl(rstr("rs_src:")+__FILE__+" "+__LINE__);ybase::error
+
+#ifdef _WIN64
+
+#define c_point_size 8
+
+#define rs_sp rskey(c_rsp)
+#define rs_bp rskey(c_rbp)
+#define rs_si rskey(c_rsi)
+#define rs_di rskey(c_rdi)
+#define rs_bx rskey(c_rbx)
+#define rs_mov c_mov64
+
+#else
+
+#define c_point_size 4
+
+#define rs_sp rskey(c_esp)
+#define rs_bp rskey(c_ebp)
+#define rs_si rskey(c_esi)
+#define rs_di rskey(c_edi)
+#define rs_bx rskey(c_ebx)
+#define rs_mov c_mov
+
+#endif

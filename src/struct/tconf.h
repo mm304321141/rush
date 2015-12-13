@@ -13,11 +13,7 @@ struct tconf
 		c_op_nop=1,
 		c_op_zero=1,//优化add esp,0
 		c_op_merge=1,//同一行连续加减同一个寄存器合并为一条指令
-#ifdef _WIN64
-		c_op_rbp=1,
-#else
-		c_op_ebp=1,//如果本函数未使用ebp可以不用push ebp节省3条指令
-#endif
+		c_op_bp=1,//如果本函数未使用ebp可以不用push ebp节省3条指令
 		c_op_base_calc=1,//优化基础运算，如调用int.opreator+可变成一条add指令
 		c_op_pass=1,//优化参数传递，如传递int不需要调用拷贝构造函数
 		c_op_const_eval=1,//常量表达式求值

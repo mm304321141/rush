@@ -80,4 +80,8 @@ void test7():
 	v.push(4)
 	v.push(5)
 	printl v.count
+	printl A(2,3)
+	
+#define B(a,b) (a*b)
+#define A(a,b) (B(a,b)+b)
 	

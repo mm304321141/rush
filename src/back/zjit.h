@@ -10,12 +10,7 @@ struct zjit
 	static rbool run(tsh& sh)
 	{
 #ifndef _RS
-		tfunc* ptfi=yfind::find_func(*sh.pmain,"__declare");
-		if(ptfi!=null)
-		{
-			compile_func_to_x86(sh,*ptfi,tenv());
-		}
-		ptfi=yfind::find_func(*sh.pmain,"main_c");
+		tfunc* ptfi=yfind::find_func(*sh.pmain,"main_c");
 		if(ptfi==null)
 		{
 			rf::printl("main not find");
@@ -41,7 +36,11 @@ struct zjit
 		{
 			return false;
 		}
+#ifdef _WIN64
+		int size=tfi.vasm.count()*12;
+#else
 		int size=tfi.vasm.count()*6;//todo 估算法并不是最好的方法
+#endif
 		size=r_ceil_div(size,4096)*4096;
 		if(tfi.code==null)
 		{
@@ -125,7 +124,11 @@ struct zjit
 			rserror(oasm);
 			return false;
 		}
+#ifdef _WIN64
+		oasm.ins.first.val64()=(int64)(vasm[j].start);
+#else
 		oasm.ins.first.val=(uint)(vasm[j].start);
+#endif
 		uchar* real=oasm.start;
 		rstr s=trans_asm_to_x86(sh,oasm,real);
 		if(s.empty())
@@ -144,6 +147,8 @@ struct zjit
 		rstr s;
 		switch(ins.get_index())
 		{
+		case tkey::c_rbyte:
+			return zjitb::build_one(ins.first.val);
 		case tkey::c_calle:
 			//todo 应判断start与item.start差值是否超过2G
 			return proc_calle(sh,ins,start);
@@ -174,8 +179,13 @@ struct zjit
 				return zjiti::b_lea(ins);
 			}
 			//应该检查b_lea是否返回空串
+#ifdef _WIN64
+			return (rsj4(b_lea,rskey(c_rcx),rsoptr(c_comma),rsjb)+
+				rsj4(b_mov64,rsja,rsoptr(c_comma),rskey(c_rcx)));
+#else
 			return (rsj4(b_lea,rskey(c_ecx),rsoptr(c_comma),rsjb)+
 				rsj4(b_mov,rsja,rsoptr(c_comma),rskey(c_ecx)));
+#endif
 		case tkey::c_mov:
 			if(znasm::count_mbk_l(vstr)!=2)
 			{
@@ -187,27 +197,38 @@ struct zjit
 			return (rsj4(b_mov8_cl_addr,rskey(c_ecx),rsoptr(c_comma),rsjb)+
 				rsj4(b_mov8_addr_cl,rsja,rsoptr(c_comma),rskey(c_ecx)));
 		case tkey::c_mov64:
-			s+=rsj4(b_mov,rskey(c_ecx),rsoptr(c_comma),rsjb);
-			s+=rsj4(b_mov,rsja,rsoptr(c_comma),rskey(c_ecx));
-			ins.first.val+=4;
-			ins.second.val+=4;
-			s+=rsj4(b_mov,rskey(c_ecx),rsoptr(c_comma),rsjb);
-			s+=rsj4(b_mov,rsja,rsoptr(c_comma),rskey(c_ecx));
-			return r_move(s);
+#ifdef _WIN64
+			if(znasm::count_mbk_l(vstr)==2)
+			{
+				return (rsj4(b_mov64,rskey(c_rcx),rsoptr(c_comma),rsjb)+
+					rsj4(b_mov64,rsja,rsoptr(c_comma),rskey(c_rcx)));
+			}
+			return zjiti::b_mov64(ins);
+#else
+			return zjiti::error();
+#endif
 		case tkey::c_add:
 			if(znasm::count_mbk_l(vstr)!=2)
 			{
 				return zjiti::b_add(ins);
 			}
+#ifdef _WIN64
+			return zjiti::error();
+#else
 			return (rsj4(b_mov,rskey(c_ecx),rsoptr(c_comma),rsjb)+
 				rsj4(b_add,rsja,rsoptr(c_comma),rskey(c_ecx)));
+#endif
 		case tkey::c_sub:
 			if(znasm::count_mbk_l(vstr)!=2)
 			{
 				return zjiti::b_sub(ins);
 			}
+#ifdef _WIN64
+			return zjiti::error();
+#else
 			return (rsj4(b_mov,rskey(c_ecx),rsoptr(c_comma),rsjb)+
 				rsj4(b_sub,rsja,rsoptr(c_comma),rskey(c_ecx)));
+#endif
 		case tkey::c_imul:
 			return (rsj4(b_mov,rskey(c_ecx),rsoptr(c_comma),rsja)+
 				rsj4(b_imul,rskey(c_ecx),rsoptr(c_comma),rsjb)+
@@ -281,8 +302,7 @@ struct zjit
 			return zjiti::b_not(ins);
 		}
 #endif
-		rserror();
-		return rstr();
+		return zjiti::error();
 	}
 
 	static rstr jcmp(tsh& sh,tasm& item,const rstr& cont)
@@ -307,7 +327,11 @@ struct zjit
 
 	static rstr proc_calle(tsh& sh,tins& ins,uchar* start)
 	{
+#ifdef _WIN64
+		char* name=(char*)(ins.first.val64());
+#else
 		char* name=(char*)(ins.first.val);
+#endif
 		void* addr=null;
 		if(sh.dic_bind_func.find(name)!=null)
 		{
@@ -318,7 +342,11 @@ struct zjit
 			//addr=zjitf::find_dll_full(name);
 			return rstr();
 		}
+#ifdef _WIN64
+		ins.first.val64()=(int64)addr;
+#else
 		ins.first.val=(int)addr;
+#endif
 		return zjiti::b_call(ins,start);
 	}
 
@@ -364,7 +392,11 @@ struct zjit
 				return false;
 			}
 			otype=topnd::c_imme;
+#ifdef _WIN64
+			o.val64()=(int64)(ptfi->code);
+#else
 			o.val=(uint)(ptfi->code);
+#endif
 			return true;
 		}
 		return zbin::parse_opnd(sh,item,index,v,o,otype);

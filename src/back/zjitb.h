@@ -255,34 +255,7 @@ struct zjitb
 			return;
 		}
 		*(int*)(start+1)=val;
-		if(off==treg::c_ebp||off==treg::c_rbp)//todo 改为switch
-		{
-			*start|=0x5;
-		}
-		elif(off==treg::c_esi||off==treg::c_rsi)
-		{
-			*start|=0x6;
-		}
-		elif(off==treg::c_edi||off==treg::c_rdi)
-		{
-			*start|=0x7;
-		}
-		elif(off==treg::c_eax||off==treg::c_rax)
-		{
-			*start|=0x0;
-		}
-		elif(off==treg::c_ebx||off==treg::c_rbx)
-		{
-			*start|=0x3;
-		}
-		elif(off==treg::c_ecx||off==treg::c_rcx)
-		{
-			*start|=0x1;
-		}
-		elif(off==treg::c_edx||off==treg::c_rdx)
-		{
-			*start|=0x2;
-		}
+		set_reg_bit(off,start);
 	}
 
 	static void set_addr_bit_64(int off,uchar* start,int64 val)
@@ -295,173 +268,60 @@ struct zjitb
 			return;
 		}
 		*(int64*)(start+1)=val;
-		if(off==treg::c_rbp)
-		{
-			*start|=0x5;
-		}
-		elif(off==treg::c_rsi)
-		{
-			*start|=0x6;
-		}
-		elif(off==treg::c_rdi)
-		{
-			*start|=0x7;
-		}
-		elif(off==treg::c_rax)
-		{
-			*start|=0x0;
-		}
-		elif(off==treg::c_rbx)
-		{
-			*start|=0x3;
-		}
-		elif(off==treg::c_rcx)
-		{
-			*start|=0x1;
-		}
-		elif(off==treg::c_rdx)
-		{
-			*start|=0x2;
-		}
-	}
-
-	static void set_reg_bit(int off,uchar* start)
-	{
-		if(off==treg::c_esp)
-		{
-			*start|=0x4;
-		}
-		elif(off==treg::c_ebp)
-		{
-			*start|=0x5;
-		}
-		elif(off==treg::c_esi)
-		{
-			*start|=0x6;
-		}
-		elif(off==treg::c_edi)
-		{
-			*start|=0x7;
-		}
-		elif(off==treg::c_eax)
-		{
-			*start|=0x0;
-		}
-		elif(off==treg::c_ebx)
-		{
-			*start|=0x3;
-		}
-		elif(off==treg::c_ecx)
-		{
-			*start|=0x1;
-		}
-		elif(off==treg::c_edx)
-		{
-			*start|=0x2;
-		}
-#ifdef _WIN64
-		elif(off==treg::c_rsp)
-		{
-			*start|=0x4;
-		}
-		elif(off==treg::c_rbp)
-		{
-			*start|=0x5;
-		}
-		elif(off==treg::c_rsi)
-		{
-			*start|=0x6;
-		}
-		elif(off==treg::c_rdi)
-		{
-			*start|=0x7;
-		}
-		elif(off==treg::c_rax)
-		{
-			*start|=0x0;
-		}
-		elif(off==treg::c_rbx)
-		{
-			*start|=0x3;
-		}
-		elif(off==treg::c_rcx)
-		{
-			*start|=0x1;
-		}
-		elif(off==treg::c_rdx)
-		{
-			*start|=0x2;
-		}
-#endif
+		set_reg_bit(off,start);
 	}
 
 	static void set_reg_bit_center(int off,uchar* start)
 	{
-		if(off==treg::c_esp)
+		set_reg_bit(off,start,3);
+	}
+
+	static void set_reg_bit(int off,uchar* start,int left=0)
+	{
+		switch(off)
 		{
-			*start|=0x4<<3;
+		case treg::c_esp:
+			*start=OR(*start,SHL(0x4,left));
+			return;
+		case treg::c_rsp:
+			*start=OR(*start,SHL(0x4,left));
+			return;
+		case treg::c_ebp:
+			*start=OR(*start,SHL(0x5,left));
+			return;
+		case treg::c_rbp:
+			*start=OR(*start,SHL(0x5,left));
+			return;
+		case treg::c_esi:
+			*start=OR(*start,SHL(0x6,left));
+			return;
+		case treg::c_rsi:
+			*start=OR(*start,SHL(0x6,left));
+			return;
+		case treg::c_edi:
+			*start=OR(*start,SHL(0x7,left));
+			return;
+		case treg::c_rdi:
+			*start=OR(*start,SHL(0x7,left));
+			return;
+		case treg::c_ebx:
+			*start=OR(*start,SHL(0x3,left));
+			return;
+		case treg::c_rbx:
+			*start=OR(*start,SHL(0x3,left));
+			return;
+		case treg::c_ecx:
+			*start=OR(*start,SHL(0x1,left));
+			return;
+		case treg::c_rcx:
+			*start=OR(*start,SHL(0x1,left));
+			return;
+		case treg::c_edx:
+			*start=OR(*start,SHL(0x2,left));
+			return;
+		case treg::c_rdx:
+			*start=OR(*start,SHL(0x2,left));
+			return;
 		}
-		elif(off==treg::c_ebp)
-		{
-			*start|=0x5<<3;
-		}
-		elif(off==treg::c_esi)
-		{
-			*start|=0x6<<3;
-		}
-		elif(off==treg::c_edi)
-		{
-			*start|=0x7<<3;
-		}
-		elif(off==treg::c_eax)
-		{
-			*start|=0x0<<3;
-		}
-		elif(off==treg::c_ebx)
-		{
-			*start|=0x3<<3;
-		}
-		elif(off==treg::c_ecx)
-		{
-			*start|=0x1<<3;
-		}
-		elif(off==treg::c_edx)
-		{
-			*start|=0x2<<3;
-		}
-#ifdef _WIN64
-		elif(off==treg::c_rsp)
-		{
-			*start|=0x4<<3;
-		}
-		elif(off==treg::c_rbp)
-		{
-			*start|=0x5<<3;
-		}
-		elif(off==treg::c_rsi)
-		{
-			*start|=0x6<<3;
-		}
-		elif(off==treg::c_rdi)
-		{
-			*start|=0x7<<3;
-		}
-		elif(off==treg::c_rax)
-		{
-			*start|=0x0<<3;
-		}
-		elif(off==treg::c_rbx)
-		{
-			*start|=0x3<<3;
-		}
-		elif(off==treg::c_rcx)
-		{
-			*start|=0x1<<3;
-		}
-		elif(off==treg::c_rdx)
-		{
-			*start|=0x2<<3;
-		}
-#endif
 	}
 };

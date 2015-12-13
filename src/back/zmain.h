@@ -3,11 +3,7 @@
 #include "../front/yclass.h"
 #include "../front/yformat.h"
 #include "zvm.h"
-#ifdef _WIN64
-#include "zjit64.h"
-#else
 #include "zjit.h"
-#endif
 #include "zgpp.h"
 #include "zjs.h"
 #include "zcpp.h"

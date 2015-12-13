@@ -2,11 +2,7 @@
 
 #include "../front/ysent.h"
 #include "../front/yword.h"
-#ifdef _WIN64
-#include "zasm64.h"
-#else
 #include "zasm.h"
-#endif
 
 //生成二进制代码类
 struct zbin
@@ -428,82 +424,46 @@ struct zbin
 
 	static int get_reg_off(tsh& sh,const rstr& s)
 	{
-		if(rskey(c_eax)==s)//todo get_key_index后switch
+		int index=sh.key.get_key_index(s);
+		switch(index)
 		{
+		case tkey::c_eax:
 			return treg::c_eax;
-		}
-		elif(rskey(c_ebx)==s)
-		{
+		case tkey::c_ebx:
 			return treg::c_ebx;
-		}
-		elif(rskey(c_ecx)==s)
-		{
+		case tkey::c_ecx:
 			return treg::c_ecx;
-		}
-		elif(rskey(c_edx)==s)
-		{
+		case tkey::c_edx:
 			return treg::c_edx;
-		}
-		elif(rskey(c_esi)==s)
-		{
+		case tkey::c_esi:
 			return treg::c_esi;
-		}
-		elif(rskey(c_edi)==s)
-		{
+		case tkey::c_edi:
 			return treg::c_edi;
-		}
-		elif(rskey(c_esp)==s)
-		{
+		case tkey::c_esp:
 			return treg::c_esp;
-		}
-		elif(rskey(c_ebp)==s)
-		{
+		case tkey::c_ebp:
 			return treg::c_ebp;
-		}
-		elif(rskey(c_eip)==s)
-		{
+		case tkey::c_eip:
 			return treg::c_eip;
-		}
-#ifdef _WIN64
-		elif(rskey(c_rax)==s)
-		{
+		case tkey::c_rax:
 			return treg::c_rax;
-		}
-		elif(rskey(c_rbx)==s)
-		{
+		case tkey::c_rbx:
 			return treg::c_rbx;
-		}
-		elif(rskey(c_rcx)==s)
-		{
+		case tkey::c_rcx:
 			return treg::c_rcx;
-		}
-		elif(rskey(c_rdx)==s)
-		{
+		case tkey::c_rdx:
 			return treg::c_rdx;
-		}
-		elif(rskey(c_rsi)==s)
-		{
+		case tkey::c_rsi:
 			return treg::c_rsi;
-		}
-		elif(rskey(c_rdi)==s)
-		{
+		case tkey::c_rdi:
 			return treg::c_rdi;
-		}
-		elif(rskey(c_rsp)==s)
-		{
+		case tkey::c_rsp:
 			return treg::c_rsp;
-		}
-		elif(rskey(c_rbp)==s)
-		{
+		case tkey::c_rbp:
 			return treg::c_rbp;
-		}
-		elif(rskey(c_rip)==s)
-		{
+		case tkey::c_rip:
 			return treg::c_rip;
-		}
-#endif
-		else
-		{
+		default:
 			rserror(s);
 			return r_size(treg);
 		}

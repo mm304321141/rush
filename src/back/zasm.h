@@ -20,10 +20,12 @@ struct zasm
 				rserror(tfi.vsent[i],"build asm error");
 				return false;
 			}
+#ifndef _WIN64
 			if(tconf::c_op_match)
 			{
 				yopt::optimize_match(sh,vasm);
 			}
+#endif
 			if(tconf::c_op_merge)
 			{
 				yopt::optimize_add_sub(sh,vasm);
@@ -34,7 +36,7 @@ struct zasm
 			}
 			tfi.vasm+=vasm;
 		}
-		add_asm_ebp(sh,tfi);
+		add_asm_bp(sh,tfi);
 		tfi.vsent.free();
 		tfi.vword.free();
 		return true;
@@ -42,106 +44,77 @@ struct zasm
 
 	static void push_double(const tsh& sh,rbuf<tasm>& vasm,double dval)
 	{
-		vasm+=rf::vstr(rskey(c_push),rstr(*((uint*)(&dval)+1)));
-		vasm+=rf::vstr(rskey(c_push),rstr(*((uint*)(&dval))));
+#ifdef _WIN64
+		rsa2(c_mov64,rskey(c_rcx),*((int64*)(&dval)));
+		rsa1(c_push,rskey(c_rcx));
+#else
+		rsa1(c_push,*((uint*)(&dval)+1));
+		rsa1(c_push,*((uint*)(&dval)));
+#endif
 	}
 
-	static rbool add_asm_ebp(const tsh& sh,tfunc& tfi)
+	static rbool add_asm_bp(const tsh& sh,tfunc& tfi)
 	{
 		rbuf<tasm> vasm;
-		tasm item;
-		item.pos=tfi.pos;
 		int size=yfind::get_func_local_size(tfi);
 		ifn(tconf::c_op_zero&&size==0)
 		{
-			item.vstr=rf::vstr(rskey(c_sub),rskey(c_esp),
-				rsoptr(c_comma),rstr(size));
-			vasm+=item;
+			rsa2(c_sub,rs_sp,size);
 		}
-		rbool b_use_ebp=use_ebp(sh,tfi.vasm);
-		rbool protect_ebx=(tfi.name.get_left()==r_char('~')&&
+		rbool b_use_bp=use_bp(sh,tfi.vasm);
+		rbool protect_bx=(tfi.name.get_left()==r_char('~')&&
 			!yfind::is_empty_struct_type(sh,tfi.ptci->name)&&
 			!tfi.vsent.empty()||tfi.is_cfunc);
-		if(b_use_ebp)
+		if(b_use_bp)
 		{
-			item.vstr=rf::vstr(rskey(c_push),rskey(c_ebp));
-			vasm+=item;
-			item.vstr=rf::vstr(rskey(c_mov),rskey(c_ebp),
-				rsoptr(c_comma),rskey(c_esp));
-			vasm+=item;
+			rsa1(c_push,rs_bp);
+			rsa2(rs_mov,rs_bp,rs_sp);
 		}
-		if(protect_ebx)
+		if(protect_bx)
 		{
-			item.vstr=rf::vstr(rskey(c_push),rskey(c_ebx));
-			vasm+=item;
+			rsa1(c_push,rs_bx);
 		}
 		if(tfi.is_cfunc)
 		{
 			//todo 如果ebx、esi、edi未修改则不用保护
-			item.vstr=rf::vstr(rskey(c_push),rskey(c_esi));
-			vasm+=item;
-			item.vstr=rf::vstr(rskey(c_push),rskey(c_edi));
-			vasm+=item;
+			rsa1(c_push,rs_si);
+			rsa1(c_push,rs_di);
 		}
 		vasm+=tfi.vasm;
-		item.pos=tfi.pos;
 		if(tfi.is_cfunc)
 		{
 			//todo: change to one line
-			item.vstr.clear();
-			item.vstr.push(rskey(c_pop));
-			item.vstr.push(rskey(c_edi));
-			vasm.push(item);
-
-			item.vstr.clear();
-			item.vstr.push(rskey(c_pop));
-			item.vstr.push(rskey(c_esi));
-			vasm.push(item);
+			rsa1(c_pop,rs_di);
+			rsa1(c_pop,rs_si);
 		}
-		if(protect_ebx)
+		if(protect_bx)
 		{
-			item.vstr.clear();
-			item.vstr.push(rskey(c_pop));
-			item.vstr.push(rskey(c_ebx));
-			vasm.push(item);
+			rsa1(c_pop,rs_bx);
 		}
-		if(b_use_ebp)
+		if(b_use_bp)
 		{
-			item.vstr.clear();
-			item.vstr.push(rskey(c_pop));
-			item.vstr.push(rskey(c_ebp));
-			vasm.push(item);
+			rsa1(c_pop,rs_bp);
 		}
 		ifn(tconf::c_op_zero&&size==0)
 		{
-			item.vstr.clear();
-			item.vstr.push(rskey(c_add));
-			item.vstr.push(rskey(c_esp));
-			item.vstr.push(rsoptr(c_comma));
-			item.vstr.push(rstr(size));
-			vasm.push(item);
+			rsa2(c_add,rs_sp,size);
 		}
 		size=yfind::get_func_param_size(tfi);
 		if(size>0)
 		{
-			item.vstr.clear();
-			item.vstr.push(rskey(c_reti));
-			item.vstr.push(rstr(size));
-			vasm.push(item);
+			rsa1(c_reti,size);
 		}
 		else
 		{
-			item.vstr.clear();
-			item.vstr.push(rskey(c_retn));
-			vasm.push(item);
+			rsa0(c_retn);
 		}
 		tfi.vasm=r_move(vasm);
 		return true;
 	}
 
-	static rbool use_ebp(const tsh& sh,const rbuf<tasm>& vasm)
+	static rbool use_bp(const tsh& sh,const rbuf<tasm>& vasm)
 	{
-		ifn(tconf::c_op_ebp)
+		ifn(tconf::c_op_bp)
 		{
 			return true;
 		}
@@ -149,7 +122,7 @@ struct zasm
 		{
 			for(int j=0;j<vasm[i].vstr.count();j++)
 			{
-				if(vasm[i].vstr[j]==rskey(c_ebp))
+				if(vasm[i].vstr[j]==rs_bp)
 				{
 					return true;
 				}
@@ -173,39 +146,38 @@ struct zasm
 			if(src.vword[0].is_cint())
 			{
 				//经测试如果是小程序rskey(c_mov)比"mov"效率高
-				vasm+=rf::vstr(rskey(c_mov),rskey(c_ebx),
-					rsoptr(c_comma),src.vword[0].val);
+				rsa2(c_mov,rskey(c_ebx),src.vword[0].val);
 				return true;
 			}
 			elif(sh.key.is_asm_reg(src.vword[0].val))
 			{
-				vasm+=rf::vstr(rskey(c_mov),rskey(c_ebx),
-					rsoptr(c_comma),src.vword[0].val);
+#ifdef _WIN64
+				ifn(sh.key.is_reg_32(src.vword[0].val))
+				{
+					rserror();
+					return false;
+				}
+#endif
+				rsa2(c_mov,rskey(c_ebx),src.vword[0].val);
 				return true;
 			}
 			elif(src.vword[0].is_cpoint())
 			{
 				if(src.vword[0].is_caddr())
 				{
-					vasm+=rf::vstr(rskey(c_mov),
-						rskey(c_ebx),rsoptr(c_comma),
-						src.vword[0].val);
+					rsa2(rs_mov,rs_bx,src.vword[0].val);
 				}
 				else
 				{
-					vasm+=rf::vstr(rskey(c_mov),
-						rskey(c_ebx),rsoptr(c_comma),
-						src.vword[0].val.sub_trim(1));
+					rsa2(rs_mov,rs_bx,src.vword[0].val.sub_trim(1));
 				}
 				return true;
 			}
 		}
 		if(src.vword.count()==7&&src.vword[1].val==rsoptr(c_addr))
 		{
-			vasm+=rf::vstr(rskey(c_mov),rskey(c_ebx),rsoptr(c_comma),
-				rsoptr(c_mbk_l),rsoptr(c_addr),rsoptr(c_comma),
-				src.vword[3].val,rsoptr(c_comma),src.vword[5].val,
-				rsoptr(c_mbk_r));
+			rsa2(rs_mov,rs_bx,rsmbk5(
+				rsoptr(c_addr),rsoptr(c_comma),src.vword[3].val,rsoptr(c_comma),src.vword[5].val));
 			return true;
 		}
 		//返回变量
@@ -215,26 +187,19 @@ struct zasm
 		{
 			if(yfind::is_type_mebx(sh,src.type))
 			{
-				vasm+=rf::vstr(rskey(c_lea),rskey(c_esi),
-					rsoptr(c_comma),rsoptr(c_mbk_l),
-					rskey(c_ebp),rsoptr(c_plus),
-					rstr(ptdi->off),rsoptr(c_mbk_r));
+				rsa2(c_lea,rs_si,rsmbk3(rs_bp,rsoptr(c_plus),ptdi->off));
 				//这里还可以优化
-				ifn(add_esi(sh,ptdi->type,vasm,src))
+				ifn(add_si(sh,ptdi->type,vasm,src))
 				{
 					rserror("");
 					return false;
 				}
-				vasm+=rf::vstr(rskey(c_mov),rskey(c_ebx),
-					rsoptr(c_comma),rsoptr(c_mbk_l),
-					rskey(c_esi),rsoptr(c_mbk_r));
+				rsa2(rs_mov,rs_bx,rsmbk1(rs_si));
 				if(ybase::is_quote(src.type)&&
 					(ybase::get_tname(src.type)==rskey(c_int)||
 					ybase::is_point(ybase::get_tname(src.type))))
 				{
-					vasm+=rf::vstr(rskey(c_mov),rskey(c_ebx),
-						rsoptr(c_comma),rsoptr(c_mbk_l),
-						rskey(c_ebx),rsoptr(c_mbk_r));
+					rsa2(rs_mov,rs_bx,rsmbk1(rs_bx));
 				}
 			}
 			return true;
@@ -251,14 +216,12 @@ struct zasm
 		{
 			return false;
 		}
-		int size;
 		//多数函数返回void，因此加上这句判断可以提高效率
 		if(src.type!=rskey(c_void)&&yfind::is_type_mebx(sh,src.type))
 		{
-			vasm+=rf::vstr(rskey(c_mov),rskey(c_esi),
-				rsoptr(c_comma),rskey(c_esp));
+			rsa2(rs_mov,rs_si,rs_sp);
 			int cur=vasm.count();
-			ifn(add_esi(sh,retval.type,vasm,src))
+			ifn(add_si(sh,retval.type,vasm,src))
 			{
 				rserror("");
 				return false;
@@ -266,23 +229,17 @@ struct zasm
 			if(cur==vasm.count())
 			{
 				vasm.pop();
-				vasm+=rf::vstr(rskey(c_mov),rskey(c_ebx),
-					rsoptr(c_comma),rsoptr(c_mbk_l),
-					rskey(c_esp),rsoptr(c_mbk_r));
+				rsa2(rs_mov,rs_bx,rsmbk1(rs_sp));
 			}
 			else
 			{
-				vasm+=rf::vstr(rskey(c_mov),rskey(c_ebx),
-					rsoptr(c_comma),rsoptr(c_mbk_l),
-					rskey(c_esi),rsoptr(c_mbk_r));
+				rsa2(rs_mov,rs_bx,rsmbk1(rs_si));
 			}
 			if(ybase::is_quote(src.type)&&
 				(ybase::get_tname(src.type)==rskey(c_int)||
 				ybase::is_point(ybase::get_tname(src.type))))
 			{
-				vasm+=rf::vstr(rskey(c_mov),rskey(c_ebx),
-					rsoptr(c_comma),rsoptr(c_mbk_l),
-					rskey(c_ebx),rsoptr(c_mbk_r));
+				rsa2(rs_mov,rs_bx,rsmbk1(rs_bx));
 			}
 		}
 		ifn(destruct_ret(sh,retval,vasm))
@@ -290,8 +247,7 @@ struct zasm
 			rserror("");
 			return false;
 		}
-		size=yfind::get_ceil_space(retval);
-		vasm+=rf::vstr(rskey(c_add),rskey(c_esp),rsoptr(c_comma),size);
+		rsa2(c_add,rs_sp,yfind::get_ceil_space(retval));
 		return true;
 	}
 	
@@ -316,7 +272,6 @@ struct zasm
 			rserror("");
 			return false;
 		}
-		int size;
 		rbuf<rbuf<tword> > vlisp;
 		yexp::get_vlisp(sh,src.vword,vlisp);
 		if(src.vword.get(1).val==rskey(c_pcall))
@@ -328,9 +283,7 @@ struct zasm
 			}
 			retval.type=vlisp[1].get(0).val;
 			retval.size=yfind::get_type_size(sh,retval.type);
-			size=yfind::get_ceil_space(retval);
-			vasm+=rf::vstr(rskey(c_sub),rskey(c_esp),
-				rsoptr(c_comma),size);
+			rsa2(c_sub,rs_sp,yfind::get_ceil_space(retval));
 			rbuf<rbuf<tword> > vparam;
 			yexp::get_vlisp(sh,vlisp[4],vparam);
 			rbuf<tsent> vsent;
@@ -365,7 +318,7 @@ struct zasm
 			}
 			if(sent.type==rstr("rp<void>"))
 			{
-				vasm+=rf::vstr(rskey(c_call),rskey(c_ebx));
+				rsa1(c_call,rs_bx);
 			}
 			else
 			{
@@ -416,8 +369,7 @@ struct zasm
 			rserror("");
 			return false;
 		}
-		size=yfind::get_ceil_space(retval);
-		vasm+=rf::vstr(rskey(c_sub),rskey(c_esp),rsoptr(c_comma),size);
+		rsa2(c_sub,rs_sp,yfind::get_ceil_space(retval));
 		for(int i=vsent.count()-1;i>=0;i--)
 		{
 			ifn(pass_param(sh,vsent[i],ptfi->param[i],vasm,tfi,level))
@@ -437,15 +389,12 @@ struct zasm
 			rserror("");
 			return false;
 		}
-		int size;
 		tsent src_in=get_src_in(sh,src);
 		if(src_in.vword.get(1).val==rskey(c_pcall)||
 			yfind::is_class(sh,src_in.vword.get(1).val))
 		{
 			//先申请参数空间
-			size=yfind::get_ceil_space(dst);
-			vasm+=rf::vstr(rskey(c_sub),rskey(c_esp),
-				rsoptr(c_comma),size);
+			rsa2(c_sub,rs_sp,yfind::get_ceil_space(dst));
 			//递归处理子表达式
 			tdata retval;
 			ifn(parse_exp(sh,src_in,vasm,retval,tfi,level))
@@ -472,49 +421,65 @@ struct zasm
 				return false;
 			}
 			//释放栈
-			size=yfind::get_ceil_space(retval);
-			vasm+=rf::vstr(rskey(c_add),rskey(c_esp),
-				rsoptr(c_comma),size);
+			rsa2(c_add,rs_sp,yfind::get_ceil_space(retval));
 		}
-		elif(src.vword[0].is_cint())
+		elif(src.vword[0].is_cint())//todo src.vword[0]保存到临时变量中
 		{
-			vasm+=rf::vstr(rskey(c_push),src.vword[0].val);
+			rsa1(c_push,src.vword[0].val);
 		}
 		elif(src.vword[0].is_cuint())
 		{
-			vasm+=rf::vstr(rskey(c_push),src.vword[0].val.sub_trim(1));
+			rsa1(c_push,src.vword[0].val.sub_trim(1));
 		}
 		elif(src.vword[0].is_cdouble())
 		{
-			double dval=src.vword[0].val.todouble();
-			push_double(sh,vasm,dval);
+			push_double(sh,vasm,src.vword[0].val.todouble());
 		}
 		elif(src.vword.count()==7&&
 			src.vword.get(1).val==rsoptr(c_addr)&&
 			src.vword[0].val==rsoptr(c_mbk_l))
 		{
+#ifdef _WIN64
+			rbuf<rstr> vstr=ybase::trans_vword_to_vstr(src.vword);
+			vstr.push_front(rsoptr(c_comma));
+			vstr.push_front(rs_bx);
+			vstr.push_front(rskey(c_mov64));
+			vasm+=vstr;
+			rsa1(c_push,rs_bx);
+#else
 			rbuf<rstr> vstr=ybase::trans_vword_to_vstr(src.vword);
 			vstr.push_front(rskey(c_push));
 			vasm+=vstr;
+#endif
 		}
 		elif(src.vword[0].is_cpoint())
 		{
 			if(src.vword.get_bottom().is_caddr())
 			{
-				vasm+=rf::vstr(rskey(c_push),src.vword[0].val);
+#ifdef _WIN64
+				rsa2(rs_mov,rs_bx,src.vword[0].val);
+				rsa1(c_push,rs_bx);
+#else
+				rsa1(c_push,src.vword[0].val);
+#endif
 			}
 			else
 			{
-				vasm+=rf::vstr(rskey(c_push),src.vword[0].val.sub_trim(1));
+				rsa1(c_push,src.vword[0].val.sub_trim(1));
 			}
 		}
 		elif(src.vword[0].is_cstr())
 		{
-			vasm+=rf::vstr(rskey(c_push),src.vword[0].val);
+#ifdef _WIN64
+			rsa2(rs_mov,rs_bx,src.vword[0].val);
+			rsa1(c_push,rs_bx);
+#else
+			rsa1(c_push,src.vword[0].val);
+#endif
 		}
 		elif(sh.key.is_asm_reg(src.vword[0].val))
 		{
-			vasm+=rf::vstr(rskey(c_push),src.vword[0].val);
+			rsa1(c_push,src.vword[0].val);
 		}
 		else
 		{
@@ -532,36 +497,31 @@ struct zasm
 				rserror("");
 				return false;
 			}
+#ifndef _WIN64
 			if(cur==vasm.count()&&tconf::c_op_pass)
 			{
 				if(yfind::is_op_pass_type(sh,dst.type)&&
 					dst.type==src.type)
 				{
 					vasm.cur_count-=3;
-					vasm+=rf::vstr(rskey(c_push),rsoptr(c_mbk_l),
-						rskey(c_ebp),rsoptr(c_plus),
-						rstr(ptdi->off),rsoptr(c_mbk_r));
+					rsa1(c_push,rsmbk3(rs_bp,rsoptr(c_plus),ptdi->off));
 					return true;
 				}
 				if(ybase::is_quote(dst.type)&&ybase::is_quote(src.type))
 				{
 					vasm.cur_count-=3;
-					vasm+=rf::vstr(rskey(c_push),rsoptr(c_mbk_l),
-						rskey(c_ebp),rsoptr(c_plus),
-						rstr(ptdi->off),rsoptr(c_mbk_r));
+					rsa1(c_push,rsmbk3(rs_bp,rsoptr(c_plus),ptdi->off));
 					return true;
 				}
 				if(ybase::is_quote(dst.type))
 				{
 					vasm.cur_count-=3;
-					vasm+=rf::vstr(rskey(c_lea),rskey(c_esi),
-						rsoptr(c_comma),rsoptr(c_mbk_l),
-						rskey(c_ebp),rsoptr(c_plus),
-						rstr(ptdi->off),rsoptr(c_mbk_r));
-					vasm+=rf::vstr(rskey(c_push),rskey(c_esi));
+					rsa2(c_lea,rs_si,rsmbk3(rs_bp,rsoptr(c_plus),ptdi->off));
+					rsa1(c_push,rs_si);
 					return true;
 				}
 			}
+#endif
 			//调用拷贝构造函数时还可以优化
 			return copy_param(sh,src.type,dst.type,vasm);
 		}
@@ -571,26 +531,18 @@ struct zasm
 	static rbool obtain_var_addr_var(const tsh& sh,const tsent& src,const tdata& dst,
 		const tdata* ptdi,rbuf<tasm>& vasm)
 	{
-		int size=yfind::get_ceil_space(dst);
-		vasm+=rf::vstr(rskey(c_sub),rskey(c_esp),rsoptr(c_comma),size);
-		vasm+=rf::vstr(rskey(c_mov),rskey(c_edi),rsoptr(c_comma),
-			rskey(c_esp));
-		vasm+=rf::vstr(rskey(c_lea),rskey(c_esi),rsoptr(c_comma),
-			rsoptr(c_mbk_l),rskey(c_ebp),rsoptr(c_plus),
-			rstr(ptdi->off),rsoptr(c_mbk_r));
-		return add_esi(sh,ptdi->type,vasm,src);
+		rsa2(c_sub,rs_sp,yfind::get_ceil_space(dst));
+		rsa2(rs_mov,rs_di,rs_sp);
+		rsa2(c_lea,rs_si,rsmbk3(rs_bp,rsoptr(c_plus),ptdi->off));
+		return add_si(sh,ptdi->type,vasm,src);
 	}
 
 	static rbool obtain_var_addr_f(const tsh& sh,tdata& retval,
 		const tsent& src,rbuf<tasm>& vasm)
 	{
-		int size=yfind::get_ceil_space(retval);
-		vasm+=rf::vstr(rskey(c_lea),rskey(c_edi),rsoptr(c_comma),
-			rsoptr(c_mbk_l),rskey(c_esp),rsoptr(c_plus),
-			rstr(size),rsoptr(c_mbk_r));
-		vasm+=rf::vstr(rskey(c_mov),rskey(c_esi),rsoptr(c_comma),
-			rskey(c_esp));
-		return add_esi(sh,retval.type,vasm,src);
+		rsa2(c_lea,rs_di,rsmbk3(rs_sp,rsoptr(c_plus),yfind::get_ceil_space(retval)));
+		rsa2(rs_mov,rs_si,rs_sp);
+		return add_si(sh,retval.type,vasm,src);
 	}
 
 	static tsent get_src_in(const tsh& sh,const tsent& src)
@@ -620,7 +572,7 @@ struct zasm
 	}
 	
 	// [ . , [ . , [ . , a , b ] , c ] , d ]
-	static rbool add_esi(const tsh& sh,rstr type,rbuf<tasm>& vasm,const tsent& src)
+	static rbool add_si(const tsh& sh,rstr type,rbuf<tasm>& vasm,const tsent& src)
 	{
 		int start=0;
 		const rbuf<tword>& v=src.vword;
@@ -658,14 +610,11 @@ struct zasm
 			}
 			if(ybase::is_quote(type))
 			{
-				vasm+=rf::vstr(rskey(c_mov),rskey(c_esi),
-					rsoptr(c_comma),rsoptr(c_mbk_l),
-					rskey(c_esi),rsoptr(c_mbk_r));
+				rsa2(rs_mov,rs_si,rsmbk1(rs_si));
 			}
 			if(ptdi->off!=0)
 			{
-				vasm+=rf::vstr(rskey(c_add),rskey(c_esi),
-					rsoptr(c_comma),ptdi->off);
+				rsa2(c_add,rs_si,ptdi->off);
 			}
 			type=ptdi->type;
 			right+=3;
@@ -678,13 +627,9 @@ struct zasm
 		const rstr& dst,rbuf<tasm>& vasm)
 	{
 		//指针可以随意转换
-		if(ybase::is_point(dst)&&ybase::is_point(src)||
-			dst==rskey(c_rd32)&&yfind::get_type_size(sh,src)==4)
+		if(ybase::is_point(dst)&&ybase::is_point(src))
 		{
-			vasm+=rf::vstr(rskey(c_mov),rsoptr(c_mbk_l),
-				rskey(c_edi),rsoptr(c_mbk_r),
-				rsoptr(c_comma),rsoptr(c_mbk_l),
-				rskey(c_esi),rsoptr(c_mbk_r));
+			rsa2(rs_mov,rsmbk1(rs_di),rsmbk1(rs_si));
 			return true;
 		}
 		//目标是引用
@@ -693,20 +638,16 @@ struct zasm
 			if(ybase::is_quote(src))
 			{
 				//源是引用
-				vasm+=rf::vstr(rskey(c_mov),rsoptr(c_mbk_l),
-					rskey(c_edi),rsoptr(c_mbk_r),
-					rsoptr(c_comma),rsoptr(c_mbk_l),
-					rskey(c_esi),rsoptr(c_mbk_r));
+				rsa2(rs_mov,rsmbk1(rs_di),rsmbk1(rs_si));
 			}				
 			else
 			{
 				//源是对象
-				vasm+=rf::vstr(rskey(c_mov),rsoptr(c_mbk_l),
-					rskey(c_edi),rsoptr(c_mbk_r),
-					rsoptr(c_comma),rskey(c_esi));
+				rsa2(rs_mov,rsmbk1(rs_di),rs_si);
 			}
 			return true;
 		}
+#ifndef _WIN64
 		if(tconf::c_op_pass)
 		{
 			if(yfind::is_op_pass_type(sh,dst))
@@ -714,49 +655,35 @@ struct zasm
 				if(ybase::is_quote(src))
 				{
 					//源是引用
-					vasm+=rf::vstr(rskey(c_mov),rskey(c_esi),
-						rsoptr(c_comma),rsoptr(c_mbk_l),
-						rskey(c_esi),rsoptr(c_mbk_r));
+					rsa2(rs_mov,rs_si,rsmbk1(rs_si));
 				}
-				vasm+=rf::vstr(rskey(c_mov),rsoptr(c_mbk_l),
-					rskey(c_edi),rsoptr(c_mbk_r),
-					rsoptr(c_comma),rsoptr(c_mbk_l),
-					rskey(c_esi),rsoptr(c_mbk_r));
+				rsa2(rs_mov,rsmbk1(rs_di),rsmbk1(rs_si));
 				return true;
 			}
 			if(dst==rskey(c_double)||dst==rskey(c_int64))
 			{
 				if(ybase::is_quote(src))
 				{
-					vasm+=rf::vstr(rskey(c_mov),rskey(c_esi),
-						rsoptr(c_comma),rsoptr(c_mbk_l),
-						rskey(c_esi),rsoptr(c_mbk_r));
+					rsa2(rs_mov,rs_si,rsmbk1(rs_si));
 				}
-				vasm+=rf::vstr(rskey(c_mov),rsoptr(c_mbk_l),
-					rskey(c_edi),rsoptr(c_mbk_r),
-					rsoptr(c_comma),rsoptr(c_mbk_l),
-					rskey(c_esi),rsoptr(c_mbk_r));
-				vasm+=rf::vstr(rskey(c_mov),rsoptr(c_mbk_l),
-					rskey(c_edi),rsoptr(c_plus),"4",
-					rsoptr(c_mbk_r),rsoptr(c_comma),
-					rsoptr(c_mbk_l),rskey(c_esi),
-					rsoptr(c_plus),"4",rsoptr(c_mbk_r));
+				rsa2(rs_mov,rsmbk1(rs_di),rsmbk1(rs_si));
+				rsa2(rs_mov,rsmbk3(rs_di,rsoptr(c_plus),4),rsmbk3(rs_si,rsoptr(c_plus),4));
 				return true;
 			}
 		}
+#endif
 		//目标是对象需要调用拷贝构造函数
 		if(ybase::is_quote(src))
 		{
 			//源是引用
-			vasm+=rf::vstr(rskey(c_push),rsoptr(c_mbk_l),
-				rskey(c_esi),rsoptr(c_mbk_r));
+			rsa1(c_push,rsmbk1(rs_si));
 		}
 		else
 		{
 			//源是对象
-			vasm+=rf::vstr(rskey(c_push),rskey(c_esi));
+			rsa1(c_push,rs_si);
 		}
-		vasm+=rf::vstr(rskey(c_push),rskey(c_edi));
+		rsa1(c_push,rs_di);
 		tclass* ptci=yfind::find_class_t(sh,src);
 		if(ptci==null)
 		{
@@ -796,9 +723,8 @@ struct zasm
 		{
 			return true;
 		}
-		vasm+=rf::vstr(rskey(c_mov),rskey(c_esi),
-			rsoptr(c_comma),rskey(c_esp));
-		vasm+=rf::vstr(rskey(c_push),rskey(c_esi));
+		rsa2(rs_mov,rs_si,rs_sp);
+		rsa1(c_push,rs_si);
 		vasm+=ybase::get_func_declare_call(sh,*ptci,*pdestruct);
 		return true;
 	}
