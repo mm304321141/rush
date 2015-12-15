@@ -3,10 +3,9 @@
 */
 
 void main(){
-	int a
-	mov a,1
-	add a,2
-	test(a)
+	mov eax,1
+	add eax,2
+	test(eax)
 } 
 	
 function test(b){
