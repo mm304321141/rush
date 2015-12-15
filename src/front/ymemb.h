@@ -770,6 +770,26 @@ struct ymemb
 		int right=v.count()-1;
 		item.pos=v[left].pos;
 		item.ptci=&tci;//反射
+		if(v.get_left().val==rskey(c_function))
+		{
+			item.is_function=true;
+			item.is_friend=true;
+			ifn(parse_func(sh,item,v.sub(1,left)))
+			{
+				return false;
+			}
+			item.retval.type="void";//rskey(c_rstr);
+			item.retval.size=yfind::get_type_size(sh,item.retval.type);
+			item.name_dec=item.get_dec();
+			item.vword=v.sub(0,right+1);
+			if(tci.s_func.exist(item))
+			{
+				rserror(v.get_bottom(),"func redefined");
+				return false;
+			}
+			tci.s_func.insert(item);
+			return true;
+		}
 		rbuf<tword> vhead=v.sub(0,left);
 		if(have_move(sh,vhead))
 		{

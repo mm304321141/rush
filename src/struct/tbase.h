@@ -103,6 +103,11 @@ struct tword
 
 	rbool is_name() const
 	{
+		return is_name_in(val);
+	}
+
+	static rbool is_name_in(const rstr& val)
+	{
 		if(val.empty())
 		{
 			return false;
@@ -205,8 +210,13 @@ struct tword
 			is_caddr());
 	}
 
-	//字符串常量，如"a"
 	rbool is_cstr() const
+	{
+		return is_cstr_in(val);
+	}
+
+	//字符串常量，如"a"
+	static rbool is_cstr_in(const rstr& val)
 	{
 		return val.get_bottom()==r_char('\"');
 	}
@@ -417,6 +427,7 @@ struct tclass;
 
 struct tfunc
 {
+	rbool is_function;
 	rbool is_infer;
 	rbool is_asm;
 	rbool is_vararg;//C可变参数
@@ -464,6 +475,7 @@ struct tfunc
 
 	void clear()
 	{
+		is_function=false;
 		is_infer=false;
 		is_asm=false;
 		is_vararg=false;
@@ -601,6 +613,8 @@ struct tgpp
 	}
 };
 
+struct tobj;
+
 //共享状态
 struct tsh
 {
@@ -630,6 +644,8 @@ struct tsh
 	rdic<void*> dic_dll_func;
 	rdic<tfunc*> dic_macro;
 	rbuf<rstr> vpath;
+
+	rset<tobj*> s_obj;
 
 	enum
 	{

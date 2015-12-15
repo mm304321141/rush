@@ -77,6 +77,18 @@ struct rdic
 		set.insert(item);
 	}
 
+	void erase(T* p)
+	{
+		set.erase(*(rdic_i<T>*)p);
+	}
+
+	void erase_key(const rstr& key)
+	{
+		rdic_i<T> item;
+		item.key=key;
+		set.erase(item);
+	}
+
 	T& operator[](const rstr& key)
 	{
 		rdic_i<T> item;

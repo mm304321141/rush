@@ -33,7 +33,7 @@ struct zbin
 	//从函数的词表编译到vasm
 	static rbool compile_vword_to_vasm(tsh& sh,tfunc& tfi,tenv env)
 	{
-		if(tfi.is_asm||tfi.is_extern)
+		if(tfi.is_asm||tfi.is_extern||tfi.is_function)
 		{
 			return true;
 		}

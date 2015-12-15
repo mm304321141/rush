@@ -387,6 +387,21 @@ struct zjit
 			{
 				return false;
 			}
+			if(ptfi->is_function)
+			{
+				void* addr=null;
+				if(sh.dic_bind_func.find("z_function")!=null)
+				{
+					addr=sh.dic_bind_func["z_function"];
+				}
+				otype=topnd::c_imme;
+#ifdef _WIN64
+				o.val64()=(int64)addr;
+#else
+				o.val=(uint)addr;
+#endif
+				return true;
+			}
 			ifn(compile_func_to_x86(sh,*ptfi,tenv()))
 			{
 				return false;

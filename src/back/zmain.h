@@ -2,18 +2,22 @@
 
 #include "../front/yclass.h"
 #include "../front/yformat.h"
+#include "zlang.h"
 #include "zvm.h"
 #include "zjit.h"
 #include "zgpp.h"
 #include "zjs.h"
 #include "zcpp.h"
 
-//main函数进行参数解析
+//参数解析
 struct zmain
 {
 	static rbool compile(uchar* cont)
 	{
 		tsh sh;
+#ifndef _RS
+		zjitf::get_psh()=&sh;
+#endif
 		sh.main_cont=cont;
 		rbuf<rstr> vparam=rf::get_param();
 		if(vparam.count()<2)

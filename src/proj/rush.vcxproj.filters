@@ -212,5 +212,8 @@
     <ClInclude Include="..\back\zcpp.h">
       <Filter>back</Filter>
     </ClInclude>
+    <ClInclude Include="..\back\zlang.h">
+      <Filter>back</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

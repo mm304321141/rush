@@ -360,6 +360,13 @@ struct yexp
 		tmp.vword.push(tword(rstr(vsent.count())));
 		tmp.type=rskey(c_int);
 		vsent.push_front(tmp);
+		if(ptfi->is_function)
+		{
+			tmp.vword.clear();
+			tmp.vword+=rstr((uint)ptfi)+"p";
+			tmp.type="rp<void>";
+			vsent.push_front(tmp);
+		}
 		//插入first还未处理引用的情况
 		if(pfirst!=null)
 		{
@@ -613,7 +620,8 @@ struct yexp
 		if(ptfi!=null)
 		{
 			if(ptfi->is_vararg&&src.vword.get(i+1).val==rsoptr(c_sbk_l)||
-				src.vword.get(i+1).val==rsoptr(c_mbk_l))
+				src.vword.get(i+1).val==rsoptr(c_mbk_l)||
+				ptfi->is_function&&src.vword.get(i+1).val==rsoptr(c_sbk_l))
 			{
 				return proc_vararg(sh,src,pfirst,outopnd,tfi,level,i,ptci,env);
 			}

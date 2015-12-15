@@ -164,6 +164,22 @@ struct zjitf
 		return null;
 	}
 
+	static void z_function(tfunc* ptfi,int count,...)
+	{
+		tsh& sh=*get_psh();
+		rbuf<var> v_var;
+		for(int i=0;i<count;i++)
+		{
+			v_var.push(var((int64)*(&count+i+1)));
+		}
+		g_state.env=var(rdic<var>());
+		rdic<var> table;
+		table["_fenv"]=var();
+		var fval(zlang::trans_v_to_s(ptfi->vword),table);
+		zlang::eval_func(sh,g_state,v_var,fval);
+		zlang::clear();
+	}
+
 	static void init_addr_list(tsh& sh)
 	{
 #ifndef _RS
@@ -220,6 +236,13 @@ struct zjitf
 		rsjf("_getch",xf::getch);
 		rsjf("MultiByteToWideChar",xf::MultiByteToWideChar);
 		rsjf("Sleep",xf::sleep);
+
+		rsjf("z_function",z_function);
 #endif
 	}
 };
+
+tsh*& r_zjitf_get_psh()
+{
+	return zjitf::get_psh();
+}

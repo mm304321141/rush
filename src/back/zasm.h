@@ -283,7 +283,8 @@ struct zasm
 			}
 			retval.type=vlisp[1].get(0).val;
 			retval.size=yfind::get_type_size(sh,retval.type);
-			rsa2(c_sub,rs_sp,yfind::get_ceil_space(retval));
+			int size=yfind::get_ceil_space(retval);
+			rsa2(c_sub,rs_sp,size);
 			rbuf<rbuf<tword> > vparam;
 			yexp::get_vlisp(sh,vlisp[4],vparam);
 			rbuf<tsent> vsent;
@@ -301,6 +302,7 @@ struct zasm
 				tdata tdi;
 				tdi.type=ybase::get_tname(vsent[i].type);
 				tdi.size=yfind::get_type_size(sh,tdi.type);
+				size+=yfind::get_ceil_space(tdi);
 				ifn(pass_param(sh,vsent[i],tdi,vasm,tfi,level))
 				{
 					return false;
@@ -308,6 +310,7 @@ struct zasm
 			}
 			tsent sent=src;
 			sent.vword=vlisp[3];
+			tfunc* ptfi=find_func(sh,sent.vword);
 			ifn(yexp::proc_exp(sh,sent,tfi,level,tenv()))
 			{
 				return false;
@@ -324,6 +327,10 @@ struct zasm
 			{
 				rserror("");
 				return false;
+			}
+			if(ptfi!=null&&ptfi->is_function)
+			{
+				rsa2(c_add,rs_sp,size);
 			}
 			return true;
 		}
@@ -727,5 +734,24 @@ struct zasm
 		rsa1(c_push,rs_si);
 		vasm+=ybase::get_func_declare_call(sh,*ptci,*pdestruct);
 		return true;
+	}
+
+	static tfunc* find_func(tsh& sh,rbuf<tword>& v)
+	{
+		if(v.count()!=7)
+		{
+			return null;
+		}
+		if(v.get(1).val!=rsoptr(c_addr))
+		{
+			return null;
+		}
+		tclass* ptci=yfind::find_class(sh,v.get(3).val);
+		if(ptci==null)
+		{
+			return null;
+		}
+		rstr fname=v.get(5).val;
+		return yfind::find_func_dec(*ptci,fname);
 	}
 };

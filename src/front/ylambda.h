@@ -245,7 +245,7 @@ struct ylambda
 	{
 		for(int i=0;i<v.count();i++)
 		{
-			if(v[i].val!=rskey(c_js_func))
+			if(v[i].val!=rskey(c_function))
 			{
 				continue;
 			}

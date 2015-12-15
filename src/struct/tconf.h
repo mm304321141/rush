@@ -314,7 +314,7 @@ struct tkey
 		c_rbuf,
 		c_rstr,
 
-		c_js_func,//JS函数
+		c_function,//JS函数
 		c_js_obj,
 		c_js_findf,
 

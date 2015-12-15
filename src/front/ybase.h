@@ -362,6 +362,60 @@ struct ybase
 		return r_move(result);
 	}
 
+	template<typename T>
+	static rbuf<rbuf<T> > split_comma_b(const tsh& sh,rbuf<T> v)
+	{
+		rbuf<rbuf<T> > result;
+		v.push(r_move(T(rsoptr(c_comma))));
+		int count1=0;
+		int count2=0;
+		int count3=0;
+		int start=0;
+		for(int i=0;i<v.count();i++)
+		{
+			//大括号不可能出现在参数中
+			if(v[i]==rsoptr(c_sbk_l))
+			{
+				count1++;
+			}
+			elif(v[i]==rsoptr(c_sbk_r))
+			{
+				count1--;
+			}
+			elif(v[i]==rsoptr(c_mbk_l))
+			{
+				count2++;
+			}
+			elif(v[i]==rsoptr(c_mbk_r))
+			{
+				count2--;
+			}
+			elif(v[i]==rsoptr(c_bbk_l))
+			{
+				count3++;
+			}
+			elif(v[i]==rsoptr(c_bbk_r))
+			{
+				count3--;
+			}
+			elif(count1==0&&count2==0&&count3==0&&
+				v[i]==rsoptr(c_comma))
+			{
+				rbuf<T> item;
+				for(int j=start;j<i;j++)
+				{
+					item.push(r_move(v[j]));
+				}
+				ifn(item.empty())
+				{
+					result.push(r_move(item));
+				}
+				start=i+1;
+			}
+		}
+		return r_move(result);
+	}
+
 	//允许空元素
 	static rbuf<rbuf<tword> > split_comma_e(const tsh& sh,rbuf<tword> v)
 	{
