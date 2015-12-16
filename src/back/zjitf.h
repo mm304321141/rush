@@ -1,6 +1,8 @@
 ﻿#pragma once
 
 #include "../struct/tbase.h"
+#include "../front/yclasstl.h"
+#include "../front/ypre.h"
 
 //jit函数
 struct zjitf
@@ -180,6 +182,66 @@ struct zjitf
 		zlang::clear();
 	}
 
+	static rbool eval_vstr(rbuf<rstr>& vstr,tenv env)
+	{
+		rbuf<tword> v;
+		for(int i=0;i<vstr.count();i++)
+		{
+			v+=tword(vstr[i]);
+			v[i].pos.line=1;
+		}
+		return eval_v(v,env);
+	}
+
+	static rbool eval_v(rbuf<tword>& v,tenv env)
+	{
+		extern rbool r_zjit_compile_func_to_x86(tsh& sh,tfunc& tfi,tenv env);
+#ifdef _MSC_VER
+		tsh& sh=*zjitf::get_psh();
+		ypre::replace_def(sh,sh.s_define,v);
+		ifn(yclasstl::replace_type(sh,v))
+		{
+			rserror();
+			return false;
+		}
+		tfunc tfi;
+		tfi.ptci=sh.pmain;
+		tfi.vword=v;
+		tfi.pos.line=1;
+		tfi.retval.type=rskey(c_int);
+		tfi.retval.name=rskey(c_s_ret);
+		tfi.is_cfunc=true;
+		ifn(r_zjit_compile_func_to_x86(sh,tfi,env))
+		{
+			rserror();
+			return false;
+		}
+		uchar* temp=tfi.code;
+#ifndef _WIN64
+		__asm sub esp,4
+		__asm call temp
+		__asm mov esi,[esp]
+		__asm mov temp,esi
+		__asm add esp,4
+#endif
+		return (int)temp;
+#else
+		return false;
+#endif
+	}
+
+	static rbool eval(uchar* s,tenv env)
+	{
+		tsh& sh=*zjitf::get_psh();
+		rbuf<tword> v;
+		rstr temp=s;
+		ifn(ypre::parse_str(sh,temp,v,null))
+		{
+			return false;
+		}
+		return eval_v(v,env);
+	}
+
 	static void init_addr_list(tsh& sh)
 	{
 #ifndef _RS
@@ -238,6 +300,9 @@ struct zjitf
 		rsjf("Sleep",xf::sleep);
 
 		rsjf("z_function",z_function);
+		rsjf("get_cur_func",get_cur_func);
+		rsjf("eval",eval);
+		rsjf("eval_vstr",eval_vstr);
 #endif
 	}
 };

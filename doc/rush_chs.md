@@ -147,7 +147,7 @@ func(1,
 
 暂时移除
 
-#### 7. 运算符DIY
+#### 7. 运算符重载
 
 Rush支持运算符重载，相同优先级的运算符都是从左往右运算的，C语言可以这样：
 ```cpp
@@ -547,6 +547,9 @@ vector<int> v
 #v.push(1,99,2)
 ```
 最新版Rush开始支持超级宏，变参宏可用超级宏实现，请参考src\example\test\11_x.rs。
+<br/>
+<br/>
+Lisp宏请参考src\example\dynamic\macro...
 
 #### 12. 函数指针
 
@@ -644,15 +647,15 @@ void[&func2,&a]
 
 #### 14. 元编程
 
-暂时移除
+请参考src\example\dynamic\meta.rs
 
 #### 15. JS
 
-暂时移除
+请参考src\example\dynamic\js.rs
 
 #### 16. 反射
 
-暂时移除
+请参考src\example\dynamic\reflect.rs
 
 #### 17. 闭包
 
@@ -682,6 +685,9 @@ lambda(int a,int b){}
 lambda(int,int a,int b){}
 ```
 上面第一个函数的返回值为空，带两个整型参数。第二个函数返回值为int，带两个整型参数。如果第一个参数只有类型，而没有变量名，编译器理解为这是一个返回值类型。
+<br/>
+<br/>
+动态闭包请参考src\example\dynamic\js.rs
 
 #### 18. 多重继承
 

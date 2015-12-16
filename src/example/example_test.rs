@@ -37,6 +37,8 @@ void main()
 	vtime.push(xf.tick-time)
 	time=xf.tick
 	
+	check_d()
+	
 	for i=0;i<vname.count;i++
 		check_jit(vname[i],'rush64')
 		
@@ -94,9 +96,28 @@ void check_vm(rstr a)
 
 void check_jit(rstr a,rstr name)
 {
-	//name.printl
-	//printl(name+' -jit ../src/example/test/'+a+'.rs > ../src/example/answer/'+a+'_tmp.txt')
 	rf.cmd(name+' -jit ../src/example/test/'+a+'.rs > ../src/example/answer/'+a+'_tmp.txt')
+	check_jit('../src/example/answer/'+a+'_tmp.txt','../src/example/answer/'+a+'.txt',name)
+}
+
+void check_d()
+{
+	v=rdir.get_file_bfs('../src/example/dynamic/')
+	rbuf<rstr> vname
+	for i=0;i<v.count;i++
+		name=rdir.get_name(v[i])
+		suffix=rdir.get_suffix(name)
+		if suffix!='rs'
+			continue
+		a=name.sub(0,name.count-suffix.count-1)
+		vname.push(a)
+	for i=0;i<vname.count;i++
+		check_jit_d(vname[i])
+}
+
+void check_jit_d(rstr a,rstr name='rush')
+{
+	rf.cmd(name+' -jit ../src/example/dynamic/'+a+'.rs > ../src/example/answer/'+a+'_tmp.txt')
 	check_jit('../src/example/answer/'+a+'_tmp.txt','../src/example/answer/'+a+'.txt',name)
 }
 
