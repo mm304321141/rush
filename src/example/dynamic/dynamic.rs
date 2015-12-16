@@ -1,6 +1,6 @@
 ﻿/*
 惰性求值的方式实现短路求值
-RPP是同时支持call_by_name和call_by_need和call_by_value的语言
+Rush是同时支持call_by_name和call_by_need和call_by_value的语言
 该示例只能以32位JIT模式运行
 */
 
