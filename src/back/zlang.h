@@ -419,6 +419,166 @@ struct zlang
 		return state.ref_result();
 	}
 
+	static rbool is_internal_func(const rstr& s)
+	{
+		return s=="+"||s=="-"||s=="=="||s=="putsl";
+	}
+
+	static rbool is_min(const rbuf<tword>& v)
+	{
+		if(v.count()==0)
+		{
+			return true;
+		}
+		if(v.count()==1)
+		{
+			return true;
+		}
+		rstr first=v.get(0).val;
+		if(is_internal_func(first)&&v.get(1).val=="(")
+		{
+			if(v.count()==6&&v.get(3).val==",")
+			{
+				return true;
+			}
+			if(v.count()==4)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	static rbuf<tword> to_cps_f(tsh& sh,const rbuf<tword>& v,int id,int& pos)
+	{
+		rbuf<tword> result;
+		result+=rstr("_F");
+		result+=rstr("(");
+		result+=v;
+		result+=rstr(")");
+		return to_cps(sh,result,id,pos);
+	}
+
+	static rbuf<tword> to_cps(tsh& sh,const rbuf<tword>& v,int id,int& pos)
+	{
+		id++;
+		if(is_min(v))
+		{
+			pos=0;
+			return v;
+		}
+		rstr first=v.get(0).val;
+		int left=1;
+		int right=ybase::find_symm_sbk(sh,v,left);
+		rbuf<rbuf<tword> > param=ybase::split_comma_b(sh,v.sub(left+1,right));
+		if(first=="function")
+		{
+			rbuf<tword> temp=v.sub(0,right);
+			if(left+1!=right)
+			{
+				temp+=rstr(",");
+			}
+			temp+=rstr("_F");
+			int bbk_right=ybase::find_symm_bbk(sh,v,right+1);
+			temp+=rstr(")");
+			temp+=rstr("{");
+			int temp_pos;
+			temp+=to_cps(sh,v.sub(right+2,bbk_right),id,temp_pos);
+			temp+=rstr("}");
+			return temp+to_cps(sh,v.sub(bbk_right+1),id,temp_pos);
+		}
+		if(first=="=")
+		{
+			rbuf<tword> result=v.sub(0,4);
+			int temp_pos;
+			result+=to_cps(sh,param[1],id,temp_pos);
+			result+=rstr(")");
+			return result+to_cps(sh,v.sub(right+1),id,temp_pos);
+		}
+		if(first=="cond")
+		{
+			rbuf<tword> result=v.sub(0,2);
+			int temp_pos;
+			result+=to_cps(sh,param[0],id,temp_pos);
+			result+=rstr(",");
+			result+=to_cps_f(sh,param[1],id,temp_pos);
+			result+=rstr(",");
+			result+=to_cps_f(sh,param[2],id,temp_pos);
+			result+=rstr(")");
+			return result+to_cps(sh,v.sub(right+1),id,temp_pos);
+		}
+		for(int i=0;i<param.count();i++)
+		{
+			if(is_min(param[i]))
+			{
+				continue;
+			}
+			int temp_pos;
+			rbuf<tword> v_val=to_cps(sh,param[i],id,temp_pos);
+			rbuf<tword> result=v_val.sub(0,temp_pos);
+			if(result.get_right().val!="("&&
+				result.get_right().val!="{")
+			{
+				result+=rstr(",");
+			}
+			result+=rstr("function");
+			result+=rstr("(");
+			result+=rstr("_V")+id;
+			result+=rstr(")");
+			result+=rstr("{");
+
+			rbuf<tword> temp;
+			temp+=first;
+			temp+=rstr("(");
+			for(int j=0;j<i;j++)
+			{
+				if(j!=0)
+				{
+					temp+=rstr(",");
+				}
+				temp+=param[j];
+			}
+			if(i!=0)
+			{
+				temp+=rstr(",");
+			}
+			temp+=rstr("_V")+id;
+			if(i!=param.count()-1)
+			{
+				for(int j=i+1;j<param.count();j++)
+				{
+					temp+=rstr(",");
+					temp+=param[j];
+				}
+			}
+			temp+=rstr(")");
+
+			int insert_pos;
+			rbuf<tword> total=to_cps(sh,temp,id,insert_pos);
+	
+			pos=insert_pos+result.count();
+			result+=total;
+
+			result+=rstr("}");
+			if(v_val.get(temp_pos).val!=")")
+			{
+				result+=rstr("(");
+				int temp_right=ybase::find_symm_sbk(sh,v_val,temp_pos+1);
+				result+=v_val.sub(temp_pos,temp_right+1);
+				result+=rstr(")");
+				result+=v_val.sub(temp_right+1);
+
+			}
+			else
+			{
+				result+=v_val.sub(temp_pos);
+			}
+			return result;
+		}
+		pos=v.count()-1;
+		return v;
+	}
+
 	static var eval(tsh& sh,fstate& state,const rbuf<tword>& v)
 	{
 		if(v.count()==0)
@@ -473,7 +633,7 @@ struct zlang
 		}
 		int right=ybase::find_symm_sbk(sh,v,1);
 		rbuf<tword> param=v.sub(2,right);
-		if(first=="printl")
+		if(first=="printl"||first=="putsl")
 		{
 			state.ref_result()=eval(sh,state,param);
 			if(state.ref_result().get_type()==var::c_long)
@@ -484,6 +644,12 @@ struct zlang
 			{
 				rf::printl(state.ref_result().ref_str());
 			}
+		}
+		elif(first=="call_cps")
+		{
+			int pos;
+			//ybase::print_vword(to_cps(sh,param,0,pos));
+			state.ref_result()=eval(sh,state,to_cps(sh,param,0,pos));
 		}
 		elif(first=="stringify")
 		{

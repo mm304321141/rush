@@ -5,10 +5,11 @@
 void main(){
 	mov eax,1
 	add eax,2
-	test(eax)
+	test1(eax)
+	test2()
 } 
 	
-function test(b){
+function test1(b){
 	printl(b)
 	
 	function sum(a){
@@ -46,4 +47,15 @@ function test(b){
 	printl(obj.get())
 	obj.set(5)
 	printl(obj.get())
+}
+
+function test2(){
+	call_cps(
+		=(sum,function(a){
+			cond(==(a,0),
+				0,
+				+(a,sum(-(a,1))))
+		})
+		putsl(sum(10))
+	)
 }
