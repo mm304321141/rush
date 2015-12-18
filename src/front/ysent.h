@@ -30,8 +30,8 @@ struct ysent
 		{
 			return false;
 		}
-		//强制转换替换
-		ifn(yrep::replace_trans(sh,tfi.vword))
+		
+		ifn(yrep::replace_force_trans(sh,tfi.vword))
 		{
 			return false;
 		}

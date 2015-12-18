@@ -460,7 +460,7 @@ class A
 {
 	int m_a=2
 
-	int func<T>
+	int func<T>()
 	{
 		return m_a+T
 	}
@@ -659,7 +659,7 @@ void[&func2,&a]
 
 #### 17. 闭包
 
-Rush支持静态闭包：
+静态闭包：
 ```cpp
 void main()
 {
@@ -670,7 +670,7 @@ void main()
 对于匿名函数访问外层变量，Rush会调用赋值函数进行复制（与C++11的[=]类似）。
 <br/>
 <br/>
-目前Rush的闭包有3个限制：
+目前Rush的静态闭包有3个限制：
 <br/>
 1. 不能在匿名函数中访问需要析构的外层变量。
 <br/>

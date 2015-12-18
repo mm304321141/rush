@@ -11,7 +11,7 @@ ASM->JS 后端完善
 
 ASM->C++ 后端完善
 
-Lisp->ASM 内联优化
+Lisp内联优化
 
 Linux支持完善
 

@@ -599,7 +599,7 @@ struct yrep
 	->
 	(a.b).to<int>
 	*/
-	static rbool replace_trans(const tsh& sh,rbuf<tword>& v)
+	static rbool replace_force_trans(const tsh& sh,rbuf<tword>& v)
 	{
 		for(int i=0;i<v.count();i++)
 		{
@@ -651,7 +651,7 @@ struct yrep
 			v[i].multi+=rsoptr(c_tbk_r);
 			if(ybase::arrange(v))
 			{
-				return replace_trans(sh,v);
+				return replace_force_trans(sh,v);
 			}
 			return true;
 		}
