@@ -624,9 +624,19 @@ struct rbuf
 		return sub(begin,count());
 	}
 
+	rbuf<T> sub_tail(int num) const
+	{
+		return sub(count()-num);
+	}
+
 	rbuf<T> sub_trim(int num) const
 	{
 		return sub(0,count()-num);
+	}
+
+	rbuf<T> sub_trim_s(int num) const
+	{
+		return sub(num,count()-num);
 	}
 
 	rbool exist(const T& a) const

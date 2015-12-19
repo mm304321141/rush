@@ -177,7 +177,15 @@ struct zjitf
 		g_state.env=var(rdic<var>());
 		rdic<var> table;
 		table["_fenv"]=var();
-		var fval(zlang::trans_v_to_s(ptfi->vword),table);
+		int left=ptfi->vword.find(rsoptr(c_bbk_l));
+		rbuf<tword> v=ptfi->vword.sub(left+1).sub_trim(1);
+		ifn(zlang::replace_control(sh,v))
+		{
+			rserror();
+			return;
+		}
+		v=zlang::trans_fdef_to_sexp(sh,ptfi->vword.sub(0,left+1)+v+ptfi->vword.sub_tail(1));
+		var fval(ybase::trans_v_to_s(v),table);
 		zlang::eval_func(sh,g_state,v_var,fval);
 		zlang::clear();
 	}

@@ -240,34 +240,4 @@ struct ylambda
 		}
 		ybase::arrange(tfi.vword);
 	}
-
-	static rbool replace_func(const tsh& sh,rbuf<tword>& v)
-	{
-		for(int i=0;i<v.count();i++)
-		{
-			if(v[i].val!=rskey(c_function))
-			{
-				continue;
-			}
-			if(v.get(i+1).val!=rsoptr(c_sbk_l))
-			{
-				rserror(v[i],"miss (");
-				return false;
-			}
-			v[i].multi+=rskey(c_lambda);
-			v[i].multi+=rsoptr(c_sbk_l);
-			v[i].multi+="var";
-			v[i].multi+=",";
-			v[i].multi+="var&";
-			v[i].multi+="this";
-			if(v.get(i+2).val!=rsoptr(c_sbk_r))
-			{
-				v[i].multi+=",";
-			}
-			v[i].val.clear();
-			v[i+1].val.clear();
-		}
-		ybase::arrange(v);
-		return true;
-	}
 };

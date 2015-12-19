@@ -781,7 +781,7 @@ struct ymemb
 			item.retval.type="void";//rskey(c_rstr);
 			item.retval.size=yfind::get_type_size(sh,item.retval.type);
 			item.name_dec=item.get_dec();
-			item.vword=v.sub(0,right+1);
+			item.vword=v.sub(0,1)+v.sub(2,right+1);
 			if(tci.s_func.exist(item))
 			{
 				rserror(v.get_bottom(),"func redefined");

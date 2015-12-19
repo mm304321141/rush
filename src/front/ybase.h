@@ -110,7 +110,7 @@ struct ybase
 		rf::printl(e);
 	}
 
-	static rstr trans_vword_to_s(rbuf<tword>& v)
+	static rstr trans_v_to_s_line(rbuf<tword>& v)
 	{
 		rstr s;
 		for(int i=0;i<v.count();i++)
@@ -122,6 +122,26 @@ struct ybase
 			s+=v[i].val+" ";
 		}
 		return r_move(s);
+	}
+
+	static rstr trans_v_to_s(const rbuf<tword>& v)
+	{
+		rstr s;
+		for(int i=0;i<v.count();i++)
+		{
+			s+=v[i].val+" ";
+		}
+		return r_move(s);
+	}
+
+	static rbuf<tword> trans_vstr_to_vword(const rbuf<rstr>& vstr)
+	{
+		rbuf<tword> v;
+		for(int i=0;i<vstr.count();i++)
+		{
+			v+=tword(vstr[i]);
+		}
+		return r_move(v);
 	}
 
 	static rstr get_func_param_declare(const tfunc& tfi)
@@ -289,6 +309,25 @@ struct ybase
 		}
 		return (s.count()>=5&&s[0]==r_char('r')&&s[1]==r_char('p')&&
 			s[2]==r_char('<')&&s.get_top()==r_char('>'));
+	}
+
+	static rbuf<rbuf<tword> > split_sexp(tsh& sh,const rbuf<tword>& v)
+	{
+		rbuf<rbuf<tword> > result;
+		for(int i=0;i<v.count();i++)
+		{
+			if(v[i].val==rsoptr(c_mbk_l))
+			{
+				int right=find_symm_mbk(sh,v,i);
+				result+=v.sub(i,right+1);
+				i=right;
+			}
+			else
+			{
+				result+=v.sub(i,i+1);
+			}
+		}
+		return result;
 	}
 
 	static void split_param(const tsh& sh,rbuf<tsent>& vsent,

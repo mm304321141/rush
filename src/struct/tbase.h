@@ -21,6 +21,12 @@ struct tword
 		val=s;
 	}
 
+	tword(const rstr& val,tpos pos)
+	{
+		this->val=val;
+		this->pos=pos;
+	}
+
 	tword(const tword& a)
 	{
 		pos=a.pos;

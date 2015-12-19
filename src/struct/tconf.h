@@ -203,6 +203,16 @@ struct toptr
 		}
 		return *p;
 	}
+
+	int get_num(const rstr& s) const
+	{
+		int* p=dic_num.find(s);
+		if(p==null)
+		{
+			return 0;
+		}
+		return *p;
+	}
 	
 	//比较两个运算符的优先级，true表示第一个优先于第二个，相同优先级总是从左到右计算
 	rbool is_precede(const rstr& first,const rstr& second) const

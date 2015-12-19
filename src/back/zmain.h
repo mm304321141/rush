@@ -18,6 +18,7 @@ struct zmain
 #ifndef _RS
 		zjitf::get_psh()=&sh;
 #endif
+		zlang::init_op();
 		sh.main_cont=cont;
 		rbuf<rstr> vparam=rf::get_param();
 		if(vparam.count()<2)

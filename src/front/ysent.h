@@ -21,10 +21,6 @@ struct ysent
 		{
 			add_class(sh,tfi,env);
 		}
-		ifn(ylambda::replace_func(sh,tfi.vword))
-		{
-			return false;
-		}
 		ylambda::replace_var(sh,tfi);
 		ifn(ylambda::replace(sh,tfi))
 		{

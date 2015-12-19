@@ -79,7 +79,7 @@ struct zvm
 			rserror("init failed");
 			return false;
 		}
-next:
+	next:
 		cur=(tins*)(reg.eip);
 		//((tasm*)cur)->vstr.print();
 		//rf::printl();

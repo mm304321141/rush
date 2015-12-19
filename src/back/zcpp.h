@@ -88,7 +88,7 @@ struct zcpp
 		{
 			result+="\nvoid "+symbol+"(";
 			result+="){\n";
-			result+=ybase::trans_vword_to_s(tfi.vword);
+			result+=ybase::trans_v_to_s(tfi.vword);
 			result+="\n}\n";
 			return true;
 		}

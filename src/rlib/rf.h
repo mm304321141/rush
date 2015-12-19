@@ -165,6 +165,24 @@ struct rf
 	static rbuf<rstr> vstr(const rstr& s1,
 		const rstr& s2,const rstr& s3,const rstr& s4,
 		const rstr& s5,const rstr& s6,const rstr& s7,const rstr& s8,
+		const rstr& s9)
+	{
+		rbuf<rstr> result;
+		result+=s1;
+		result+=s2;
+		result+=s3;
+		result+=s4;
+		result+=s5;
+		result+=s6;
+		result+=s7;
+		result+=s8;
+		result+=s9;
+		return result;
+	}
+
+	static rbuf<rstr> vstr(const rstr& s1,
+		const rstr& s2,const rstr& s3,const rstr& s4,
+		const rstr& s5,const rstr& s6,const rstr& s7,const rstr& s8,
 		const rstr& s9,const rstr& s10)
 	{
 		rbuf<rstr> result;
