@@ -1,5 +1,5 @@
-/*
-¸Ã³ÌĞòÖ»ÄÜÒÔ32Î»JITÄ£Ê½ÔËĞĞ
+ï»¿/*
+è¯¥ç¨‹åºåªèƒ½ä»¥32ä½JITæ¨¡å¼è¿è¡Œ
 */
 
 void main()
@@ -11,6 +11,7 @@ void main()
 	test5()
 	test6()
 	test7()
+	test8()
 }
 
 function test1(){
@@ -209,4 +210,11 @@ function test7(){
 			[+ n [f [- n 1]]]]
 	]]
 	[putsl [f 10]]
+}
+
+function test8(){
+	n=2
+	putsl(n)
+	n+=3
+	putsl(n)
 }

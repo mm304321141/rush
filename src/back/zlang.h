@@ -639,16 +639,57 @@ struct zlang
 			}
 			if(v.get(1).val==rsoptr(c_plusplus))
 			{
-				v=ybase::trans_vstr_to_vword(rf::vstr("[","=",v.get(2).val,
-					"[","+",v.get(2).val,"1","]","]"));
+				v=replace_multi(sh,v,"+");
 			}
 			elif(v.get(1).val==rsoptr(c_minusminus))
 			{
-				v=ybase::trans_vstr_to_vword(rf::vstr("[","=",v.get(2).val,
-					"[","-",v.get(2).val,"1","]","]"));
+				v=replace_multi(sh,v,"-");
+			}
+			elif(v.get(1).val=="+=")
+			{
+				v=replace_multi(sh,v,"+");
+			}
+			elif(v.get(1).val=="-=")
+			{
+				v=replace_multi(sh,v,"-");
+			}
+			elif(v.get(1).val=="*=")
+			{
+				v=replace_multi(sh,v,"*");
+			}
+			elif(v.get(1).val=="/=")
+			{
+				v=replace_multi(sh,v,"/");
+			}
+			elif(v.get(1).val=="%=")
+			{
+				v=replace_multi(sh,v,"%");
 			}
 		}
 		return true;
+	}
+
+	static rbuf<tword> replace_multi(tsh& sh,const rbuf<tword>& v,const rstr& op)
+	{
+		rbuf<rbuf<tword> > vexp=ybase::split_sexp(sh,v.sub_trim_s(1));
+		rbuf<tword> temp;
+		temp+=rstr("[");
+		temp+=rstr("=");
+		temp+=vexp.get(1);
+		temp+=rstr("[");
+		temp+=op;
+		temp+=vexp.get(1);
+		if(vexp.count()==3)
+		{
+			temp+=vexp.get(2);
+		}
+		else
+		{
+			temp+=rstr(1);
+		}
+		temp+=rstr("]");
+		temp+=rstr("]");
+		return temp;
 	}
 
 	static void obtain_tag(tsh& sh,fstate& state)
