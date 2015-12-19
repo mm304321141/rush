@@ -32,7 +32,7 @@ void main()
 	//	src_name+'.exe')
 	
 	ifn v.count>=5&&v[4]=='-build'
-		rf.cmd(rdir.dir_std_rev(src_name+'.exe'))
+		rf.cmd(rdir.std_dir_rev(src_name+'.exe'))
 	
 	//clear(src_name)
 	
@@ -48,17 +48,17 @@ void main()
 	if v[3]=='-build'
 		;
 	elif v[3]=='-del'
-		rf.cmd(rdir.dir_std_rev(src_name+'.exe'))
-		while rfile.remove(rcode.gbk_to_utf8(src_name)+'.exe')
+		rf.cmd(rdir.std_dir_rev(src_name+'.exe'))
+		while rfile.remove(rcode.trans_gbk_to_utf8(src_name)+'.exe')
 			xf.sleep(100)//很可能是由于golink没有关闭EXE导致无法删除
 	elif v[3]=='-check'
-		if rfile.remove(rcode.gbk_to_utf8(src_name)+'.exe')
+		if rfile.remove(rcode.trans_gbk_to_utf8(src_name)+'.exe')
 			printl 'delete error'
 }
 
 void clear(rstr name)
 {
-	name=rcode.gbk_to_utf8(name)
+	name=rcode.trans_gbk_to_utf8(name)
 	rfile.remove(name+'.exe')
 	rfile.remove(name+'.cpp')
 }
