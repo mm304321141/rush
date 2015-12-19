@@ -21,13 +21,13 @@ function js_main(num){
 	
 	putsl(f(3)(4));
 	
-	var f=function(n,h){
+	var k=function(n,h){
 		if(n<=1){
 			return 1;
 		}
-		return h(n,f(n-1,h));
+		return h(n,k(n-1,h));
 	};
 	
-	putsl(f(10,function(a,b){a+b}));
-	putsl(f(10,function(a,b){a*b}));
+	putsl(k(10,function(a,b){a+b}));
+	putsl(k(10,function(a,b){a*b}));
 }
