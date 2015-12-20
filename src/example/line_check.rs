@@ -1,5 +1,5 @@
 ﻿/*
-检查代码每行是否超过92字符
+检查代码每行是否超过120字符
 rush ..\src\example\line_check.rs ../
 */
 
@@ -17,7 +17,7 @@ bool check_line(rstrw s)
 			count+=8
 		else
 			count++
-	if count<=92
+	if count<=120
 		return true
 	printl 'count '+count
 	printl(s.torstr)
