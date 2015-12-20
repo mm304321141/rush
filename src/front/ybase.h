@@ -110,6 +110,16 @@ struct ybase
 		rf::printl(e);
 	}
 
+	static rbuf<tword> combine_v(const rbuf<rbuf<tword> >& v)
+	{
+		rbuf<tword> result;
+		for(int i=0;i<v.count();i++)
+		{
+			result+=v[i];
+		}
+		return result;
+	}
+
 	static rstr trans_v_to_s_line(rbuf<tword>& v)
 	{
 		rstr s;

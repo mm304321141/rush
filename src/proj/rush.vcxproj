@@ -161,7 +161,7 @@
     <ClInclude Include="..\back\zcpp.h" />
     <ClInclude Include="..\back\zgpp.h" />
     <ClInclude Include="..\back\zjs.h" />
-    <ClInclude Include="..\back\zlang.h" />
+    <ClInclude Include="..\back\zlisp.h" />
     <ClInclude Include="..\back\zvm.h" />
     <ClInclude Include="..\back\zjit.h" />
     <ClInclude Include="..\back\zjitb.h" />
@@ -181,6 +181,7 @@
     <ClInclude Include="..\front\yfind.h" />
     <ClInclude Include="..\front\yformat.h" />
     <ClInclude Include="..\front\yfunctl.h" />
+    <ClInclude Include="..\front\yjs.h" />
     <ClInclude Include="..\front\ylambda.h" />
     <ClInclude Include="..\front\ylazy.h" />
     <ClInclude Include="..\front\ymac.h" />

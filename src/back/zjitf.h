@@ -179,15 +179,15 @@ struct zjitf
 		table["_fenv"]=var();
 		int left=ptfi->vword.find(rsoptr(c_bbk_l));
 		rbuf<tword> v=ptfi->vword.sub(left+1).sub_trim(1);
-		ifn(zlang::replace_control(sh,v))
+		ifn(yjs::replace_control(sh,v))
 		{
 			rserror();
 			return;
 		}
-		v=zlang::trans_fdef_to_sexp(sh,ptfi->vword.sub(0,left+1)+v+ptfi->vword.sub_tail(1));
+		v=yjs::trans_fdef_to_sexp(sh,ptfi->vword.sub(0,left+1)+v+ptfi->vword.sub_tail(1));
 		var fval(ybase::trans_v_to_s(v),table);
-		zlang::eval_func(sh,g_state,v_var,fval);
-		zlang::clear();
+		zlisp::eval_func(sh,g_state,v_var,fval);
+		zlisp::clear();
 	}
 
 	static rbool eval_vstr(rbuf<rstr>& vstr,tenv env)

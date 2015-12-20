@@ -629,7 +629,7 @@ namespace xf
 	{
 		push count
 		push dst
-		push (-1)
+		push 0xffffffff
 		push src
 		push 0
 		push 936
@@ -646,7 +646,7 @@ namespace xf
 		push 0
 		push buf_size
 		push dst
-		push (-1)
+		push 0xffffffff
 		push src
 		push 0
 		push 936

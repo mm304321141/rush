@@ -217,4 +217,24 @@ function test8(){
 	putsl(n)
 	n+=3
 	putsl(n)
+	
+	if(n==5&&1<2){
+		putsl(true)
+	}
+	else{
+		putsl(false)
+	}
+	
+	if(n==6||1<2){
+		putsl(true)
+	}
+	else{
+		putsl(false)
+	}
+	
+	putsl(!(n==5))
+	putsl(n!=5)
+	putsl(-2)
+	t=-0.5
+	putsl(t)
 }

@@ -38,6 +38,10 @@ struct yconsteval
 				rserror(v[i],"const_eval");
 				return false;
 			}
+			if(dst<0)
+			{
+				continue;
+			}
 			v[pos].val=rstr((uint)dst);
 			ybase::clear_word_val(v,pos+1,right);
 			if(clear_sbk)

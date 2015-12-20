@@ -2,7 +2,7 @@
 
 #include "../front/yclass.h"
 #include "../front/yformat.h"
-#include "zlang.h"
+#include "zlisp.h"
 #include "zvm.h"
 #include "zjit.h"
 #include "zgpp.h"
@@ -18,7 +18,7 @@ struct zmain
 #ifndef _RS
 		zjitf::get_psh()=&sh;
 #endif
-		zlang::init_op();
+		zlisp::init_op();
 		sh.main_cont=cont;
 		rbuf<rstr> vparam=rf::get_param();
 		if(vparam.count()<2)

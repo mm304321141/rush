@@ -214,6 +214,7 @@ struct yrep
 			if(v[i-1]==rsoptr(c_equal)||
 				v[i-1]==rsoptr(c_sbk_l)||
 				v[i-1]==rsoptr(c_mbk_l)||
+				v[i-1]==rsoptr(c_bbk_l)||
 				v[i-1]==rsoptr(c_comma)||
 				v[i-1]==rsoptr(c_equal_equal)||
 				v[i-1]==rsoptr(c_not_equal)||

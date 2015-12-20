@@ -212,7 +212,10 @@
     <ClInclude Include="..\back\zcpp.h">
       <Filter>back</Filter>
     </ClInclude>
-    <ClInclude Include="..\back\zlang.h">
+    <ClInclude Include="..\front\yjs.h">
+      <Filter>front</Filter>
+    </ClInclude>
+    <ClInclude Include="..\back\zlisp.h">
       <Filter>back</Filter>
     </ClInclude>
   </ItemGroup>
